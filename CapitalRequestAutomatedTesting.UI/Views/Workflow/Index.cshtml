@@ -1,0 +1,29 @@
+﻿<h2>Run Automated Test</h2>
+
+<div>
+    <h3>Request ID</h3>
+    <div id="requestIdSpinner" style="display: none;">
+        <span>Loading Request IDs...</span>
+        <img src="~/images/spinner.gif" alt="Loading..." style="height: 20px;" />
+    </div>
+    <select id="requestIdDropdown">
+        <option value="">-- Select One --</option>
+    </select>
+</div>
+
+<form id="scenarioForm">
+    <div id="scenarioList"></div>
+    <button type="button" onclick="runSelectedScenarios()">Run Selected</button>
+</form>
+
+<div id="spinner" style="display:none;"></div>
+<div id="status" style="display:block;"></div>
+
+<div id="loadingModal" class="modal-overlay" style="display: none;">
+    <div class="spinner-container">
+        <img src="~/images/spinner.gif" alt="Loading..." />
+        <p id="loadingMessage">Loading...</p>
+    </div>
+</div>
+<link rel="stylesheet" href="~/css/workflow.css" asp-append-version="true" />
+<script src="~/js/workflow.js" asp-append-version="true"></script>
