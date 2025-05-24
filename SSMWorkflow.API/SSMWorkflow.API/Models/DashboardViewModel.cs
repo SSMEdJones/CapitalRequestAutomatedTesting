@@ -1,11 +1,10 @@
-﻿using CapitalRequest.DATA.Model;
-
+﻿
 namespace SSMWorkflow.API.Models
 {
     public class DashboardViewModel
     {
 
-        public AnnualCapitalProcess AnnualCapitalProcess { get; set; }
+        //public AnnualCapitalProcess AnnualCapitalProcess { get; set; }
 
 
         public string ShowAnnualCapitalProcess { get; set; }

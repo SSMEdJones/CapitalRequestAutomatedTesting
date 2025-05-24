@@ -1,29 +1,61 @@
 using AutoMapper;
 using CapitalRequestAutomatedTesting.UI.Services;
-using Microsoft.Extensions.Configuration;
+using SSMAuthenticationCore;
+using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
+using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using SSMWorkflow.API.DataAccess.Services.Api;
+using SSMWorkflow.API.DataAccess.Services;
+using CapitalRequestAutomatedTesting.Data;
+using System.Diagnostics;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-//var mapperConfig = new MapperConfiguration(mc =>
-//{
-//    mc.AddProfile(new CapitalRequestProfile());
-//});
+var mapperConfig = new MapperConfiguration(mc =>
+{
+    mc.AddProfile(new WorkflowProfile());
+});
+IMapper mapper = mapperConfig.CreateMapper();
 
-//IMapper mapper = mapperConfig.CreateMapper();
+//builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddSingleton(mapper);
 
-//builder.Services.AddSingleton<WorkflowControllerService>();
+#region Workflow API
+builder.Services.AddScoped<WorkflowControllerService>();
+builder.Services.AddScoped<ISSMWorkflowServices, SSMWorkflowServices>();
+builder.Services.AddScoped<IDashboards, Dashboards>();
+builder.Services.AddScoped<ISSMNotification, SSMNotification>();
+builder.Services.AddScoped<ISSMWorkFlow, SSMWorkFlow>();
+builder.Services.AddScoped<ISSMWorkFlowInstance, SSMWorkFlowInstance>();
+builder.Services.AddScoped<ISSMWorkFlowInstanceActionHistory, SSMWorkFlowInstanceActionHistory>();
+builder.Services.AddScoped<ISSMWorkFlowStakeholder, SSMWorkFlowStakeholder>();
+builder.Services.AddScoped<ISSMWorkFlowStep, SSMWorkFlowStep>();
+builder.Services.AddScoped<ISSMWorkFlowStepOption, SSMWorkFlowStepOption>();
+builder.Services.AddScoped<ISSMWorkFlowStepResponder, SSMWorkFlowStepResponder>();
+builder.Services.AddScoped<IWorkflowServices, WorkflowServices>();
+#endregion
 
-//ConfigurationSettings _configuration = new ConfigurationSettings();
+var env = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEB_SQL_ENV", EnvironmentVariableTarget.Machine))
+    ? "DEV"
+    : Environment.GetEnvironmentVariable("WEB_SQL_ENV", EnvironmentVariableTarget.Machine);
 
-//builder.Services.PostConfigureAll<SSMWorkFlowSettings>(options =>
-//{
-//    options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "BaseApiUrl").LookupValue.ToString();
-//    options.ProjectReviewLink = _configuration.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink").LookupValue.ToString();
-//});
+builder.Configuration.GetConnectionString($"CapitalRequest_{env}");
 
+ConfigurationSettings _configuration = new ConfigurationSettings();
+
+var baseUrl = string.Empty;
+//baseUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "BaseApiUrl").LookupValue.ToString();
+
+builder.Services.PostConfigureAll<SSMWorkFlowSettings>(options =>
+{
+    options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "BaseApiUrl").LookupValue.ToString();
+    //baseUrl = options.BaseApiUrl;
+});
+
+//Debug.WriteLine($"BaseApiUrl configured as: {baseUrl}");
 
 var app = builder.Build();
 

@@ -17,7 +17,7 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
 
         Task<WorkFlowInstanceActionHistoryViewModel> Get(Guid workflowInstanceActionHistoryID);
 
-        Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAll(Guid workflowInstanceID, Guid optionID);
+        Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAll(WorkFlowInstanceActionHistorySearchFilter filter);
 
         Task<WorkFlowInstanceActionHistoryViewModel> Update(CreateUpdateWorkFlowInstanceActionHistory createWorkFlowInstanceActionHistory, Guid stakeholderId);
     }
@@ -88,7 +88,7 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
             }
         }
 
-        public async Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAll(Guid workflowInstanceID, Guid optionID)
+        public async Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAll(WorkFlowInstanceActionHistorySearchFilter filter)
         {
             try
             {
@@ -96,7 +96,8 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
 
                 var response = await _ssmWorkFlowSettings.BaseApiUrl
                         .AppendPathSegment("WorkFlowInstanceActionHistory")
-                        .SetQueryParam($"WorkflowInstanceID={workflowInstanceID}")
+                        .SetQueryParam($"WorkflowInstanceID={filter.WorkflowInstanceID}")
+                        .SetQueryParam($"WorkflowInstanceID={filter.OptionID}")
                         .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
@@ -140,6 +141,7 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
                         .ReceiveJson<Response<WorkFlowViewModel>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
+
                 var results = JsonConvert.DeserializeObject<WorkFlowInstanceActionHistoryViewModel>(responseObject);
 
                 if (results != null)

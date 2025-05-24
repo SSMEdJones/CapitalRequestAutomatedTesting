@@ -1,12 +1,6 @@
 ﻿using SSMWorkflow.API.DataAccess.Models;
-using SSMWorkflow.API.DataAccess.Services;
 using SSMWorkflow.API.DataAccess.Services.Api;
 using SSMWorkflow.API.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CapitalRequestAutomatedTesting.Data
 {
@@ -35,7 +29,7 @@ namespace CapitalRequestAutomatedTesting.Data
 
         Task<List<SSMWorkflow.API.Models.Dashboard>> GetCapitalRequestDashboard(DashboardSearchFilter dashboardSearchFilter);
 
-        Task<IEnumerable<WorkFlowInstanceActionHistoryViewModel>> GetAll(WorkFlowInstanceActionHistorySearchFilter filter);
+        Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAll(WorkFlowInstanceActionHistorySearchFilter filter);
 
     }
     public class SSMWorkflowServices : ISSMWorkflowServices
@@ -126,16 +120,15 @@ namespace CapitalRequestAutomatedTesting.Data
             return _dashboards.GetDashboardData(dashboardSearchFilter);
         }
 
-        public Task<Guid> GetWorkflowInstanceActionHistory(Guid Optionid)
+        public Task<WorkFlowInstanceActionHistoryViewModel> GetWorkflowInstanceActionHistory(Guid Optionid)
         {
             return _ssmMWorkFlowInstanceActionHistory.Get(Optionid);
         }
 
-        Task<IEnumerable<WorkFlowInstanceActionHistoryViewModel>> GetAll(WorkFlowInstanceActionHistorySearchFilter filter)
+        public Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAll(WorkFlowInstanceActionHistorySearchFilter filter)
         {
             return _ssmMWorkFlowInstanceActionHistory.GetAll(filter);
         }
-
 
     }
 

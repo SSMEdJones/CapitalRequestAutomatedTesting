@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using SSMAuthenticationCore;
-using SSMWorkflow.Data.DataAccess.Models;
-using SSMWorkflow.Data.Models;
+using SSMWorkflow.API.DataAccess.Models;
+using SSMWorkflow.API.Models;
 
 namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
 {
@@ -42,6 +42,8 @@ namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
             //WorkFlowInstanceActionHistory
             CreateMap<WorkFlowInstanceActionHistoryViewModel, CreateUpdateWorkFlowInstanceActionHistory>();
             CreateMap<CreateUpdateWorkFlowInstanceActionHistory, WorkflowInstanceActionHistory>();
+            CreateMap<API.Models.Dashboard, Models.Dashboard>();
+            CreateMap<Models.Dashboard, API.Models.Dashboard>();
         }
 
         private string GetUserId()

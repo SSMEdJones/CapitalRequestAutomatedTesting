@@ -1,6 +1,7 @@
 ﻿using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.DataAccess.Services.Api;
-using SSMWorkflow.Data.Models;
+using SSMWorkflow.API.Models;
+using Dashboard = SSMWorkflow.API.Models.Dashboard;
 
 namespace SSMWorkflow.API.DataAccess.Services
 {
@@ -46,7 +47,7 @@ namespace SSMWorkflow.API.DataAccess.Services
 
         Task<List<Notification>> GetCapitalRequestGroupNotifications(NotificationSearchFilter notificationSearchFilter);
 
-        Task<List<Data.Models.Dashboard>> GetCapitalRequestDashboard(DashboardSearchFilter dashboardSearchFilter);
+        Task<List<Dashboard>> GetCapitalRequestDashboard(DashboardSearchFilter dashboardSearchFilter);
     }
 
     public class WorkflowServices : IWorkflowServices
@@ -183,7 +184,7 @@ namespace SSMWorkflow.API.DataAccess.Services
             return _ssmMWorkFlowInstance.GetAll(workflowID);
         }
 
-        public Task<List<Data.Models.Dashboard>> GetCapitalRequestDashboard(DashboardSearchFilter dashboardSearchFilter)
+        public Task<List<Dashboard>> GetCapitalRequestDashboard(DashboardSearchFilter dashboardSearchFilter)
         {
             return _dashboards.GetDashboardData(dashboardSearchFilter);
         }

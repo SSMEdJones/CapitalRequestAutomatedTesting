@@ -4,14 +4,14 @@ using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using SSMWorkflow.API.Models;
 using SSMWorkflow.API.DataAccess.Models;
-using SSMWorkflow.Data.Models;
 
 namespace SSMWorkflow.API.DataAccess.Services.Api
 {
     public interface IDashboards
     {
-        Task<List<Data.Models.Dashboard>> GetDashboardData(DashboardSearchFilter dashboardSearchFilter);
+        Task<List<API.Models.Dashboard>> GetDashboardData(DashboardSearchFilter dashboardSearchFilter);
     }
 
     public class Dashboards : IDashboards
@@ -26,11 +26,11 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
             _mapper = mapper;
         }
 
-        public async Task<List<Data.Models.Dashboard>> GetDashboardData(DashboardSearchFilter dashboardSearchFilter)
+        public async Task<List<API.Models.Dashboard>> GetDashboardData(DashboardSearchFilter dashboardSearchFilter)
         {
             try
             {
-                var dashboardViewModel = new List<Data.Models.Dashboard>();
+                var dashboardViewModel = new List<API.Models.Dashboard>();
 
                 var response = await _ssmWorkFlowSettings.BaseApiUrl
                         .AppendPathSegment("Dashboard")
@@ -39,13 +39,13 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
                         .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var results = JsonConvert.DeserializeObject<List<Dashboard>>(responseObject);
+                var results = JsonConvert.DeserializeObject<List<Models.Dashboard>>(responseObject);
 
                 if (results != null)
                 {
                     foreach (var result in results)
                     {
-                        dashboardViewModel.Add(_mapper.Map<Data.Models.Dashboard>(result));
+                        dashboardViewModel.Add(_mapper.Map<API.Models.Dashboard>(result));
                     }
                 }
 

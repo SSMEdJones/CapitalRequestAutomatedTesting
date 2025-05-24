@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Models;
-using SSMWorkflow.Data.Models;
+using SSMWorkflow.API.Models;
 
 namespace SSMWorkflow.API.DataAccess.Services.Api
 {
@@ -26,15 +26,6 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
         {
             _ssmWorkFlowSettings = ssmWorkFlowSettings.CurrentValue;
         }
-
-        //public async Task SendCapitalRequestGroupNotifications(Guid workflowStepId)
-        //{
-        //    await _ssmWorkFlowSettings.BaseApiUrl
-        //                .AppendPathSegment("Notification")
-        //                .AppendPathSegment($"{workflowStepId}")
-        //                .PostJsonAsync(workflowStepId);
-
-        //}
 
         public async Task SendCapitalRequestGroupNotificationsAsync(NotificationSearchFilter notificationSearchFilter)
         {

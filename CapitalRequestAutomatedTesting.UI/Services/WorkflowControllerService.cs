@@ -1,13 +1,14 @@
-﻿using CapitalRequestAutomatedTesting.UI.Enums;
-using CapitalRequestAutomatedTesting.UI.Models;
+﻿using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
-using Microsoft.VisualBasic;
+using CapitalRequestAutomatedTesting.UI.Models;
+using Newtonsoft.Json;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Support.UI;
+using SSMWorkflow.API.DataAccess.Models;
 using System.Diagnostics;
 using System.Reflection;
-using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
-using Newtonsoft.Json;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
@@ -15,8 +16,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
     public class WorkflowControllerService
     {
+        private readonly ISSMWorkflowServices _ssmWorkflowServices;
+
+        public WorkflowControllerService(ISSMWorkflowServices ssmWorkflowServices)
+        { 
+            _ssmWorkflowServices = ssmWorkflowServices;
+        }
+
         public Dictionary<string, Func<string, WorkflowTestResult>> _scenarioMap;
-        public List<DashboardModel> _dashboardItems;
+        public List<SSMWorkflow.API.Models.Dashboard> _dashboardItems;
 
         // Async Initialization Method
         public async Task InitializeDashboardItemsAsync()
@@ -331,20 +339,40 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
 
 
-        public async Task<List<DashboardModel>> GetDashboardItemsFromApiAsync()
+        //public async Task<List<DashboardModel>> GetDashboardItemsFromApiAsync()
+        //{
+        //    var httpClient = new HttpClient();
+        //    var json = await httpClient.GetStringAsync("http://caps-dev.ssmhc.com/SSMWorkflowAPI/v1/SSMWorkflow/Dashboard?CapitalFundingYear=2025");
+
+        //    var response = JsonConvert.DeserializeObject<ApiResponse<List<DashboardModel>>>(json);
+        //    var dashboardItems = response?.Result;
+
+        //    if (dashboardItems == null || !dashboardItems.Any())
+        //        throw new Exception("No dashboard data found.");
+
+        //    var dashboardFilter = new DashboardSearchFilter
+        //    {
+        //        CapitalFundingYear = DateTime.Now.Year,
+        //        HistoricalDataOnly = false,
+        //    };
+
+        //    var dashboardData = _ssmWorkflowServices.GetCapitalRequestDashboard(dashboardFilter).Result;
+
+        //    return dashboardData;
+        //}
+        public async Task<List<SSMWorkflow.API.Models.Dashboard>> GetDashboardItemsFromApiAsync()
         {
-            var httpClient = new HttpClient();
-            var json = await httpClient.GetStringAsync("http://caps-dev.ssmhc.com/SSMWorkflowAPI/v1/SSMWorkflow/Dashboard?CapitalFundingYear=2025");
+            var dashboardFilter = new DashboardSearchFilter
+            {
+                CapitalFundingYear = DateTime.Now.Year,
+                HistoricalDataOnly = false,
+            };
 
-            var response = JsonConvert.DeserializeObject<ApiResponse<List<DashboardModel>>>(json);
-            var dashboardItems = response?.Result;
+            var dashboardData = _ssmWorkflowServices.GetCapitalRequestDashboard(dashboardFilter).Result;
 
-            if (dashboardItems == null || !dashboardItems.Any())
-                throw new Exception("No dashboard data found.");
-
-            return dashboardItems;
+            return dashboardData;
         }
-
+        
 
         public List<WorkflowAction> GetActionsFromWorkflowDashboard(string id)
         {
