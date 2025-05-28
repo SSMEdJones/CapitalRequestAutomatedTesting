@@ -12,7 +12,6 @@ namespace CapitalRequest.API.DataAccess.Services.Api
 {
     public interface IWorkflowActions
     {
-        Task<WorkflowAction> Get(int id);
         Task<List<WorkflowAction>> GetAll(WorkflowActionSearchFilter filter);
     }
 
@@ -35,7 +34,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
         {
             try
             {
-                var wbsList = new List<WorkflowAction>();
+                var workflowActions = new List<WorkflowAction>();
 
                 var response = await _capitalRequestSettings.BaseApiUrl
                     .AppendPathSegment("WorkflowAction")
@@ -54,11 +53,11 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                 {
                     foreach (var result in results)
                     {
-                        wbsList.Add(result);
+                        workflowActions.Add(result);
                     }
                 }
 
-                return wbsList;
+                return workflowActions;
             }
             catch (FlurlHttpException ex)
             {

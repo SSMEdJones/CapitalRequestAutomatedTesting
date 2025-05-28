@@ -1,16 +1,24 @@
-﻿using CapitalRequestAutomatedTesting.Data;
+﻿using AutoMapper;
+using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Services.Api;
+using CapitalRequest.API.Models;
+using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
+using OpenQA.Selenium.BiDi.Modules.Browser;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
+using WorkflowAction = CapitalRequestAutomatedTesting.UI.Models.WorkflowAction;
+//using WorkflowAction = CapitalRequest.API.DataAccess.Models.WorkflowAction;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
@@ -19,19 +27,44 @@ namespace CapitalRequestAutomatedTesting.UI.Services
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
+        private readonly IUserContextService _userContextService;
+        private readonly IMapper _mapper;
 
-        public WorkflowControllerService(ISSMWorkflowServices ssmWorkflowServices)
+        public WorkflowControllerService(
+            ISSMWorkflowServices ssmWorkflowServices, 
+            ICapitalRequestServices capitalRequestServices,
+            IUserContextService userContextService,
+            IMapper mapper)
         { 
             _ssmWorkflowServices = ssmWorkflowServices;
+            _capitalRequestServices = capitalRequestServices;
+            _userContextService = userContextService;
+            _mapper = mapper;
         }
 
         public Dictionary<string, Func<string, WorkflowTestResult>> _scenarioMap;
         public List<SSMWorkflow.API.Models.Dashboard> _dashboardItems;
+        public List<CapitalRequest.API.Models.WorkflowAction> _workflowActions;
 
         // Async Initialization Method
         public async Task InitializeDashboardItemsAsync()
         {
+            _workflowActions = await GetWorkflowActionsFromApiAsync();
             _dashboardItems = await GetDashboardItemsFromApiAsync();
+        }
+
+        public async Task<List<CapitalRequest.API.Models.WorkflowAction>> GetWorkflowActionsFromApiAsync()
+        {
+            //TODO Implement persona
+            var userId = _userContextService.UserId;
+
+            var applicationUser = await _capitalRequestServices.GetApplicationUser(userId);
+
+            var filter = new WorkflowActionSearchFilter {Id = null, UserId = applicationUser.UserId, Email = applicationUser.Email};
+
+            var workflowActions = await _capitalRequestServices.GetAllWorkflowActions(filter);
+
+            return workflowActions;
         }
 
         public Request GetRequestById(int id)
@@ -395,8 +428,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 HistoricalDataOnly = false,
             };
 
+
+            var workflowActions = _workflowActions
+             .GroupBy(x => x.ProposalId)
+             .Select(g => g.First())
+             .ToList();
+
+
             var dashboardData = _ssmWorkflowServices.GetCapitalRequestDashboard(dashboardFilter).Result
                 .Where(x => x.SubmittedBy != null && x.IsMovingForward && x.ProjectNumber == null)
+                .ToList();
+
+            dashboardData = (from data in dashboardData
+                             join action in workflowActions on data.ReqId equals action.ProposalId
+                             select data)
                 .ToList();
 
             return dashboardData;

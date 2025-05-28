@@ -1,6 +1,6 @@
-﻿using System.Diagnostics;
+﻿using CapitalRequestAutomatedTesting.UI.Models;
 using Microsoft.AspNetCore.Mvc;
-using CapitalRequestAutomatedTesting.UI.Models;
+using System.Diagnostics;
 
 namespace CapitalRequestAutomatedTesting.UI.Controllers;
 
@@ -15,6 +15,13 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
+
+        var name = HttpContext.User.Identity?.Name;
+        var authenticated =  Content($"User: {name ?? "Not Authenticated"}");
+
+
+        Debug.WriteLine($"Identity Name: {HttpContext.User.Identity?.Name}");
+
         return View();
     }
 

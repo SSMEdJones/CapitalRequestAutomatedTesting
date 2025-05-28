@@ -1,4 +1,4 @@
-﻿namespace CapitalRequest.API.Models;
+﻿namespace CapitalRequest.API.Models
 {
     public class WorkflowAction
     {
@@ -11,5 +11,11 @@
         public string Email { get; set; }
         public string WorkflowPortion { get; set; }
         public string ButtonCaption { get; set; }
+        public string ReqId { get; set; }
+        public string Identifier { get; set; }
+        public string ActionName { get; set; }
+        public string ScenarioId { get; set; }
+        public string MethodName { get; set; }
+        public string TargetId { get; set; }
     }
 }

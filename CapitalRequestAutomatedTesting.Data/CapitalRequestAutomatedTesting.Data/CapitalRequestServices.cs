@@ -54,7 +54,12 @@ namespace CapitalRequestAutomatedTesting.Data
         Task DeleteAllWorkflowTemplates(WorkflowTemplateSearchFilter filter);
 
         //// WorkflowActions
-        Task<List<CapitalRequest.API.Models.WorkflowAction>> GetAllWorkflowAction(WorkflowActionSearchFilter filter);
+        Task<List<CapitalRequest.API.Models.WorkflowAction>> GetAllWorkflowActions(WorkflowActionSearchFilter filter);
+
+        //// ApplicationUser
+
+        Task<CapitalRequest.API.Models.ApplicationUser> GetApplicationUser(string userId);
+
 
     }
 
@@ -71,6 +76,7 @@ namespace CapitalRequestAutomatedTesting.Data
         private readonly IWBSs _wbss;
         private readonly IWorkflowTemplates _workflowTemplates;
         private readonly IWorkflowActions _workflowActions;
+        private readonly IApplicationUsers _applicationUsers;
 
         public CapitalRequestServices(
             IAssets assets,
@@ -83,7 +89,8 @@ namespace CapitalRequestAutomatedTesting.Data
             IReviewers reviewers,
             IWBSs wbss,
             IWorkflowTemplates workflowTemplates,
-            IWorkflowActions workflowActions
+            IWorkflowActions workflowActions,
+            IApplicationUsers applicationUsers
             )
         {
             _assets = assets;
@@ -97,6 +104,7 @@ namespace CapitalRequestAutomatedTesting.Data
             _wbss = wbss;
             _workflowTemplates = workflowTemplates;
             _workflowActions = workflowActions;
+            _applicationUsers = applicationUsers;
         }
 
         #region Assets
@@ -278,6 +286,12 @@ namespace CapitalRequestAutomatedTesting.Data
             return _workflowActions.GetAll(filter);
         }
 
-        #endregion
+        public Task<CapitalRequest.API.Models.ApplicationUser> GetApplicationUser(string userId)
+        {
+            return _applicationUsers.Get(userId);
+        }
+
     }
+
+    #endregion
 }

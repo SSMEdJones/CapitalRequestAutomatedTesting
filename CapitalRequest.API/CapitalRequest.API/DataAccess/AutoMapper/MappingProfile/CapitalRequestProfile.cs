@@ -8,6 +8,7 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
     {
         public CapitalRequestProfile()
         {
+            CreateMap<dto.ApplicationUser, vm.ApplicationUser>();
             CreateMap<dto.Proposal, vm.Proposal>();
             CreateMap<dto.RequestedInfo, vm.RequestedInfo>();
             CreateMap<dto.ProvidedInfo, vm.ProvidedInfo>();
@@ -18,6 +19,7 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
             CreateMap<dto.Quote, vm.Quote>();
             CreateMap<dto.WorkflowTemplate, vm.WorkflowTemplate>();
             CreateMap<dto.WorkflowAction, vm.WorkflowAction>();
+            CreateMap<dto.ApplicationUser, vm.ApplicationUser>();
         }
 
     }
