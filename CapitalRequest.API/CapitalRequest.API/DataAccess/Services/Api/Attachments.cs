@@ -6,23 +6,23 @@ using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using RequestedInfo = CapitalRequest.API.Models.RequestedInfo;
+using Attachment = CapitalRequest.API.Models.Attachment;
 
 namespace CapitalRequest.API.DataAccess.Services.Api
 {
-    public interface IRequestedInfos
+    public interface IAttachments
     {
-        Task<RequestedInfo> Get(int id);
-        Task<List<RequestedInfo>> GetAll(RequestedInfoSearchFilter filter);
-        Task DeleteAll(RequestedInfoSearchFilter filter);
+        Task<Attachment> Get(int id);
+        Task<List<Attachment>> GetAll(AttachmentSearchFilter filter);
+        Task DeleteAll(AttachmentSearchFilter filter);
     }
 
-    public class RequestedInfos : IRequestedInfos
+    public class Attachments : IAttachments
     {
         private readonly CapitalRequestSettings _capitalRequestSettings;
         private readonly IMapper _mapper;
 
-        public RequestedInfos(
+        public Attachments(
             IOptionsMonitor<CapitalRequestSettings> capitalRequestSettings,
             IMapper mapper)
         {
@@ -30,19 +30,19 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             _mapper = mapper;
         }
 
-        public async Task<RequestedInfo> Get(int id)
+        public async Task<Attachment> Get(int id)
         {
             try
             {
                 var response = await _capitalRequestSettings.BaseApiUrl
-                    .AppendPathSegment("RequestedInfo")
+                    .AppendPathSegment("Attachment")
                     .AppendPathSegment($"{id}")
                     .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var result = JsonConvert.DeserializeObject<RequestedInfo>(responseObject);
+                var result = JsonConvert.DeserializeObject<Attachment>(responseObject);
 
-                return _mapper.Map<RequestedInfo>(result);
+                return _mapper.Map<Attachment>(result);
             }
             catch (FlurlHttpException ex)
             {
@@ -51,37 +51,34 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             }
         }
 
-        public async Task<List<RequestedInfo>> GetAll(RequestedInfoSearchFilter filter)
+        public async Task<List<Attachment>> GetAll(AttachmentSearchFilter filter)
         {
             try
             {
-                var requestedInfos = new List<RequestedInfo>();
+                var attachments = new List<Attachment>();
 
                 var response = await _capitalRequestSettings.BaseApiUrl
-                    .AppendPathSegment("RequestedInfo")
+                    .AppendPathSegment("Attachment")
                     .SetQueryParams(new
                     {
                         filter.ProposalId,
-                        filter.RequestingReviewerGroupId,
-                        filter.RequestingReviewerId,
-                        filter.ReviewerGroupId,
-                        filter.WorkflowStepOptionId,
-                        filter.IsOpen
+                        filter.FileName,
+                        filter.ProvidedInfoId
                     })
                     .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var results = JsonConvert.DeserializeObject<List<RequestedInfo>>(responseObject);
+                var results = JsonConvert.DeserializeObject<List<Attachment>>(responseObject);
 
                 if (results != null)
                 {
                     foreach (var result in results)
                     {
-                        requestedInfos.Add(result);
+                        attachments.Add(result);
                     }
                 }
 
-                return requestedInfos;
+                return attachments;
             }
             catch (FlurlHttpException ex)
             {
@@ -90,22 +87,18 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             }
         }
 
-        public async Task DeleteAll(RequestedInfoSearchFilter filter)
+        public async Task DeleteAll(AttachmentSearchFilter filter)
         {
             try
             {
                 await _capitalRequestSettings.BaseApiUrl
-                        .AppendPathSegment("RequestedInfo")
-                    .SetQueryParams(new
-                    {
-                        filter.ProposalId,
-                        filter.RequestingReviewerGroupId,
-                        filter.RequestingReviewerId,
-                        filter.ReviewerGroupId,
-                        filter.WorkflowStepOptionId,
-                        filter.IsOpen
-                    })
-                        .DeleteAsync();
+                        .AppendPathSegment("Attachment")
+                         .SetQueryParams(new
+                         {  
+                             filter.ProposalId,
+                             filter.FileName,
+                             filter.ProvidedInfoId
+                         }).DeleteAsync();
             }
             catch (FlurlHttpException ex)
             {

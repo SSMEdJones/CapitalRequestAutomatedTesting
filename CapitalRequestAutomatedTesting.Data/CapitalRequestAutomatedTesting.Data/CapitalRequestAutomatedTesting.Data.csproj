@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\CapitalRequest.API\CapitalRequest.API\CapitalRequest.API.csproj" />
     <ProjectReference Include="..\..\SSMWorkflow.API\SSMWorkflow.API\SSMWorkflow.API.csproj" />
   </ItemGroup>
 

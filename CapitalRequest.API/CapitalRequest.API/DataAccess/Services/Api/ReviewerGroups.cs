@@ -1,58 +1,91 @@
 ﻿using AutoMapper;
-using CapitalRequestAPI.Data.Database.Context;
-using CapitalRequestAPI.Models;
-using Microsoft.EntityFrameworkCore;
+using CapitalRequest.API.DataAccess.ConfigurationSettings;
+using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Models;
+using Flurl;
+using Flurl.Http;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using ReviewerGroup = CapitalRequest.API.Models.ReviewerGroup;
+
 
 namespace CapitalRequest.API.DataAccess.Services.Api
 {
     public interface IReviewerGroups
     {
         Task<ReviewerGroup> Get(int id);
-        Task<IEnumerable<ReviewerGroup>> GetAll(ReviewerGroupSearchFilter filter);
-
+        Task<List<ReviewerGroup>> GetAll(ReviewerGroupSearchFilter filter);
     }
+
     public class ReviewerGroups : IReviewerGroups
     {
-        private readonly CapitalRequestContext _context;
+        private readonly CapitalRequestSettings _capitalRequestSettings;
         private readonly IMapper _mapper;
-        public ReviewerGroups(CapitalRequestContext context, IMapper mapper)
+
+        public ReviewerGroups(
+            IOptionsMonitor<CapitalRequestSettings> capitalRequestSettings,
+            IMapper mapper)
         {
-            _context = context;
+            _capitalRequestSettings = capitalRequestSettings.CurrentValue;
             _mapper = mapper;
         }
 
         public async Task<ReviewerGroup> Get(int id)
         {
-            var ReviewerGroup = await _context.ReviewerGroup
-                .Where(x => x.Id == id)
-                .FirstOrDefaultAsync();
+            try
+            {
+                var response = await _capitalRequestSettings.BaseApiUrl
+                    .AppendPathSegment("ReviewerGroup")
+                    .AppendPathSegment($"{id}")
+                    .GetJsonAsync<Response<dynamic>>();
 
-            return _mapper.Map<ReviewerGroup>(ReviewerGroup);
+                var responseObject = JsonConvert.SerializeObject(response.Result);
+                var result = JsonConvert.DeserializeObject<ReviewerGroup>(responseObject);
+
+                return _mapper.Map<ReviewerGroup>(result);
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send get request to CapitalRequest. {exceptionResponse}");
+            }
         }
 
-
-        public async Task<IEnumerable<ReviewerGroup>> GetAll(ReviewerGroupSearchFilter filter)
+        public async Task<List<ReviewerGroup>> GetAll(ReviewerGroupSearchFilter filter)
         {
-            var query = _context.ReviewerGroup.AsNoTracking().AsQueryable();
+            try
+            {
+                var reviewerGroups = new List<ReviewerGroup>();
 
-            if (!string.IsNullOrEmpty(filter.Name))
-                query = query.Where(x => x.Name == filter.Name);
+                var response = await _capitalRequestSettings.BaseApiUrl
+                    .AppendPathSegment("ReviewerGroup")
+                    .SetQueryParams(new
+                    {
+                        filter.Name,
+                        filter.EmailTemplateId,
+                        filter.ReviewerType,
+                        filter.AdminReviewer
+                    })
+                    .GetJsonAsync<Response<dynamic>>();
 
+                var responseObject = JsonConvert.SerializeObject(response.Result);
+                var results = JsonConvert.DeserializeObject<List<ReviewerGroup>>(responseObject);
 
-            if (filter.EmailTemplateId.HasValue)
-                query = query.Where(x => x.EmailTemplateId == filter.EmailTemplateId.Value);
+                if (results != null)
+                {
+                    foreach (var result in results)
+                    {
+                        reviewerGroups.Add(result);
+                    }
+                }
 
-            if (!string.IsNullOrEmpty(filter.ReviewerType))
-                query = query.Where(x => x.ReviewerType == filter.ReviewerType);
-
-            if (filter.AdminReviewer.HasValue)
-                query = query.Where(x => x.AdminReviewer == filter.AdminReviewer.Value);
-
-            var ReviewerGroups = await query.ToListAsync();
-
-            return ReviewerGroups.Select(x => _mapper.Map<ReviewerGroup>(x));
+                return reviewerGroups;
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send get all request to CapitalRequest. {exceptionResponse}");
+            }
         }
-
     }
-
 }

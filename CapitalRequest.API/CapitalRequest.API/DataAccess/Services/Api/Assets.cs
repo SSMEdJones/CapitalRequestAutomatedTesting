@@ -1,20 +1,22 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Models;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Asset = CapitalRequestAPI.Models.Asset;
+using Asset = CapitalRequest.API.Models.Asset;
 using Flurl;
 using Flurl.Http;
 
-namespace CapitalRequest.API.DataAccess.Services
+namespace CapitalRequest.API.DataAccess.Services.Api
 {
     public interface IAssets
     {
         Task<Asset> Get(int id);
-        Task<IEnumerable<Asset>> GetAll(AssetSearchFilter filter);
-
+        Task<List<Asset>> GetAll(AssetSearchFilter filter);
+        Task DeleteAll(AssetSearchFilter filter);
     }
+
     public class Assets : IAssets
     {
         private readonly CapitalRequestSettings _capitalRequestSettings;
@@ -89,7 +91,27 @@ namespace CapitalRequest.API.DataAccess.Services
                 throw new Exception($"Failed attempting to send get all request to CapitalRequest. {exceptionResponse}");
             }
         }
-        
+
+        public async Task DeleteAll(AssetSearchFilter filter)
+        {
+            try
+            {
+                await _capitalRequestSettings.BaseApiUrl
+                        .AppendPathSegment("Asset")
+                        .SetQueryParams(new
+                        {
+                            filter.ProposalId,
+                            filter.AssetNumber,
+                        })
+                        .DeleteAsync();
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send delete all request to CapitalRequest. {exceptionResponse}");
+            }
+        }
+
     }
 
 }

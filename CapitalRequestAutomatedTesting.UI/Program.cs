@@ -1,13 +1,12 @@
 using AutoMapper;
+using CapitalRequest.API.DataAccess.ConfigurationSettings;
+using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Services;
 using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
-using SSMWorkflow.API.DataAccess.Services.Api;
 using SSMWorkflow.API.DataAccess.Services;
-using CapitalRequestAutomatedTesting.Data;
-using System.Diagnostics;
-using Microsoft.Extensions.Options;
+using SSMWorkflow.API.DataAccess.Services.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +53,13 @@ builder.Services.PostConfigureAll<SSMWorkFlowSettings>(options =>
     options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "BaseApiUrl").LookupValue.ToString();
     //baseUrl = options.BaseApiUrl;
 });
+
+builder.Services.PostConfigureAll<CapitalRequestSettings>(options =>
+{
+    options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestApiUrl").LookupValue.ToString();
+    //baseUrl = options.BaseApiUrl;
+});
+
 
 //Debug.WriteLine($"BaseApiUrl configured as: {baseUrl}");
 

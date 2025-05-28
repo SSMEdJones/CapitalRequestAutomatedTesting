@@ -6,23 +6,25 @@ using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using RequestedInfo = CapitalRequest.API.Models.RequestedInfo;
+using Quote = CapitalRequest.API.Models.Quote;
+using Attachment = CapitalRequest.API.Models.Attachment;
+
 
 namespace CapitalRequest.API.DataAccess.Services.Api
 {
-    public interface IRequestedInfos
+    public interface IQuotes
     {
-        Task<RequestedInfo> Get(int id);
-        Task<List<RequestedInfo>> GetAll(RequestedInfoSearchFilter filter);
-        Task DeleteAll(RequestedInfoSearchFilter filter);
+        Task<Quote> Get(int id);
+        Task<List<Quote>> GetAll(QuoteSearchFilter filter);
+        Task DeleteAll(QuoteSearchFilter filter);
     }
 
-    public class RequestedInfos : IRequestedInfos
+    public class Quotes : IQuotes
     {
         private readonly CapitalRequestSettings _capitalRequestSettings;
         private readonly IMapper _mapper;
 
-        public RequestedInfos(
+        public Quotes(
             IOptionsMonitor<CapitalRequestSettings> capitalRequestSettings,
             IMapper mapper)
         {
@@ -30,19 +32,19 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             _mapper = mapper;
         }
 
-        public async Task<RequestedInfo> Get(int id)
+        public async Task<Quote> Get(int id)
         {
             try
             {
                 var response = await _capitalRequestSettings.BaseApiUrl
-                    .AppendPathSegment("RequestedInfo")
+                    .AppendPathSegment("Quote")
                     .AppendPathSegment($"{id}")
                     .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var result = JsonConvert.DeserializeObject<RequestedInfo>(responseObject);
+                var result = JsonConvert.DeserializeObject<Quote>(responseObject);
 
-                return _mapper.Map<RequestedInfo>(result);
+                return _mapper.Map<Quote>(result);
             }
             catch (FlurlHttpException ex)
             {
@@ -51,37 +53,33 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             }
         }
 
-        public async Task<List<RequestedInfo>> GetAll(RequestedInfoSearchFilter filter)
+        public async Task<List<Quote>> GetAll(QuoteSearchFilter filter)
         {
             try
             {
-                var requestedInfos = new List<RequestedInfo>();
+                var quotes = new List<Quote>();
 
                 var response = await _capitalRequestSettings.BaseApiUrl
-                    .AppendPathSegment("RequestedInfo")
+                    .AppendPathSegment("Quote")
                     .SetQueryParams(new
                     {
                         filter.ProposalId,
-                        filter.RequestingReviewerGroupId,
-                        filter.RequestingReviewerId,
-                        filter.ReviewerGroupId,
-                        filter.WorkflowStepOptionId,
-                        filter.IsOpen
+                        filter.FileName
                     })
                     .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var results = JsonConvert.DeserializeObject<List<RequestedInfo>>(responseObject);
+                var results = JsonConvert.DeserializeObject<List<Quote>>(responseObject);
 
                 if (results != null)
                 {
                     foreach (var result in results)
                     {
-                        requestedInfos.Add(result);
+                        quotes.Add(result);
                     }
                 }
 
-                return requestedInfos;
+                return quotes;
             }
             catch (FlurlHttpException ex)
             {
@@ -90,21 +88,17 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             }
         }
 
-        public async Task DeleteAll(RequestedInfoSearchFilter filter)
+        public async Task DeleteAll(QuoteSearchFilter filter)
         {
             try
             {
                 await _capitalRequestSettings.BaseApiUrl
-                        .AppendPathSegment("RequestedInfo")
-                    .SetQueryParams(new
-                    {
-                        filter.ProposalId,
-                        filter.RequestingReviewerGroupId,
-                        filter.RequestingReviewerId,
-                        filter.ReviewerGroupId,
-                        filter.WorkflowStepOptionId,
-                        filter.IsOpen
-                    })
+                        .AppendPathSegment("Quote")
+                        .SetQueryParams(new
+                        {
+                            filter.ProposalId,
+                            filter.FileName
+                        })
                         .DeleteAsync();
             }
             catch (FlurlHttpException ex)
@@ -113,5 +107,6 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                 throw new Exception($"Failed attempting to send delete all request to CapitalRequest. {exceptionResponse}");
             }
         }
+
     }
 }

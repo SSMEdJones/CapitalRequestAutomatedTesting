@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CapitalRequestAPI.Models;
+namespace CapitalRequest.API.Models;
 
 public partial class ProvidedInfo
 {

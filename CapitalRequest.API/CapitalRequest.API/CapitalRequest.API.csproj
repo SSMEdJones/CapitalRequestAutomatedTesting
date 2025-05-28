@@ -18,8 +18,10 @@
 
   <ItemGroup>
     <Folder Include="DataAccess\AutoMapper\MappingProfile\" />
-    <Folder Include="DataAccess\Models\" />
-    <Folder Include="Models\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="DataAccess\Models\AttachmentSearchFilter.cs" />
   </ItemGroup>
 
 </Project>

@@ -1,56 +1,112 @@
 ﻿using AutoMapper;
-using CapitalRequestAPI.Data.Database.Context;
-using CapitalRequestAPI.Models;
-using Microsoft.EntityFrameworkCore;
+using CapitalRequest.API.DataAccess.ConfigurationSettings;
+using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Models;
+using Flurl;
+using Flurl.Http;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Wbs = CapitalRequest.API.Models.Wbs;
 
 namespace CapitalRequest.API.DataAccess.Services.Api
 {
     public interface IWBSs
     {
         Task<Wbs> Get(int id);
-        Task<IEnumerable<Wbs>> GetAll(WbsSearchFilter filter);
-
+        Task<List<Wbs>> GetAll(WbsSearchFilter filter);
+        Task DeleteAll(WbsSearchFilter filter);
     }
+
     public class WBSs : IWBSs
     {
-        private readonly CapitalRequestContext _context;
+        private readonly CapitalRequestSettings _capitalRequestSettings;
         private readonly IMapper _mapper;
-        public WBSs(CapitalRequestContext context, IMapper mapper)
+
+        public WBSs(
+            IOptionsMonitor<CapitalRequestSettings> capitalRequestSettings,
+            IMapper mapper)
         {
-            _context = context;
+            _capitalRequestSettings = capitalRequestSettings.CurrentValue;
             _mapper = mapper;
         }
 
         public async Task<Wbs> Get(int id)
         {
+            try
+            {
+                var response = await _capitalRequestSettings.BaseApiUrl
+                    .AppendPathSegment("Wbs")
+                    .AppendPathSegment($"{id}")
+                    .GetJsonAsync<Response<dynamic>>();
 
-            var wbs = await _context.Wbs
-                .Where(x => x.Id == id)
-                .FirstOrDefaultAsync();
+                var responseObject = JsonConvert.SerializeObject(response.Result);
+                var result = JsonConvert.DeserializeObject<Wbs>(responseObject);
 
-            return _mapper.Map<Wbs>(wbs);
+                return _mapper.Map<Wbs>(result);
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send get request to CapitalRequest. {exceptionResponse}");
+            }
         }
 
-        public async Task<IEnumerable<Wbs>> GetAll(WbsSearchFilter filter)
+        public async Task<List<Wbs>> GetAll(WbsSearchFilter filter)
         {
-            var query = _context.Wbs.AsNoTracking().AsQueryable();
+            try
+            {
+                var wbsList = new List<Wbs>();
 
+                var response = await _capitalRequestSettings.BaseApiUrl
+                    .AppendPathSegment("Wbs")
+                    .SetQueryParams(new
+                    {
+                        filter.Wbsnumber,
+                        filter.ProposalId,
+                        filter.TypeOfProject
+                    })
+                    .GetJsonAsync<Response<dynamic>>();
 
-            if (!string.IsNullOrEmpty(filter.Wbsnumber))
-                query = query.Where(x => x.Wbsnumber == filter.Wbsnumber);
+                var responseObject = JsonConvert.SerializeObject(response.Result);
+                var results = JsonConvert.DeserializeObject<List<Wbs>>(responseObject);
 
+                if (results != null)
+                {
+                    foreach (var result in results)
+                    {
+                        wbsList.Add(result);
+                    }
+                }
 
-            if (filter.ProposalId.HasValue)
-                query = query.Where(x => x.ProposalId == filter.ProposalId.Value);
+                return wbsList;
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send get all request to CapitalRequest. {exceptionResponse}");
+            }
+        }
 
-            if (filter.TypeOfProject.HasValue)
-                query = query.Where(x => x.TypeOfProject == filter.TypeOfProject.Value);
+        public async Task DeleteAll(WbsSearchFilter filter)
+        {
+            try
+            {
+                await _capitalRequestSettings.BaseApiUrl
+                    .AppendPathSegment("Wbs")
+                    .SetQueryParams(new
+                    {
+                        filter.Wbsnumber,
+                        filter.ProposalId,
+                        filter.TypeOfProject
 
-
-            var wbs = await query.ToListAsync();
-
-            return wbs.Select(x => _mapper.Map<Wbs>(x));
+                    })
+                        .DeleteAsync();
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send delete all request to CapitalRequest. {exceptionResponse}");
+            }
         }
     }
-
 }

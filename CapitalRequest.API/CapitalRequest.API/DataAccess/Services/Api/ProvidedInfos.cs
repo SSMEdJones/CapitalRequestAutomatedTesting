@@ -1,54 +1,111 @@
 ﻿using AutoMapper;
-using CapitalRequestAPI.Data.Database.Context;
-using CapitalRequestAPI.Models;
-using Microsoft.EntityFrameworkCore;
+using CapitalRequest.API.DataAccess.ConfigurationSettings;
+using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Models;
+using Flurl;
+using Flurl.Http;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using ProvidedInfo = CapitalRequest.API.Models.ProvidedInfo;
 
 namespace CapitalRequest.API.DataAccess.Services.Api
 {
     public interface IProvidedInfos
     {
         Task<ProvidedInfo> Get(int id);
-        Task<IEnumerable<ProvidedInfo>> GetAll(ProvidedInfoSearchFilter filter);
-
+        Task<List<ProvidedInfo>> GetAll(ProvidedInfoSearchFilter filter);
+        Task DeleteAll(ProvidedInfoSearchFilter filter);
     }
+
     public class ProvidedInfos : IProvidedInfos
     {
-        private readonly CapitalRequestContext _context;
+        private readonly CapitalRequestSettings _capitalRequestSettings;
         private readonly IMapper _mapper;
-        public ProvidedInfos(CapitalRequestContext context, IMapper mapper)
+
+        public ProvidedInfos(
+            IOptionsMonitor<CapitalRequestSettings> capitalRequestSettings,
+            IMapper mapper)
         {
-            _context = context;
+            _capitalRequestSettings = capitalRequestSettings.CurrentValue;
             _mapper = mapper;
         }
 
         public async Task<ProvidedInfo> Get(int id)
         {
-            var ProvidedInfo = await _context.ProvidedInfo
-                .Where(x => x.Id == id)
-                .FirstOrDefaultAsync();
+            try
+            {
+                var response = await _capitalRequestSettings.BaseApiUrl
+                    .AppendPathSegment("ProvidedInfo")
+                    .AppendPathSegment($"{id}")
+                    .GetJsonAsync<Response<dynamic>>();
 
-            return _mapper.Map<ProvidedInfo>(ProvidedInfo);
+                var responseObject = JsonConvert.SerializeObject(response.Result);
+                var result = JsonConvert.DeserializeObject<ProvidedInfo>(responseObject);
+
+                return _mapper.Map<ProvidedInfo>(result);
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send get request to CapitalRequest. {exceptionResponse}");
+            }
         }
 
-        public async Task<IEnumerable<ProvidedInfo>> GetAll(ProvidedInfoSearchFilter filter)
+        public async Task<List<ProvidedInfo>> GetAll(ProvidedInfoSearchFilter filter)
         {
-            var query = _context.ProvidedInfo.AsNoTracking().AsQueryable();
+            try
+            {
+                var providedInfos = new List<ProvidedInfo>();
 
-            if (filter.RequestedInfoId.HasValue)
-                query = query.Where(x => x.RequestedInfoId == filter.RequestedInfoId.Value);
+                var response = await _capitalRequestSettings.BaseApiUrl
+                    .AppendPathSegment("ProvidedInfo")
+                    .SetQueryParams(new
+                    {
+                        filter.RequestedInfoId,
+                        filter.ReviewerGroupId,
+                        filter.ReviewerId
+                    })
+                    .GetJsonAsync<Response<dynamic>>();
 
+                var responseObject = JsonConvert.SerializeObject(response.Result);
+                var results = JsonConvert.DeserializeObject<List<ProvidedInfo>>(responseObject);
 
-            if (filter.ReviewerGroupId.HasValue)
-                query = query.Where(x => x.ReviewerGroupId == filter.ReviewerGroupId.Value);
+                if (results != null)
+                {
+                    foreach (var result in results)
+                    {
+                        providedInfos.Add(result);
+                    }
+                }
 
-            if (filter.ReviewerId.HasValue)
-                query = query.Where(x => x.ReviewerId == filter.ReviewerId.Value);
-
-            var ProvidedInfos = await query.ToListAsync();
-
-            return ProvidedInfos.Select(x => _mapper.Map<ProvidedInfo>(x));
+                return providedInfos;
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send get all request to CapitalRequest. {exceptionResponse}");
+            }
         }
 
+        public async Task DeleteAll(ProvidedInfoSearchFilter filter)
+        {
+            try
+            {
+                await _capitalRequestSettings.BaseApiUrl
+                        .AppendPathSegment("ProvidedInfo")
+                        .SetQueryParams(new
+                        {
+                            filter.RequestedInfoId,
+                            filter.ReviewerGroupId,
+                            filter.ReviewerId
+                        })
+                        .DeleteAsync();
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send delete all request to CapitalRequest. {exceptionResponse}");
+            }
+        }
     }
-
 }

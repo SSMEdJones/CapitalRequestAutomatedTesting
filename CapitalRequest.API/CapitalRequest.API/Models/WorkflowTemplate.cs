@@ -2,15 +2,19 @@
 #nullable disable
 namespace CapitalRequest.API.Models;
 
-public class Wbs
+public partial class WorkflowTemplate
 {
     public int Id { get; set; }
 
-    public int ProposalId { get; set; }
+    public string StepName { get; set; }
 
-    public int? TypeOfProject { get; set; }
+    public string StepDescription { get; set; }
 
-    public string Wbsnumber { get; set; }
+    public short StepNumber { get; set; }
+
+    public string Conditional { get; set; }
+
+    public string AdditionalTask { get; set; }
 
     public DateTime Created { get; set; }
 
@@ -19,6 +23,4 @@ public class Wbs
     public DateTime? Updated { get; set; }
 
     public string UpdatedBy { get; set; }
-
-    public virtual Proposal Proposal { get; set; }
 }

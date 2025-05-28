@@ -6,23 +6,23 @@ using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using RequestedInfo = CapitalRequest.API.Models.RequestedInfo;
+using WorkflowTemplate = CapitalRequest.API.Models.WorkflowTemplate;
 
 namespace CapitalRequest.API.DataAccess.Services.Api
 {
-    public interface IRequestedInfos
+    public interface IWorkflowTemplates
     {
-        Task<RequestedInfo> Get(int id);
-        Task<List<RequestedInfo>> GetAll(RequestedInfoSearchFilter filter);
-        Task DeleteAll(RequestedInfoSearchFilter filter);
+        Task<WorkflowTemplate> Get(int id);
+        Task<List<WorkflowTemplate>> GetAll(WorkflowTemplateSearchFilter filter);
+        Task DeleteAll(WorkflowTemplateSearchFilter filter);
     }
 
-    public class RequestedInfos : IRequestedInfos
+    public class WorkflowTemplates : IWorkflowTemplates
     {
         private readonly CapitalRequestSettings _capitalRequestSettings;
         private readonly IMapper _mapper;
 
-        public RequestedInfos(
+        public WorkflowTemplates(
             IOptionsMonitor<CapitalRequestSettings> capitalRequestSettings,
             IMapper mapper)
         {
@@ -30,19 +30,19 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             _mapper = mapper;
         }
 
-        public async Task<RequestedInfo> Get(int id)
+        public async Task<WorkflowTemplate> Get(int id)
         {
             try
             {
                 var response = await _capitalRequestSettings.BaseApiUrl
-                    .AppendPathSegment("RequestedInfo")
+                    .AppendPathSegment("WorkflowTemplate")
                     .AppendPathSegment($"{id}")
                     .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var result = JsonConvert.DeserializeObject<RequestedInfo>(responseObject);
+                var result = JsonConvert.DeserializeObject<WorkflowTemplate>(responseObject);
 
-                return _mapper.Map<RequestedInfo>(result);
+                return _mapper.Map<WorkflowTemplate>(result);
             }
             catch (FlurlHttpException ex)
             {
@@ -51,37 +51,34 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             }
         }
 
-        public async Task<List<RequestedInfo>> GetAll(RequestedInfoSearchFilter filter)
+        public async Task<List<WorkflowTemplate>> GetAll(WorkflowTemplateSearchFilter filter)
         {
             try
             {
-                var requestedInfos = new List<RequestedInfo>();
+                var wbsList = new List<WorkflowTemplate>();
 
                 var response = await _capitalRequestSettings.BaseApiUrl
-                    .AppendPathSegment("RequestedInfo")
+                    .AppendPathSegment("WorkflowTemplate")
                     .SetQueryParams(new
                     {
-                        filter.ProposalId,
-                        filter.RequestingReviewerGroupId,
-                        filter.RequestingReviewerId,
-                        filter.ReviewerGroupId,
-                        filter.WorkflowStepOptionId,
-                        filter.IsOpen
+                        filter.StepName,
+                        filter.StepDescription,
+                        filter.StepNumber
                     })
                     .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var results = JsonConvert.DeserializeObject<List<RequestedInfo>>(responseObject);
+                var results = JsonConvert.DeserializeObject<List<WorkflowTemplate>>(responseObject);
 
                 if (results != null)
                 {
                     foreach (var result in results)
                     {
-                        requestedInfos.Add(result);
+                        wbsList.Add(result);
                     }
                 }
 
-                return requestedInfos;
+                return wbsList;
             }
             catch (FlurlHttpException ex)
             {
@@ -90,22 +87,20 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             }
         }
 
-        public async Task DeleteAll(RequestedInfoSearchFilter filter)
+        public async Task DeleteAll(WorkflowTemplateSearchFilter filter)
         {
             try
             {
                 await _capitalRequestSettings.BaseApiUrl
-                        .AppendPathSegment("RequestedInfo")
+                    .AppendPathSegment("WorkflowTemplate")
                     .SetQueryParams(new
                     {
-                        filter.ProposalId,
-                        filter.RequestingReviewerGroupId,
-                        filter.RequestingReviewerId,
-                        filter.ReviewerGroupId,
-                        filter.WorkflowStepOptionId,
-                        filter.IsOpen
+                        filter.StepName,
+                        filter.StepDescription,
+                        filter.StepNumber
+
                     })
-                        .DeleteAsync();
+                    .DeleteAsync();
             }
             catch (FlurlHttpException ex)
             {

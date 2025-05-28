@@ -7,6 +7,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using SSMWorkflow.API.DataAccess.Models;
+using SSMWorkflow.API.Models;
 using System.Diagnostics;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
@@ -17,6 +18,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
     public class WorkflowControllerService
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
+        private readonly ICapitalRequestServices _capitalRequestServices;
 
         public WorkflowControllerService(ISSMWorkflowServices ssmWorkflowServices)
         { 
@@ -55,6 +57,31 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 VPOpsReviewStatus = item.VPOpsReviewStatus,
                 VPFinanceReviewStatus = item.VPFinanceReviewStatus
             };
+
+            var proposal = _capitalRequestServices.GetProposal(item.ReqId).Result;
+            var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId.Value).Result;
+            var workflowStep = new WorkFlowStepViewModel();
+            int?stepNumber = null;
+            
+            if (workflowSteps != null)
+            {
+                workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
+            }
+
+            var workflowTemplates = _capitalRequestServices.GetAllWorkflowTemplates(new CapitalRequest.API.DataAccess.Models.WorkflowTemplateSearchFilter()).Result;
+            if (workflowStep != null)
+            {
+                stepNumber = workflowTemplates
+                    .Where(x => x.StepName == workflowStep.StepName)
+                    .Select(x => x.StepNumber)
+                    .First();
+
+            }
+
+            allGroups = _capitalRequestServices.GetAllReviewerGroups(new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter()).Result
+                .Where(x => x.StepNumber.Value == stepNumber)
+                .Select(x => x.Name)
+                .ToArray();
 
             var groupsThatHaveTakenAction = allGroups
                 .Where(group => DashboardHelper.HasGroupTakenAction(request, group))
@@ -368,7 +395,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 HistoricalDataOnly = false,
             };
 
-            var dashboardData = _ssmWorkflowServices.GetCapitalRequestDashboard(dashboardFilter).Result;
+            var dashboardData = _ssmWorkflowServices.GetCapitalRequestDashboard(dashboardFilter).Result
+                .Where(x => x.SubmittedBy != null && x.IsMovingForward && x.ProjectNumber == null)
+                .ToList();
 
             return dashboardData;
         }
