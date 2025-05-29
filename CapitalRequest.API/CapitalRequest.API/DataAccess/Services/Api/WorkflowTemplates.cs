@@ -55,7 +55,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
         {
             try
             {
-                var wbsList = new List<WorkflowTemplate>();
+                var WorkflowTemplate = new List<WorkflowTemplate>();
 
                 var response = await _capitalRequestSettings.BaseApiUrl
                     .AppendPathSegment("WorkflowTemplate")
@@ -74,11 +74,11 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                 {
                     foreach (var result in results)
                     {
-                        wbsList.Add(result);
+                        WorkflowTemplate.Add(result);
                     }
                 }
 
-                return wbsList;
+                return WorkflowTemplate;
             }
             catch (FlurlHttpException ex)
             {

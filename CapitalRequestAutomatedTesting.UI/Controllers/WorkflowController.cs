@@ -50,6 +50,10 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         {
             try
             {
+                var actions = _workflowControllerService.GetActionsFromWorkflowDashboard(id);
+                _workflowControllerService.RegisterWorkflowActions(actions);
+                //_workflowControllerService._workflowActions =  _workflowControllerService.GetWorkflowActionsFromApiAsync(Convert.ToInt32(id)).Result;
+
                 if (!_workflowControllerService._scenarioMap.TryGetValue(scenario, out var testFunc))
                 {
                     return Json(new { success = false, message = $"Unknown scenario: {scenario}" });

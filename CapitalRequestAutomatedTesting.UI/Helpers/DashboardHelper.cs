@@ -13,7 +13,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                 "Finance" => request.FinanceReviewStatus,
                 "IT" => request.ITReviewStatus,
                 "Purchasing" => request.PurchasingReviewStatus,
-                "SupplyChain" => request.SupplyChainReviewStatus,
+                "Supply Chain" => request.SupplyChainReviewStatus,
                 "VPFinance" => request.VPFinanceReviewStatus,
                 "VPOps" => request.VPOpsReviewStatus,
                 _ => throw new ArgumentException("Invalid group name")

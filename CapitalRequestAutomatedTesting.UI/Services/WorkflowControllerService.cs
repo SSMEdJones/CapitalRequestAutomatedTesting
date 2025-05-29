@@ -49,18 +49,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         // Async Initialization Method
         public async Task InitializeDashboardItemsAsync()
         {
-            _workflowActions = await GetWorkflowActionsFromApiAsync();
+            _workflowActions = await GetWorkflowActionsFromApiAsync(null);
             _dashboardItems = await GetDashboardItemsFromApiAsync();
         }
 
-        public async Task<List<CapitalRequest.API.Models.WorkflowAction>> GetWorkflowActionsFromApiAsync()
+        public async Task<List<CapitalRequest.API.Models.WorkflowAction>> GetWorkflowActionsFromApiAsync(int? id)
         {
             //TODO Implement persona
             var userId = _userContextService.UserId;
 
             var applicationUser = await _capitalRequestServices.GetApplicationUser(userId);
 
-            var filter = new WorkflowActionSearchFilter {Id = null, UserId = applicationUser.UserId, Email = applicationUser.Email};
+            var filter = new WorkflowActionSearchFilter {Id = id, UserId = applicationUser.UserId, Email = applicationUser.Email};
 
             var workflowActions = await _capitalRequestServices.GetAllWorkflowActions(filter);
 
@@ -110,9 +110,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     .First();
 
             }
-
+            //TODO Constant
             allGroups = _capitalRequestServices.GetAllReviewerGroups(new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter()).Result
-                .Where(x => x.StepNumber.Value == stepNumber)
+                .Where(x => x.StepNumber.HasValue && x.StepNumber.Value == stepNumber && x.ReviewerType == "Review")
                 .Select(x => x.Name)
                 .ToArray();
 
@@ -427,7 +427,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public List<WorkflowAction> GetActionsFromWorkflowDashboard(string id)
         {
 
-            var allWorkflowActions = GetWorkflowActionsFromApiAsync().Result.ToList();
+            var allWorkflowActions = new List<CapitalRequest.API.Models.WorkflowAction>();
+            if (id != null && int.TryParse(id.ToString(), out int parsedId))
+            {
+                allWorkflowActions = GetWorkflowActionsFromApiAsync(parsedId).Result.ToList();
+            }
+            else
+            {
+                allWorkflowActions = GetWorkflowActionsFromApiAsync(null).Result.ToList();
+            }
 
             var workflowActions = allWorkflowActions
                 .Where(x => x.ProposalId == Convert.ToInt32(id))
