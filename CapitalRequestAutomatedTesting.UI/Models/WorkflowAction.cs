@@ -8,6 +8,9 @@
         public string ScenarioId { get; set; }      // e.g., "1_it_verify"
         public string MethodName { get; set; }      // e.g., "RunLoadVerifyButtonTest"
         public string TargetId { get; set; }        // e.g., "1_it"
+        public string SelectedAction { get; set; }
+        public string RequestedFrom { get; set; }
+        public string RequestDetails { get; set; }
 
     }
 }

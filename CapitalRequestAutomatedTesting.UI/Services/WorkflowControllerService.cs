@@ -11,6 +11,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.BiDi.Modules.Browser;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
+using SSMAuthenticationCore.Models;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
 using System.Diagnostics;
@@ -19,6 +20,8 @@ using System.Runtime.InteropServices;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 using WorkflowAction = CapitalRequestAutomatedTesting.UI.Models.WorkflowAction;
 //using WorkflowAction = CapitalRequest.API.DataAccess.Models.WorkflowAction;
+using SSMAuthenticationCore;
+using SSMAuthenticationCore.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
@@ -31,11 +34,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private readonly IMapper _mapper;
 
         public WorkflowControllerService(
-            ISSMWorkflowServices ssmWorkflowServices, 
+            ISSMWorkflowServices ssmWorkflowServices,
             ICapitalRequestServices capitalRequestServices,
             IUserContextService userContextService,
             IMapper mapper)
-        { 
+        {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
             _userContextService = userContextService;
@@ -60,7 +63,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             var applicationUser = await _capitalRequestServices.GetApplicationUser(userId);
 
-            var filter = new WorkflowActionSearchFilter {Id = id, UserId = applicationUser.UserId, Email = applicationUser.Email};
+            var filter = new WorkflowActionSearchFilter { Id = id, UserId = applicationUser.UserId, Email = applicationUser.Email };
 
             var workflowActions = await _capitalRequestServices.GetAllWorkflowActions(filter);
 
@@ -71,12 +74,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         {
             var item = _dashboardItems.FirstOrDefault(d => d.ReqId == id);
             if (item == null) return null;
-
-            var allGroups = new[]
-            {
-                "EPMO", "Facilities", "Finance", "IT",
-                "Purchasing", "SupplyChain", "VPFinance", "VPOps"
-            };
 
             var request = new Request
             {
@@ -94,8 +91,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var proposal = _capitalRequestServices.GetProposal(item.ReqId).Result;
             var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId.Value).Result;
             var workflowStep = new WorkFlowStepViewModel();
-            int?stepNumber = null;
-            
+            int? stepNumber = null;
+
             if (workflowSteps != null)
             {
                 workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
@@ -111,7 +108,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             }
             //TODO Constant
-            allGroups = _capitalRequestServices.GetAllReviewerGroups(new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter()).Result
+            var allGroups = _capitalRequestServices.GetAllReviewerGroups(new ReviewerGroupSearchFilter()).Result
                 .Where(x => x.StepNumber.HasValue && x.StepNumber.Value == stepNumber && x.ReviewerType == "Review")
                 .Select(x => x.Name)
                 .ToArray();
@@ -176,12 +173,50 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return options;
         }
 
+        //public WorkflowTestResult RunLoadButtonTest(WorkflowTestContext context)
+        //{
+        //    return SeleniumHelper.RunWithSafeChromeDriver(driver =>
+        //    {
+        //        var baseUrl = GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
+        //        var url = $"{baseUrl}/Proposal/WorkflowActions/{context.ReqId}";
+        //        driver.Navigate().GoToUrl(url);
+
+        //        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+        //        try
+        //        {
+        //            var button = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(
+        //                By.XPath($"//tr[td[1][text()='{context.Identifier}']]//button[text()='{context.ButtonText}']")));
+        //            button.Click();
+
+        //            if (!string.IsNullOrEmpty(context.WaitForElementId))
+        //            {
+        //                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id(context.WaitForElementId)));
+        //            }
+
+        //            return new WorkflowTestResult
+        //            {
+        //                Passed = true,
+        //                Message = $"'{context.ButtonText}' button clicked successfully for '{context.Identifier}' as '{context.ImpersonatedUserId}'."
+        //            };
+        //        }
+        //        catch (WebDriverTimeoutException)
+        //        {
+        //            return new WorkflowTestResult
+        //            {
+        //                Passed = false,
+        //                Message = $"Failed to click '{context.ButtonText}' or find expected element for '{context.Identifier}'."
+        //            };
+        //        }
+        //    });
+        //}
+
         public WorkflowTestResult RunLoadButtonTest(string reqId, string identifier, string buttonText, string waitForElementId = null)
         {
             return SeleniumHelper.RunWithSafeChromeDriver(driver =>
             {
-                var baseUrl = "http://caps-dev.ssmhc.com/CapitalRequest";
-                baseUrl = "https://localhost:27867";
+
+                var baseUrl = GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
 
                 var url = $"{baseUrl}/Proposal/WorkflowActions/{reqId}";
                 driver.Navigate().GoToUrl(url);
@@ -245,12 +280,37 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             }
         }
 
+        public WorkflowTestResult RunLoadApproveWBSButtonTest(string reqId, string groupName)
+        {
+            InitializeDashboardItemsAsync().Wait(); // Assuming this is an instance method
+
+            if (!int.TryParse(reqId, out int requestId))
+                throw new ArgumentException("Invalid request ID");
+
+            var request = GetRequestById(requestId);
+            var decision = DecideTestAction(request, groupName);
+
+            decision.ElementId = "btnApproveWBS";
+            switch (decision.ActionType)
+            {
+                case WorkflowActionType.ClickButton:
+                    return RunLoadButtonTest(reqId, groupName, "Approve WBS", decision.ElementId);
+
+                case WorkflowActionType.ExpectMessage:
+                    return RunExpectMessageTest(reqId, groupName, "Verify", decision.ExpectedMessage);
+
+                default:
+                    throw new InvalidOperationException("Unknown test action type");
+            }
+        }
 
         public static string ExtractGroupName(string dashboardText)
         {
             // Split on the first dash and trim the result
             var parts = dashboardText.Split('-', 2);
-            return parts.Length > 1 ? parts[1].Trim().Replace(" ", string.Empty) : dashboardText.Trim();
+            var returnVal = parts.Length > 1 ? parts[1].Trim() : dashboardText.Trim();
+            return returnVal;
+            //return parts.Length > 1 ? parts[1].Trim().Replace(" ", string.Empty) : dashboardText.Trim();
         }
 
         public WorkflowTestResult RunLoadReplyButtonTest(string reqId, string identifier)
@@ -268,7 +328,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         {
             return SeleniumHelper.RunWithSafeChromeDriver(driver =>
             {
-                var baseUrl = "https://localhost:27867";
+
+                var baseUrl = GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
                 var url = $"{baseUrl}/Proposal/WorkflowActions/{reqId}?testmode=true";
 
                 driver.Navigate().GoToUrl(url);
@@ -333,6 +394,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var baseUrl = "http://caps-dev.ssmhc.com/CapitalRequest";
                 baseUrl = "https://localhost:27867";
 
+                var debug = GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
+
                 var url = $"{baseUrl}/Proposal/WorkflowActions/{id}";
                 driver.Navigate().GoToUrl(url);
 
@@ -396,7 +459,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return result;
         }
-       
+
         public async Task<List<SSMWorkflow.API.Models.Dashboard>> GetDashboardItemsFromApiAsync()
         {
             var dashboardFilter = new DashboardSearchFilter
@@ -443,163 +506,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 {
                     ReqId = x.ProposalId.ToString(),
                     Identifier = x.WorkflowPortion,
-                    ActionName = x.ActionType,
-                    MethodName = $"RunLoad{x.ActionType}ButtonTest",
+                    ActionName = x.ButtonCaption,
+                    MethodName = $"RunLoad{x.ButtonCaption.Replace(" ", string.Empty)}ButtonTest",
                     TargetId = x.WorkflowPortion.ToLower().Replace(" ", "_").Replace("-", ""),
-                    ScenarioId = GenerateScenarioId(x.WorkflowPortion, x.ActionType)
+                    ScenarioId = GenerateScenarioId(x.WorkflowPortion, x.ButtonCaption)
                 })
                 .ToList();
 
             return workflowActions;
-            //var testModel = SeleniumHelper.RunWithSafeChromeDriver(driver =>
-            //{
-            //    var result = new WorkflowTestResult();
-            //    var workflowActions = new List<WorkflowAction>();
-
-            //    var baseUrl = "http://caps-dev.ssmhc.com/CapitalRequest";
-            //    baseUrl = "https://localhost:27867";
-
-            //    var url = $"{baseUrl}/Proposal/WorkflowActions/{id}";
-
-            //    driver.Navigate().GoToUrl(url);
-
-            //    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-            //    wait.Until(d => d.FindElement(By.CssSelector("table#admintable tbody")));
-
-            //    var rows = driver.FindElements(By.CssSelector("table#admintable tbody tr"));
-
-            //    foreach (var row in rows)
-            //    {
-            //        try
-            //        {
-            //            var identifier = row.FindElement(By.CssSelector("td:nth-child(1)")).Text.Trim();
-            //            var button = row.FindElement(By.CssSelector("button[name='btnAction']"));
-            //            var actionName = button.Text.Trim();
-
-            //            var reqIdElement = driver.FindElement(By.Id("divReqId"));
-            //            var reqIdText = reqIdElement.Text; // e.g., "Req Id: 2906"
-            //            var reqId = reqIdText.Split(':')[1].Trim(); // "2906"
-
-            //            if (!string.IsNullOrEmpty(identifier) && !string.IsNullOrEmpty(actionName))
-            //            {
-            //                var scenarioId = GenerateScenarioId(identifier, actionName);
-
-
-            //                var methodName = $"RunLoad{actionName}ButtonTest";
-            //                var targetId = identifier.ToLower().Replace(" ", "_").Replace("-", "");
-
-            //                workflowActions.Add(new WorkflowAction
-            //                {
-            //                    ReqId = reqId,
-            //                    Identifier = identifier,
-            //                    ActionName = actionName,
-            //                    ScenarioId = scenarioId,
-            //                    MethodName = methodName,
-            //                    TargetId = targetId
-            //                });
-
-            //            }
-            //        }
-            //        catch (NoSuchElementException)
-            //        {
-            //            // Optionally log or skip rows without expected structure
-            //        }
-            //    }
-
-            //    result.Passed = true;
-            //    result.Message = $"Found {workflowActions.Count} Workflow Actions.";
-            //    result.WorkflowActions = workflowActions;
-
-            //    return result;
-            //});
-
-            //if (testModel.Passed)
-            //{
-            //    return testModel.WorkflowActions;
-            //}
-            //else
-            //{
-            //    throw new Exception(testModel.Message);
-            //}
         }
-
-        //public List<WorkflowAction> GetActionsFromWorkflowDashboard(string id)
-        //{
-        //    var testModel = SeleniumHelper.RunWithSafeChromeDriver(driver =>
-        //    {
-        //        var result = new WorkflowTestResult();
-        //        var workflowActions = new List<WorkflowAction>();
-
-        //        var baseUrl = "http://caps-dev.ssmhc.com/CapitalRequest";
-        //        baseUrl = "https://localhost:27867";
-
-        //        var url = $"{baseUrl}/Proposal/WorkflowActions/{id}";
-
-        //        driver.Navigate().GoToUrl(url);
-
-        //        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-        //        wait.Until(d => d.FindElement(By.CssSelector("table#admintable tbody")));
-
-        //        var rows = driver.FindElements(By.CssSelector("table#admintable tbody tr"));
-
-        //        foreach (var row in rows)
-        //        {
-        //            try
-        //            {
-        //                var identifier = row.FindElement(By.CssSelector("td:nth-child(1)")).Text.Trim();
-        //                var button = row.FindElement(By.CssSelector("button[name='btnAction']"));
-        //                var actionName = button.Text.Trim();
-
-        //                var reqIdElement = driver.FindElement(By.Id("divReqId"));
-        //                var reqIdText = reqIdElement.Text; // e.g., "Req Id: 2906"
-        //                var reqId = reqIdText.Split(':')[1].Trim(); // "2906"
-
-        //                if (!string.IsNullOrEmpty(identifier) && !string.IsNullOrEmpty(actionName))
-        //                {
-        //                    var scenarioId = GenerateScenarioId(identifier, actionName);
-
-
-        //                    var methodName = $"RunLoad{actionName}ButtonTest";
-        //                    var targetId = identifier.ToLower().Replace(" ", "_").Replace("-", "");
-
-        //                    workflowActions.Add(new WorkflowAction
-        //                    {
-        //                        ReqId = reqId,
-        //                        Identifier = identifier,
-        //                        ActionName = actionName,
-        //                        ScenarioId = scenarioId,
-        //                        MethodName = methodName,
-        //                        TargetId = targetId
-        //                    });
-
-        //                }
-        //            }
-        //            catch (NoSuchElementException)
-        //            {
-        //                // Optionally log or skip rows without expected structure
-        //            }
-        //        }
-
-        //        result.Passed = true;
-        //        result.Message = $"Found {workflowActions.Count} Workflow Actions.";
-        //        result.WorkflowActions = workflowActions;
-
-        //        return result;
-        //    });
-
-        //    if (testModel.Passed)
-        //    {
-        //        return testModel.WorkflowActions;
-        //    }
-        //    else
-        //    {
-        //        throw new Exception(testModel.Message);
-        //    }
-        //}
 
         public string GenerateScenarioId(string identifier, string action)
         {
-            return $"{identifier.ToLower().Replace(" ", "_").Replace("-", "")}_{action.ToLower()}";
+            var debug = $"{identifier.ToLower().Replace(" ", "_").Replace("-", "")}_{action.ToLower().Replace(" ", "_").Replace("-", "")}";
+            return $"{identifier.ToLower().Replace(" ", "_").Replace("-", "")}_{action.ToLower().Replace(" ", "_").Replace("-", "")}";
         }
 
 
@@ -622,6 +542,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 ActionType = WorkflowActionType.ClickButton,
                 ElementId = "btnRequestMoreInfo"
             };
+        }
+
+        public AppKeyValues GetAppKeyValueByKey(string AppName, string LookupKey)
+        {
+            ConfigurationSettings configuration = new ConfigurationSettings();
+            var appKeyValue = configuration.GetAppKeyValues(AppName).Where(kv => kv.LookupKey == LookupKey).FirstOrDefault();
+
+            return appKeyValue;
         }
 
 

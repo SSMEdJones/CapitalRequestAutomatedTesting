@@ -1,9 +1,40 @@
-﻿document.getElementById('requestIdDropdown').addEventListener('change', function () {
-    const id = getSelectText('requestIdDropdown');
-    if (isValidRequestId(id)) {
-        loadWorkflowActions(id); // Only load actions if ID is valid
-    }
+﻿document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById('requestIdDropdown').addEventListener('change', function () {
+        const id = getSelectText('requestIdDropdown');
+        const runButton = document.getElementById('runSelectedButton');
+        const scenarioList = document.getElementById('scenarioList');
+        const status = document.getElementById('status');
+        scenarioList.innerHTML = "";
+        status.innerHTML = "";
+
+
+
+        if (isValidRequestId(id)) {
+            loadWorkflowActions(id);
+            runButton.style.display = "inline-block";
+            scenarioList.style.display = "block";
+            status.style.display = "block";
+        } else {
+            runButton.style.display = "none";
+            scenarioList.style.display = "none";
+            status.style.display = "none";
+        }
+    });
 });
+
+//document.getElementById('requestIdDropdown').addEventListener('change', function () {
+//    const id = getSelectText('requestIdDropdown');
+
+//    if (isValidRequestId(id)) {
+//        loadWorkflowActions(id); // Only load actions if ID is valid
+//        runButton.style.display = "inline-block";
+//        scenarioList.style.display = "block";
+//    } else {
+//        runButton.style.display = "none";
+//        scenarioList.style.display = "none";
+//    }
+
+//});
 
 function isValidRequestId(id) {
     return /^\d+$/.test(id); // Checks if id is composed only of digits
@@ -28,35 +59,50 @@ async function runSelectedScenarios() {
     let totalElapsed = 0;
 
     for (let i = 0; i < checkboxes.length; i++) {
-        const scenario = checkboxes[i].value;
-        const startTime = performance.now();
+        const checkbox = checkboxes[i];
+        const scenario = checkbox.value;
 
+        // Get the label text (assumes checkbox is inside a <label>)
+        const labelText = checkbox.parentElement.textContent.trim();
+
+        const selectedRadio = document.querySelector(`input[name="action-${scenario}"]:checked`);
+        const selectedAction = selectedRadio ? selectedRadio.value : null;
+
+        if (scenario.toLowerCase().includes("verify") && !selectedAction) {
+            alert(`⚠️ Please select an action for: "${labelText}"`);
+            hideLoading();
+            return;
+        }
+
+        // Use labelText in your status messages
+        const startTime = performance.now();
         try {
-            const response = await fetch(`/Workflow/RunScenario?scenario=${scenario}&id=${encodeURIComponent(id)}`);
+            const debug = `/Workflow/RunScenario?scenario=${scenario}&id=${encodeURIComponent(id)}&selectedAction=${encodeURIComponent(selectedAction || '')}`;
+
+            const response = await fetch(`/Workflow/RunScenario?scenario=${scenario}&id=${encodeURIComponent(id)}&selectedAction=${encodeURIComponent(selectedAction || '')}`);
             const result = await response.json();
             const endTime = performance.now();
             const duration = ((endTime - startTime) / 1000).toFixed(2);
             totalElapsed += parseFloat(duration);
 
             if (!result.success) {
-                statusDiv.innerHTML += `<p style="color:red;">❌ ${result.message} <em>(${duration}s)</em></p>`;
+                statusDiv.innerHTML += `<p style="color:red;">❌ ${labelText}: ${result.message} <em>(${duration}s)</em></p>`;
                 break;
             } else {
-                statusDiv.innerHTML += `<p style="color:green;">✅ ${result.message} <em>(${duration}s)</em></p>`;
+                statusDiv.innerHTML += `<p style="color:green;">✅ ${labelText}: ${result.message} <em>(${duration}s)</em></p>`;
             }
         } catch (error) {
             const endTime = performance.now();
             const duration = ((endTime - startTime) / 1000).toFixed(2);
             totalElapsed += parseFloat(duration);
-            statusDiv.innerHTML += `<p style="color:red;">❌ Error running "${scenario}": ${error.message} <em>(${duration}s)</em></p>`;
+            statusDiv.innerHTML += `<p style="color:red;">❌ Error running "${labelText}": ${error.message} <em>(${duration}s)</em></p>`;
             break;
         }
 
-        const avgTime = totalElapsed / (i + 1);
-        const remaining = checkboxes.length - (i + 1);
-        const estimatedRemaining = (avgTime * remaining).toFixed(2);
-        statusDiv.innerHTML += `<p style="color:gray;"><em>⏳ Estimated time remaining: ${estimatedRemaining}s</em></p>`;
+        // ... rest of your loop
     }
+
+
 
     const totalEnd = performance.now();
     const totalDuration = ((totalEnd - totalStart) / 1000).toFixed(2);
@@ -139,29 +185,58 @@ async function loadWorkflowActions(id) {
         showLoading('Loading available scenarios...');
 
         const response = await fetch(`Workflow/GetWorkflowDashboardActions?id=${encodeURIComponent(id)}`);
-        const data = await response.json(); // Parse as JSON
+        const data = await response.json();
 
-        // Extract unique actions from the JSON structure
         const actionsSet = new Set();
         data.forEach(action => {
-            actionsSet.add(JSON.stringify(action)); // Use JSON.stringify to ensure uniqueness
+            actionsSet.add(JSON.stringify(action));
         });
 
         const actions = Array.from(actionsSet).map(item => JSON.parse(item));
-
         const container = document.getElementById('scenarioList');
-        container.innerHTML = ''; // Clear existing
+        container.innerHTML = '';
 
         actions.forEach(item => {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('scenario-item');
+
             const label = document.createElement('label');
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.name = 'scenario';
-            checkbox.value = item.scenarioId;
+            checkbox.value = item.scenarioId; // e.g., "1_it_verify"
+
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(` ${item.identifier} - ${item.actionName}`));
-            container.appendChild(label);
-            container.appendChild(document.createElement('br'));
+            wrapper.appendChild(label);
+
+            // Check if the value includes "verify"
+            const shouldShowRadio = checkbox.value.toLowerCase().includes("verify");
+
+            const radioContainer = document.createElement('div');
+            radioContainer.classList.add('radio-options');
+            radioContainer.style.display = 'none';
+
+            if (shouldShowRadio) {
+                ['Verify', 'Request More Info'].forEach(actionType => {
+                    const radioLabel = document.createElement('label');
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = `action-${item.scenarioId}`;
+                    radio.value = actionType;
+                    radioLabel.appendChild(radio);
+                    radioLabel.appendChild(document.createTextNode(` ${actionType}`));
+                    radioContainer.appendChild(radioLabel);
+                    radioContainer.appendChild(document.createElement('br'));
+                });
+            }
+
+            wrapper.appendChild(radioContainer);
+            container.appendChild(wrapper);
+
+            checkbox.addEventListener('change', function () {
+                radioContainer.style.display = (this.checked && shouldShowRadio) ? 'block' : 'none';
+            });
         });
 
 
@@ -169,9 +244,48 @@ async function loadWorkflowActions(id) {
         console.error('Error loading workflow actions:', error);
         alert('Failed to load workflow actions. Please try again.');
     } finally {
-        hideLoading()
+        hideLoading();
     }
-    
 }
+
+//async function loadWorkflowActions(id) {
+//    try {
+//        showLoading('Loading available scenarios...');
+
+//        const response = await fetch(`Workflow/GetWorkflowDashboardActions?id=${encodeURIComponent(id)}`);
+//        const data = await response.json(); // Parse as JSON
+
+//        // Extract unique actions from the JSON structure
+//        const actionsSet = new Set();
+//        data.forEach(action => {
+//            actionsSet.add(JSON.stringify(action)); // Use JSON.stringify to ensure uniqueness
+//        });
+
+//        const actions = Array.from(actionsSet).map(item => JSON.parse(item));
+
+//        const container = document.getElementById('scenarioList');
+//        container.innerHTML = ''; // Clear existing
+
+//        actions.forEach(item => {
+//            const label = document.createElement('label');
+//            const checkbox = document.createElement('input');
+//            checkbox.type = 'checkbox';
+//            checkbox.name = 'scenario';
+//            checkbox.value = item.scenarioId;
+//            label.appendChild(checkbox);
+//            label.appendChild(document.createTextNode(` ${item.identifier} - ${item.actionName}`));
+//            container.appendChild(label);
+//            container.appendChild(document.createElement('br'));
+//        });
+
+
+//    } catch (error) {
+//        console.error('Error loading workflow actions:', error);
+//        alert('Failed to load workflow actions. Please try again.');
+//    } finally {
+//        hideLoading()
+//    }
+    
+//}
 
 

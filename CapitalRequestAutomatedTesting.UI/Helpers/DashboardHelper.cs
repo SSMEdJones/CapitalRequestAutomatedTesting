@@ -15,7 +15,8 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                 "Purchasing" => request.PurchasingReviewStatus,
                 "Supply Chain" => request.SupplyChainReviewStatus,
                 "VPFinance" => request.VPFinanceReviewStatus,
-                "VPOps" => request.VPOpsReviewStatus,
+                "VP Ops" => request.VPOpsReviewStatus,
+                "Corporate" => " ",
                 _ => throw new ArgumentException("Invalid group name")
             };
 

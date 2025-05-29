@@ -46,11 +46,16 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             return Json(actionModels);
         }
         [HttpGet]
-        public IActionResult RunScenario(string scenario, string id)
+
+        public async Task<IActionResult> RunScenario(string scenario, string id, string selectedAction)
         {
             try
             {
-                var actions = _workflowControllerService.GetActionsFromWorkflowDashboard(id);
+                var actions = _workflowControllerService.GetActionsFromWorkflowDashboard(id)
+                    .Where(x => x.ScenarioId == scenario)
+                    .ToList();
+
+                actions.ForEach(a => a.SelectedAction = selectedAction);
                 _workflowControllerService.RegisterWorkflowActions(actions);
                 //_workflowControllerService._workflowActions =  _workflowControllerService.GetWorkflowActionsFromApiAsync(Convert.ToInt32(id)).Result;
 
