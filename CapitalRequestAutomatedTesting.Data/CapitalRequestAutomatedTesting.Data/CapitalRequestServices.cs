@@ -42,6 +42,7 @@ namespace CapitalRequestAutomatedTesting.Data
         //// Reviewers
         Task<CapitalRequest.API.Models.Reviewer> GetReviewer(int id);
         Task<List<CapitalRequest.API.Models.Reviewer>> GetAllReviewers(ReviewerSearchFilter filter);
+        Task<List<CapitalRequest.API.Models.Reviewer>> GetReviewers(int segmentId);
 
         //// WBSs
         Task<CapitalRequest.API.Models.Wbs> GetWbs(int id);
@@ -241,6 +242,16 @@ namespace CapitalRequestAutomatedTesting.Data
         {
             return _reviewers.GetAll(filter);
         }
+
+        public Task<List<CapitalRequest.API.Models.Reviewer>> GetReviewers(int segmentId)
+        {
+            var filter = new ReviewerSearchFilter
+            {
+                SegmentId = segmentId
+            };
+            return _reviewers.GetAll(filter);
+        }
+
         #endregion
 
         #region Wbss

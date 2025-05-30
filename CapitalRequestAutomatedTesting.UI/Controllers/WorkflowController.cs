@@ -45,8 +45,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
             return Json(actionModels);
         }
-        [HttpGet]
 
+        [HttpGet]
         public async Task<IActionResult> RunScenario(string scenario, string id, string selectedAction)
         {
             try
@@ -57,14 +57,46 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
                 actions.ForEach(a => a.SelectedAction = selectedAction);
                 _workflowControllerService.RegisterWorkflowActions(actions);
-                //_workflowControllerService._workflowActions =  _workflowControllerService.GetWorkflowActionsFromApiAsync(Convert.ToInt32(id)).Result;
 
-                if (!_workflowControllerService._scenarioMap.TryGetValue(scenario, out var testFunc))
+                WorkflowTestResult result;
+
+                if (scenario.ToLower().Contains("verify"))
+                {
+                    var context = actions
+                        .Select(x => new WorkflowTestContext
+                        {
+                            ReqId = x.ReqId,
+                            Identifier = x.Identifier,
+                            ButtonText = x.ActionName,
+                            WaitForElementId = "btnRequestMoreInfo",
+                            ImpersonatedUserId = x.SelectedAction, // Assuming SelectedAction is the impersonated user ID
+                            SelectedAction = x.SelectedAction,
+                            RequestedFrom = x.RequestedFrom,
+                            RequestDetails = x.RequestDetails,
+                            StepType = "Verify",
+                            MethodName = $"RunLoad{x.ActionName.Replace(" ", string.Empty)}ButtonTest"
+                        })
+                        .FirstOrDefault();
+
+                    //var context = new WorkflowTestContext
+                    //{
+                    //    ReqId = action,
+                    //    Identifier = ,
+                    //    // You can hardcode or later pass these values
+                    //    ButtonText = "Verify",
+                    //    WaitForElementId = "btnRequestMoreInfo"
+                    //};
+
+                    result = _workflowControllerService.RunLoadVerifyButtonTest(context);
+                }
+                else if (_workflowControllerService._scenarioMap.TryGetValue(scenario, out var testFunc))
+                {
+                    result = testFunc.Invoke(id);
+                }
+                else
                 {
                     return Json(new { success = false, message = $"Unknown scenario: {scenario}" });
                 }
-
-                var result = testFunc.Invoke(id);
 
                 return Json(new { success = result.Passed, message = result.Message });
             }
@@ -73,6 +105,35 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
-        
+
+        //[HttpGet]
+
+        //public async Task<IActionResult> RunScenario(string scenario, string id, string selectedAction)
+        //{
+        //    try
+        //    {
+        //        var actions = _workflowControllerService.GetActionsFromWorkflowDashboard(id)
+        //            .Where(x => x.ScenarioId == scenario)
+        //            .ToList();
+
+        //        actions.ForEach(a => a.SelectedAction = selectedAction);
+        //        _workflowControllerService.RegisterWorkflowActions(actions);
+        //        //_workflowControllerService._workflowActions =  _workflowControllerService.GetWorkflowActionsFromApiAsync(Convert.ToInt32(id)).Result;
+
+        //        if (!_workflowControllerService._scenarioMap.TryGetValue(scenario, out var testFunc))
+        //        {
+        //            return Json(new { success = false, message = $"Unknown scenario: {scenario}" });
+        //        }
+
+        //        var result = testFunc.Invoke(id);
+
+        //        return Json(new { success = result.Passed, message = result.Message });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Json(new { success = false, message = $"Error: {ex.Message}" });
+        //    }
+        //}
+
     }
 }

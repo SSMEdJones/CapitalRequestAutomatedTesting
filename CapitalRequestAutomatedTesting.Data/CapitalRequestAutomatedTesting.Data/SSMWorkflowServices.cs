@@ -9,7 +9,7 @@ namespace CapitalRequestAutomatedTesting.Data
 
         Task<List<WorkFlowStepViewModel>> GetAllWorkFlowSteps(Guid workFlowId);
 
-        Task<WorkFlowStepViewModel> GetWorkFlowStep(Guid workFlowStepId);
+        Task<WorkFlowStepViewModel> GetWorkflowStep(Guid workFlowStepId);
 
         Task<List<WorkFlowInstanceViewModel>> GetAllWorkflowInstances(Guid WorkflowID);
 
@@ -70,7 +70,7 @@ namespace CapitalRequestAutomatedTesting.Data
             return _ssmMWorkFlowStep.GetAll(workflowID);
         }
 
-        public Task<WorkFlowStepViewModel> GetWorkFlowStep(Guid workFlowStepId)
+        public Task<WorkFlowStepViewModel> GetWorkflowStep(Guid workFlowStepId)
         {
             return _ssmMWorkFlowStep.Get(workFlowStepId);
         }

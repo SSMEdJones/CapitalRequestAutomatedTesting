@@ -1,12 +1,9 @@
-using AutoMapper;
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Services;
 using Microsoft.AspNetCore.Authentication.Negotiate;
-using Microsoft.AspNetCore.Server.IISIntegration;
 using SSMAuthenticationCore;
-using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Services;
 using SSMWorkflow.API.DataAccess.Services.Api;
@@ -26,14 +23,7 @@ builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = options.DefaultPolicy;
 });
 
-var mapperConfig = new MapperConfiguration(mc =>
-{
-    mc.AddProfile(new WorkflowProfile());
-});
-IMapper mapper = mapperConfig.CreateMapper();
-
-//builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-builder.Services.AddSingleton(mapper);
+builder.Services.AddAutoMapper(typeof(Program));
 
 #region Workflow API
 builder.Services.AddScoped<WorkflowControllerService>();

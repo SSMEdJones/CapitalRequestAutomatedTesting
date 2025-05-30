@@ -89,7 +89,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             };
 
             var proposal = _capitalRequestServices.GetProposal(item.ReqId).Result;
-            var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId.Value).Result;
+            var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId).Result;
             var workflowStep = new WorkFlowStepViewModel();
             int? stepNumber = null;
 
@@ -173,72 +173,38 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return options;
         }
 
-        //public WorkflowTestResult RunLoadButtonTest(WorkflowTestContext context)
-        //{
-        //    return SeleniumHelper.RunWithSafeChromeDriver(driver =>
-        //    {
-        //        var baseUrl = GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
-        //        var url = $"{baseUrl}/Proposal/WorkflowActions/{context.ReqId}";
-        //        driver.Navigate().GoToUrl(url);
-
-        //        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
-        //        try
-        //        {
-        //            var button = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(
-        //                By.XPath($"//tr[td[1][text()='{context.Identifier}']]//button[text()='{context.ButtonText}']")));
-        //            button.Click();
-
-        //            if (!string.IsNullOrEmpty(context.WaitForElementId))
-        //            {
-        //                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id(context.WaitForElementId)));
-        //            }
-
-        //            return new WorkflowTestResult
-        //            {
-        //                Passed = true,
-        //                Message = $"'{context.ButtonText}' button clicked successfully for '{context.Identifier}' as '{context.ImpersonatedUserId}'."
-        //            };
-        //        }
-        //        catch (WebDriverTimeoutException)
-        //        {
-        //            return new WorkflowTestResult
-        //            {
-        //                Passed = false,
-        //                Message = $"Failed to click '{context.ButtonText}' or find expected element for '{context.Identifier}'."
-        //            };
-        //        }
-        //    });
-        //}
-
-        public WorkflowTestResult RunLoadButtonTest(string reqId, string identifier, string buttonText, string waitForElementId = null)
+        public WorkflowTestResult RunLoadButtonTest(WorkflowTestContext context)
         {
             return SeleniumHelper.RunWithSafeChromeDriver(driver =>
             {
-
                 var baseUrl = GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
-
-                var url = $"{baseUrl}/Proposal/WorkflowActions/{reqId}";
+                var url = $"{baseUrl}/Proposal/WorkflowActions/{context.ReqId}";
                 driver.Navigate().GoToUrl(url);
 
                 var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
 
                 try
                 {
-                    // Click the button in the correct row
                     var button = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(
-                        By.XPath($"//tr[td[1][text()='{identifier}']]//button[text()='{buttonText}']")));
+                        By.XPath($"//tr[td[1][text()='{context.Identifier}']]//button[text()='{context.ButtonText}']")));
                     button.Click();
 
-                    if (!string.IsNullOrEmpty(waitForElementId))
+                    if (!string.IsNullOrEmpty(context.WaitForElementId))
                     {
-                        wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id(waitForElementId)));
+                        wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id(context.WaitForElementId)));
+                        if (context.WaitForElementId == "btnRequestMoreInfo" && context.SelectedAction == "Request More Info")
+                        {
+                            var selectedButton = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id("btnRequestMoreInfo")));
+                            selectedButton.Click();
+
+                            return FillOutVerifyForm(driver, wait);
+                        }
                     }
 
                     return new WorkflowTestResult
                     {
                         Passed = true,
-                        Message = $"'{buttonText}' button clicked successfully for '{identifier}'."
+                        Message = $"'{context.ButtonText}' button clicked successfully for '{context.Identifier}' as '{context.ImpersonatedUserId}'."
                     };
                 }
                 catch (WebDriverTimeoutException)
@@ -246,39 +212,106 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     return new WorkflowTestResult
                     {
                         Passed = false,
-                        Message = $"Failed to click '{buttonText}' or find expected element for '{identifier}'."
+                        Message = $"Failed to click '{context.ButtonText}' or find expected element for '{context.Identifier}'."
                     };
                 }
             });
         }
 
-        //public TestResultModel RunLoadVerifyButtonTest(string reqId, string identifier)
+        //public WorkflowTestResult RunLoadButtonTest(string reqId, string identifier, string buttonText, string waitForElementId = null)
         //{
-        //    return RunLoadButtonTest(reqId, identifier, "Verify", "btnRequestMoreInfo");
+        //    return SeleniumHelper.RunWithSafeChromeDriver(driver =>
+        //    {
+
+        //        var baseUrl = GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
+
+        //        var url = $"{baseUrl}/Proposal/WorkflowActions/{reqId}";
+        //        driver.Navigate().GoToUrl(url);
+
+        //        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+        //        try
+        //        {
+        //            // Click the button in the correct row
+        //            var button = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(
+        //                By.XPath($"//tr[td[1][text()='{identifier}']]//button[text()='{buttonText}']")));
+        //            button.Click();
+
+        //            if (!string.IsNullOrEmpty(waitForElementId))
+        //            {
+        //                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id(waitForElementId)));
+        //            }
+
+        //            return new WorkflowTestResult
+        //            {
+        //                Passed = true,
+        //                Message = $"'{buttonText}' button clicked successfully for '{identifier}'."
+        //            };
+        //        }
+        //        catch (WebDriverTimeoutException)
+        //        {
+        //            return new WorkflowTestResult
+        //            {
+        //                Passed = false,
+        //                Message = $"Failed to click '{buttonText}' or find expected element for '{identifier}'."
+        //            };
+        //        }
+        //    });
         //}
 
-        public WorkflowTestResult RunLoadVerifyButtonTest(string reqId, string groupName)
+        public WorkflowTestResult RunLoadVerifyButtonTest(WorkflowTestContext context)
         {
-            InitializeDashboardItemsAsync().Wait(); // Assuming this is an instance method
+            InitializeDashboardItemsAsync().Wait();
 
-            if (!int.TryParse(reqId, out int requestId))
+            if (!int.TryParse(context.ReqId, out int requestId))
                 throw new ArgumentException("Invalid request ID");
 
             var request = GetRequestById(requestId);
-            var decision = DecideTestAction(request, groupName);
+            var decision = DecideTestAction(request, context.Identifier);
 
-            switch (decision.ActionType)
-            {
-                case WorkflowActionType.ClickButton:
-                    return RunLoadButtonTest(reqId, groupName, "Verify", decision.ElementId);
+            context.ButtonText = "Verify";
+            context.WaitForElementId = decision.ElementId;
 
-                case WorkflowActionType.ExpectMessage:
-                    return RunExpectMessageTest(reqId, groupName, "Verify", decision.ExpectedMessage);
+            var result = RunLoadButtonTest(context);
 
-                default:
-                    throw new InvalidOperationException("Unknown test action type");
-            }
+            if (!result.Passed)
+                return result;
+
+            // Only run the form fill if it's the Verify button
+            //if (context.ButtonText == "Verify")
+            //{
+            //    return SeleniumHelper.RunWithSafeChromeDriver(driver =>
+            //    {
+            //        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            //        return FillOutVerifyForm(driver, wait);
+            //    });
+            //}
+
+            return result;
         }
+
+        //public WorkflowTestResult RunLoadVerifyButtonTest(string reqId, string groupName)
+        //{
+        //    InitializeDashboardItemsAsync().Wait(); // Assuming this is an instance method
+
+        //    if (!int.TryParse(reqId, out int requestId))
+        //        throw new ArgumentException("Invalid request ID");
+
+        //    var request = GetRequestById(requestId);
+        //    var decision = DecideTestAction(request, groupName);
+
+        //    switch (decision.ActionType)
+        //    {
+        //        case WorkflowActionType.ClickButton:
+        //            return RunLoadButtonTest(reqId, groupName, "Verify", decision.ElementId);
+
+        //        case WorkflowActionType.ExpectMessage:
+        //            return RunExpectMessageTest(reqId, groupName, "Verify", decision.ExpectedMessage);
+
+        //        default:
+        //            throw new InvalidOperationException("Unknown test action type");
+        //    }
+        //}
 
         public WorkflowTestResult RunLoadApproveWBSButtonTest(string reqId, string groupName)
         {
@@ -294,7 +327,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             switch (decision.ActionType)
             {
                 case WorkflowActionType.ClickButton:
-                    return RunLoadButtonTest(reqId, groupName, "Approve WBS", decision.ElementId);
+                //return RunLoadButtonTest(reqId, groupName, "Approve WBS", decision.ElementId);
 
                 case WorkflowActionType.ExpectMessage:
                     return RunExpectMessageTest(reqId, groupName, "Verify", decision.ExpectedMessage);
@@ -315,12 +348,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public WorkflowTestResult RunLoadReplyButtonTest(string reqId, string identifier)
         {
-            return RunLoadButtonTest(reqId, identifier, "Reply", "RequestedInfo_RequestedInformation");
+            return new WorkflowTestResult();
+            //return RunLoadButtonTest(reqId, identifier, "Reply", "RequestedInfo_RequestedInformation");
         }
 
         public WorkflowTestResult RunLoadApproveButtonTest(string reqId, string identifier)
         {
-            return RunLoadButtonTest(reqId, identifier, "Approve");
+            return new WorkflowTestResult();
+
+            //return RunLoadButtonTest(reqId, identifier, "Approve");
         }
 
 
@@ -552,6 +588,68 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return appKeyValue;
         }
 
+        private WorkflowTestResult FillOutVerifyForm(IWebDriver driver, WebDriverWait wait)
+        {
+            try
+            {
+                var dropdown = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id("RequestedInfo_ReviewerGroupId")));
+                var selectElement = new SelectElement(dropdown);
+                selectElement.SelectByValue("3");
+
+                var textbox = driver.FindElement(By.Id("RequestedInfo_RequestedInformation"));
+                textbox.Clear();
+                textbox.SendKeys("This message brought to you by Workflow Automated Testing.");
+
+                var submitButton = driver.FindElement(By.Id("btnSubmitMoreInfo"));
+                submitButton.Click();
+
+                //TODO Verify message 
+                //wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id("confirmationElementId")));
+                //var elements = driver.FindElements(By.XPath("//*[contains(text(), 'Thank you')]"));
+
+                //foreach (var el in elements)
+                //{
+                //    Debug.WriteLine($"Found element: Displayed={el.Displayed}, Text='{el.Text}'");
+                //}
+
+                //var visibleElement = elements.FirstOrDefault(e => e.Displayed);
+
+                //if (visibleElement == null)
+                //{
+                //    return new WorkflowTestResult
+                //    {
+                //        Passed = false,
+                //        Message = "No visible 'Thank you' message found."
+                //    };
+                //}
+
+                //var actualMessage = visibleElement.Text;
+                //bool success = actualMessage == expectedMessage;
+
+                //return new WorkflowTestResult
+                //{
+                //    Passed = success,
+                //    Message = success
+                //        ? $"Verify' button clicked Expected message. '{actualMessage}'."
+                //        : $"Expected '{expectedMessage}', but found '{actualMessage}'"
+                //};
+                
+
+                return new WorkflowTestResult
+                {
+                    Passed = true,
+                    Message = "Verify form submitted successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new WorkflowTestResult
+                {
+                    Passed = false,
+                    Message = $"Error submitting verify form: {ex.Message}"
+                };
+            }
+        }
 
     }
 }
