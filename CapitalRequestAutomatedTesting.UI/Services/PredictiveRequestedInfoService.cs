@@ -36,7 +36,9 @@ public class PredictiveRequestedInfoService
     public RequestedInfo Generate(Proposal proposal)
     {
         // Resolve WorkflowStepOptionId
-        var workflowStep = _ssmWorkflowServices.GetWorkflowStep((Guid)proposal.WorkflowId).Result;
+        var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId).Result;
+        var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
+
         var workflowStepOptions = _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID).Result
             .Where(x => !x.IsComplete && !x.IsTerminate)
             .ToList();

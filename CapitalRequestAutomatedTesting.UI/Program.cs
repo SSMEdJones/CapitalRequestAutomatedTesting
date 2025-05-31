@@ -38,6 +38,9 @@ builder.Services.AddScoped<ISSMWorkFlowStep, SSMWorkFlowStep>();
 builder.Services.AddScoped<ISSMWorkFlowStepOption, SSMWorkFlowStepOption>();
 builder.Services.AddScoped<ISSMWorkFlowStepResponder, SSMWorkFlowStepResponder>();
 builder.Services.AddScoped<IWorkflowServices, WorkflowServices>();
+#endregion
+
+#region CapitalRequest API
 builder.Services.AddScoped<IApplicationUsers, ApplicationUsers>();
 builder.Services.AddScoped<IAssets, Assets>();
 builder.Services.AddScoped<IAttachments, Attachments>();

@@ -7,6 +7,10 @@ using Flurl;
 using Flurl.Http;
 using CapitalRequest.API.DataAccess.Models;
 using Proposal = CapitalRequest.API.Models.Proposal;
+using dto = CapitalRequest.API.DataAccess.Models;
+using vm = CapitalRequest.API.Models;
+using Newtonsoft.Json.Linq;
+using static Dapper.SqlMapper;
 
 namespace CapitalRequest.API.DataAccess.Services.Api
 {
@@ -33,22 +37,25 @@ namespace CapitalRequest.API.DataAccess.Services.Api
         {
             try
             {
-                var proposal = new Proposal();
-
                 var response = await _capitalRequestSettings.BaseApiUrl
                     .AppendPathSegment("Proposal")
                     .AppendPathSegment($"{id}")
                     .GetJsonAsync<Response<dynamic>>();
 
-                var responseObject = JsonConvert.SerializeObject(response.Result);
-                var result = JsonConvert.DeserializeObject<Proposal>(responseObject);
+                var json = JsonConvert.SerializeObject(response.Result);
 
-                if (result != null)
+                var settings = new JsonSerializerSettings
                 {
-                    proposal = result;
-                }
+                    Error = (sender, args) =>
+                    {
+                        // Optional: log or debug
+                        args.ErrorContext.Handled = true;
+                    }
+                };
 
-                return _mapper.Map<Proposal>(proposal);
+                var proposal = JsonConvert.DeserializeObject<vm.Proposal>(json, settings);
+                return proposal;
+
             }
             catch (FlurlHttpException ex)
             {

@@ -83,7 +83,7 @@ namespace CapitalRequest.API.Models
         public bool IsPartOfAnnualCapitalReviewProcessNOTOffCycleRequest { get; set; }
 
         [DisplayName("Override Workflow")]
-        public bool OverrideWorkflow { get; set; }
+        public bool? OverrideWorkflow { get; set; }
 
         public List<WorkflowAction> WorkflowActions { get; set; }
         public string WorkflowCaption { get; set; } = "Workflow";

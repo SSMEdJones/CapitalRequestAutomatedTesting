@@ -1,6 +1,10 @@
-﻿using SSMWorkflow.API.DataAccess.Models;
+﻿using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.DataAccess.Services.Api;
 using SSMWorkflow.API.Models;
+using Microsoft.Extensions.Options;
+using System.Diagnostics;
+
 
 namespace CapitalRequestAutomatedTesting.Data
 {
@@ -43,6 +47,8 @@ namespace CapitalRequestAutomatedTesting.Data
         private readonly ISSMWorkFlowInstanceActionHistory _ssmMWorkFlowInstanceActionHistory;
         private readonly ISSMNotification _ssmMNotification;
         private readonly IDashboards _dashboards;
+        private readonly SSMWorkFlowSettings _settings;
+
 
         public SSMWorkflowServices(
             ISSMWorkFlow ssmMWorkFlow,
@@ -53,7 +59,8 @@ namespace CapitalRequestAutomatedTesting.Data
             ISSMWorkFlowInstance ssmMWorkFlowInstance,
             ISSMWorkFlowInstanceActionHistory ssmMWorkFlowInstanceActionHistory,
             ISSMNotification ssmMNotification,
-            IDashboards dashboards)
+            IDashboards dashboards,
+            IOptions<SSMWorkFlowSettings> settings)
         {
             _ssmMWorkFlow = ssmMWorkFlow;
             _ssmMWorkFlowStakeholder = ssmMWorkFlowStakeholder;
@@ -64,7 +71,11 @@ namespace CapitalRequestAutomatedTesting.Data
             _ssmMWorkFlowInstanceActionHistory = ssmMWorkFlowInstanceActionHistory;
             _ssmMNotification = ssmMNotification;
             _dashboards = dashboards;
+            _settings = settings.Value;
+
+            Debug.WriteLine($"✅ Loaded BaseApiUrl from config: {_settings.BaseApiUrl}");
         }
+
         public Task<List<WorkFlowStepViewModel>> GetAllWorkFlowSteps(Guid workflowID)
         {
             return _ssmMWorkFlowStep.GetAll(workflowID);
