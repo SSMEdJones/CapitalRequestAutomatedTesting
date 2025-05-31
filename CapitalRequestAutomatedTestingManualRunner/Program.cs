@@ -16,6 +16,9 @@ using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using static Dapper.SqlMapper;
+using dto = CapitalRequest.API.DataAccess.Models;
+using vm = CapitalRequest.API.Models;
+
 
 class Program
 {
@@ -28,7 +31,9 @@ class Program
         var claims = new[]
         {
             new Claim(ClaimTypes.Email, "edward.jones@ssmhealth.com"),
-            new Claim(ClaimTypes.Name, "DOMAIN\\Jones, Edward")
+            new Claim(ClaimTypes.Name, "DOMAIN\\Jones, Edward"),
+            new Claim(ClaimTypes.GivenName, "Edward"),
+            new Claim(ClaimTypes.Surname, "Jones")
         };
         context.User = new ClaimsPrincipal(new ClaimsIdentity(claims, "ejones08"));
 
@@ -102,6 +107,7 @@ class Program
         int proposalId = 2884;
         var proposal =  capitalRequestService.GetProposal(proposalId).Result;
         proposal.ReviewerGroupId = 2;
+        proposal.RequestedInfo.ReviewerGroupId = 3;
         if (proposal != null)
         {
             Console.WriteLine($"✅ Proposal Retrieved: ID = {proposal.Id}, Author = {proposal.Author}, WorkflowId = {proposal.WorkflowId}");
@@ -111,21 +117,9 @@ class Program
             Console.WriteLine("⚠️ Proposal not found.");
         }
 
-
-        //var proposal = new Proposal
-        //{
-        //    Id = 2884,
-        //    ReviewerGroupId = 2,
-        //    SegmentId = 5,
-        //    Author = "Edward Jones",
-        //    WorkflowId = Guid.Parse("6E5DD951-4D33-F011-A318-0050569736FD"),
-        //    RequestedInfo = new RequestedInfo
-        //    {
-        //        ReviewerGroupId = 3
-        //    }
-        //};
-
         var result = service.Generate(proposal);
         Debug.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(result)}");
     }
+
+    
 }

@@ -1,16 +1,12 @@
 ﻿
-//using System;
-//using System.Linq;
-//using CapitalRequest.DATA.Interface;
-//using CapitalRequest.DATA.Model;
-//using CapitalRequest.UI.Models;
-//using CapitalRequest.UI.Utilities;
-//using Microsoft.Extensions.DependencyInjection;
 using SSMWorkflow.API.Models;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using AutoMapper;
 using CapitalRequestAutomatedTesting.UI.Models;
+using CapitalRequest.API.DataAccess.Models;
+using dto = CapitalRequest.API.DataAccess.Models;
+using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services;
 public class PredictiveRequestedInfoService
@@ -33,7 +29,7 @@ public class PredictiveRequestedInfoService
         _mapper = mapper;
     }
 
-    public RequestedInfo Generate(Proposal proposal)
+    public vm.RequestedInfo Generate(vm.Proposal proposal)
     {
         // Resolve WorkflowStepOptionId
         var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId).Result;
@@ -60,7 +56,7 @@ public class PredictiveRequestedInfoService
         }
 
         // Generate RequestedInfo object
-        var requestedInfo = new RequestedInfo
+        var requestedInfo = new vm.RequestedInfo
         {
             ProposalId = proposal.Id,
             RequestingReviewerGroupId = proposal.ReviewerGroupId,
@@ -72,11 +68,37 @@ public class PredictiveRequestedInfoService
                 .Id,
             ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
             RequestedInformation = "This message brought to you by Workflow Automated Testing.",
-            Action = $"{proposal.Author} from IT requested more information from Unknown Group on {DateTime.Today:MM/dd/yyyy}.",
+            //Action = $"{proposal.Author} from IT requested more information from Unknown Group on {DateTime.Today:MM/dd/yyyy}.",
             WorkflowStepOptionId = workflowStepOption?.OptionID ?? Guid.Empty,
             IsOpen = true
         };
 
+        requestedInfo.Action = GetActionString(requestedInfo, Constants.RESPONSE_REQUEST_MORE_INFORMATION);
+
         return requestedInfo;
+    }
+
+    public string GetActionString(vm.RequestedInfo requestedInfo, string action)
+    {
+        var filter = new ReviewerGroupSearchFilter();
+
+        var reviewerGroups = _capitalRequestServices
+            .GetAllReviewerGroups(filter)
+            .Result
+            .ToList();
+
+        var requestingGroup = reviewerGroups
+            .Where(x => x.Id == requestedInfo.RequestingReviewerGroupId)
+            .First()
+            .Name;
+
+        var requestingUser = $"{_userContextService.FirstName} {_userContextService.LastName}";
+
+        var requestedGroup = reviewerGroups
+            .Where(x => x.Id == requestedInfo.ReviewerGroupId)
+            .First()
+            .Name;
+
+        return $"{requestingUser} from {requestingGroup} {action.ToLower()} from {requestedGroup} on {DateTime.Today.ToShortDateString()}.";
     }
 }
