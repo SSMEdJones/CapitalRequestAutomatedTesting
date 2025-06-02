@@ -48,7 +48,7 @@ public class PredictiveRequestedInfoServiceTests
         };
 
         // Act
-        var result = _service.Generate(proposal);
+        var result = _service.CreateRequestedInfo(proposal);
 
         // Assert
         Assert.NotNull(result);

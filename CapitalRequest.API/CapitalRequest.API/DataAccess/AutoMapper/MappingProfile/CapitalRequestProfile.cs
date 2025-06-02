@@ -40,6 +40,10 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
             CreateMap<dto.WorkflowTemplate, vm.WorkflowTemplate>();
             CreateMap<dto.WorkflowAction, vm.WorkflowAction>();
             CreateMap<dto.ApplicationUser, vm.ApplicationUser>();
+
+            //Predictive models
+            CreateMap<vm.RequestedInfo, dto.RequestedInfo>();
+
         }
 
     }

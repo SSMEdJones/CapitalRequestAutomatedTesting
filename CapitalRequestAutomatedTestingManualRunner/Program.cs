@@ -18,6 +18,7 @@ using System.Diagnostics;
 using static Dapper.SqlMapper;
 using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
+using CapitalRequest.API.DataAccess.Models;
 
 
 class Program
@@ -105,7 +106,7 @@ class Program
         var capitalRequestService = provider.GetRequiredService<ICapitalRequestServices>();
 
         int proposalId = 2884;
-        var proposal =  capitalRequestService.GetProposal(proposalId).Result;
+        var proposal = capitalRequestService.GetProposal(proposalId).Result;
         proposal.ReviewerGroupId = 2;
         proposal.RequestedInfo.ReviewerGroupId = 3;
         if (proposal != null)
@@ -117,9 +118,29 @@ class Program
             Console.WriteLine("⚠️ Proposal not found.");
         }
 
-        var result = service.Generate(proposal);
-        Debug.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(result)}");
+        CreatePredictiveRequestedInfo(service, proposal);
+        //int proposalId = 2884;
+        //var proposal =  capitalRequestService.GetProposal(proposalId).Result;
+        //proposal.ReviewerGroupId = 2;
+        //proposal.RequestedInfo.ReviewerGroupId = 3;
+        //if (proposal != null)
+        //{
+        //    Console.WriteLine($"✅ Proposal Retrieved: ID = {proposal.Id}, Author = {proposal.Author}, WorkflowId = {proposal.WorkflowId}");
+        //}
+        //else
+        //{
+        //    Console.WriteLine("⚠️ Proposal not found.");
+        //}
+
+        //var result = service.CreateRequestedInfo(proposal);
+        //Debug.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(result)}");
     }
 
-    
+    public dto.RequestedInfo CreatePredictiveRequestedInfo(PredictiveRequestedInfoService service, vm.Proposal proposal)
+    {
+        
+
+        var result = service.CreateRequestedInfo(proposal);
+        Debug.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(result)}");
+    }
 }

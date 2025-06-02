@@ -29,7 +29,7 @@ public class PredictiveRequestedInfoService
         _mapper = mapper;
     }
 
-    public vm.RequestedInfo Generate(vm.Proposal proposal)
+    public dto.RequestedInfo CreateRequestedInfo(vm.Proposal proposal)
     {
         // Resolve WorkflowStepOptionId
         var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId).Result;
@@ -70,12 +70,14 @@ public class PredictiveRequestedInfoService
             RequestedInformation = "This message brought to you by Workflow Automated Testing.",
             //Action = $"{proposal.Author} from IT requested more information from Unknown Group on {DateTime.Today:MM/dd/yyyy}.",
             WorkflowStepOptionId = workflowStepOption?.OptionID ?? Guid.Empty,
-            IsOpen = true
+            IsOpen = true,
+            Created = DateTime.Now,
+            CreatedBy = _userContextService.UserId
         };
 
         requestedInfo.Action = GetActionString(requestedInfo, Constants.RESPONSE_REQUEST_MORE_INFORMATION);
 
-        return requestedInfo;
+        return _mapper.Map<dto.RequestedInfo>(requestedInfo);
     }
 
     public string GetActionString(vm.RequestedInfo requestedInfo, string action)
