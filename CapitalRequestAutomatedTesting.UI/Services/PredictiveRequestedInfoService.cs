@@ -1,16 +1,22 @@
-﻿
-using SSMWorkflow.API.Models;
-using CapitalRequest.API.Models;
-using CapitalRequestAutomatedTesting.Data;
-using AutoMapper;
-using CapitalRequestAutomatedTesting.UI.Models;
+﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.UI.Models;
+using SSMWorkflow.API.Models;
 using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services;
-public class PredictiveRequestedInfoService
+
+public interface IPredictiveRequestedInfoService
 {
+    dto.RequestedInfo CreateRequestedInfo(vm.Proposal proposal);
+    string GetActionString(vm.RequestedInfo requestedInfo, string action);
+}
+
+public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
+{
+
 
     private readonly ISSMWorkflowServices _ssmWorkflowServices;
     private readonly ICapitalRequestServices _capitalRequestServices;

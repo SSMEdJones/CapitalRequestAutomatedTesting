@@ -1,57 +1,71 @@
 using AutoMapper;
+using CapitalRequest.API.DataAccess.ConfigurationSettings;
+using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Tests;
+using CapitalRequestAutomatedTesting.Tests.Helpers;
 using CapitalRequestAutomatedTesting.UI.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
+using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using System.Diagnostics;
 
-public class PredictiveRequestedInfoServiceTests
+public class PredictiveRequestedInfoServiceTests : IntegrationTestBase
 {
-    private readonly PredictiveRequestedInfoService _service;
+    private readonly IPredictiveRequestedInfoService _service;
+    private readonly ICapitalRequestServices _capitalRequestservices;
 
     public PredictiveRequestedInfoServiceTests()
     {
-        // Setup DI container or manually instantiate services
-        var services = new ServiceCollection();
-
-        // Register real or test implementations
-        services.AddScoped<ISSMWorkflowServices, SSMWorkflowServices>(); // Replace with your actual implementation
-        services.AddScoped<ICapitalRequestServices, CapitalRequestServices>(); // Replace with your actual implementation
-        services.AddScoped<IUserContextService, UserContextService>(); // Replace with your actual implementation
-        services.AddAutoMapper(typeof(WorkflowProfile)); // Or your AutoMapper profile
-
-        var provider = services.BuildServiceProvider();
-
-        _service = new PredictiveRequestedInfoService(
-            provider.GetRequiredService<ISSMWorkflowServices>(),
-            provider.GetRequiredService<ICapitalRequestServices>(),
-            provider.GetRequiredService<IUserContextService>(),
-            provider.GetRequiredService<IMapper>()
-        );
+        _service = _provider.GetRequiredService<IPredictiveRequestedInfoService>();
+        _capitalRequestservices = _provider.GetRequiredService<ICapitalRequestServices>();
     }
 
     [Fact]
-    public void Generate_ShouldReturnRequestedInfo()
+    public void CreateRequestedInfo_ShouldReturnRequestedInfo()
     {
-        // Arrange
-        var proposal = new Proposal
+
+        int proposalId = 2884;
+        var proposal = _capitalRequestservices.GetProposal(proposalId).Result;
+
+        proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
+        proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
+        
+        var predicted = _service.CreateRequestedInfo(proposal);
+
+        var filter = new RequestedInfoSearchFilter
         {
-            Id = 2884,
-            ReviewerGroupId = 2,
-            SegmentId = 5,
-            Author = "Edward Jones",
-            WorkflowId = Guid.Parse("6E5DD951-4D33-F011-A318-0050569736FD"),
-            RequestedInfo = new RequestedInfo
-            {
-                ReviewerGroupId = 3
-            }
+            ProposalId = proposalId,
+            ReviewerGroupId = predicted.ReviewerGroupId,
+            RequestingReviewerId = predicted.RequestingReviewerId,
+            WorkflowStepOptionId = predicted.WorkflowStepOptionId,
+            IsOpen = predicted.IsOpen
         };
 
-        // Act
-        var result = _service.CreateRequestedInfo(proposal);
+        var actual = _capitalRequestservices
+            .GetAllRequestedInfos(filter)
+            .Result
+            .FirstOrDefault();
 
-        // Assert
-        Assert.NotNull(result);
-        Console.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(result)}");
+        Assert.NotNull(actual);
+        Assert.Equal(predicted.ProposalId, actual.ProposalId);
+        Assert.Equal(predicted.RequestingReviewerGroupId, actual.RequestingReviewerGroupId);
+        Assert.Equal(predicted.RequestingReviewerId, actual.RequestingReviewerId);
+        Assert.Equal(predicted.ReviewerGroupId, actual.ReviewerGroupId);
+        Assert.Equal(predicted.WorkflowStepOptionId, actual.WorkflowStepOptionId);
+        Assert.Equal(predicted.IsOpen, actual.IsOpen);
+        Assert.Equal(predicted.CreatedBy, actual.CreatedBy);
+        Assert.Equal(predicted.UpdatedBy, actual.UpdatedBy);
+
+        //Assert.Equal(predicted.Action, actual.Action);
+
+        //TestHelpers.AssertTimestampsClose(predicted.Created, actual.Created);
+        //TestHelpers.AssertTimestampsClose(predicted.Updated, actual.Updated);
+
+        Assert.NotNull(predicted);
+        Debug.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(predicted)}");
     }
 }
+

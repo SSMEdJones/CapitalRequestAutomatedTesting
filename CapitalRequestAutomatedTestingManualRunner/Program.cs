@@ -118,7 +118,7 @@ class Program
             Console.WriteLine("⚠️ Proposal not found.");
         }
 
-        CreatePredictiveRequestedInfo(service, proposal);
+        //CreatePredictiveRequestedInfo(service, proposal);
         //int proposalId = 2884;
         //var proposal =  capitalRequestService.GetProposal(proposalId).Result;
         //proposal.ReviewerGroupId = 2;
@@ -136,11 +136,11 @@ class Program
         //Debug.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(result)}");
     }
 
-    public dto.RequestedInfo CreatePredictiveRequestedInfo(PredictiveRequestedInfoService service, vm.Proposal proposal)
-    {
+    //public dto.RequestedInfo CreatePredictiveRequestedInfo(PredictiveRequestedInfoService service, vm.Proposal proposal)
+    //{
         
 
-        var result = service.CreateRequestedInfo(proposal);
-        Debug.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(result)}");
-    }
+    //    var result = service.CreateRequestedInfo(proposal);
+    //    Debug.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(result)}");
+    //}
 }

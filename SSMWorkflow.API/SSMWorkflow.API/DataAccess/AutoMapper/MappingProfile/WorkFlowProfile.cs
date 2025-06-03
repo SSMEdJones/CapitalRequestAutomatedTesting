@@ -4,6 +4,10 @@ using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
 
+//Mapping types:
+//WorkFlowStepOptionViewModel->WorkflowStepResponder
+//SSMWorkflow.API.Models.WorkFlowStepOptionViewModel->SSMWorkflow.API.DataAccess.Models.WorkflowStepResponder
+
 namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
 {
     public class WorkflowProfile : Profile
@@ -29,15 +33,22 @@ namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
             //WorkFlowStepOption
             CreateMap<WorkFlowStepOptionViewModel, CreateUpdateWorkFlowStepOption>();
             CreateMap<CreateUpdateWorkFlowStepOption, WorkflowStepOption>();
+            CreateMap<WorkflowStepOption, CreateUpdateWorkFlowStepOption>();
 
             //WorkFlowStepResponder
             CreateMap<WorkFlowStepResponderViewModel, CreateUpdateWorkFlowStepResponder>();
+            CreateMap<WorkFlowStepResponderViewModel, WorkflowStepResponder>();
             CreateMap<CreateUpdateWorkFlowStepResponder, WorkflowStepResponder>();
+           
+            CreateMap<WorkFlowStepResponderViewModel, WorkflowStepResponder>();
+            CreateMap<WorkflowStepResponder, WorkFlowStepResponderViewModel>();
 
             CreateMap<WorkflowStepOption, WorkflowStepResponder>()
-                .ForMember(dest => dest.WorkflowStepID, o => o.MapFrom(src => src.WorkflowStepID))
-                .ForMember(dest => dest.WorkflowStepOptionID, o => o.MapFrom(src => src.OptionID))
-                .ForMember(dest => dest.CreatedBy, o => o.MapFrom(src => GetUserName()));
+                .ForMember(dest => dest.WorkflowStepID, o => o.MapFrom(src => src.WorkflowStepID));
+
+            CreateMap<WorkflowStepOption, WorkFlowStepOptionViewModel>();
+
+            CreateMap<WorkFlowStepOptionViewModel, WorkflowStepResponder>();
 
             //WorkFlowInstanceActionHistory
             CreateMap<WorkFlowInstanceActionHistoryViewModel, CreateUpdateWorkFlowInstanceActionHistory>();

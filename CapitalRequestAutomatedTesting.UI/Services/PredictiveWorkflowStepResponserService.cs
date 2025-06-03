@@ -12,7 +12,11 @@ using CapitalRequest.API.DataAccess.Services.Api;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
-    public class PredictiveWorkflowStepResponserService
+    public interface IPredictiveWorkflowStepResponserService
+    {
+        WorkflowStepResponder CreateWorkflowStepResponder(vm.Proposal proposal, string responderType);
+    }
+    public class PredictiveWorkflowStepResponserService : IPredictiveWorkflowStepResponserService
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
@@ -59,9 +63,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             workflowStepResponder.ResponderType = responderType;
             workflowStepResponder.Responder = _userContextService.Email;
             workflowStepResponder.CreatedBy = _userContextService.UserId;
+            workflowStepResponder.WorkflowStepOptionID = workflowStepOption.OptionID;
 
             return workflowStepResponder;
         }
-
+    }
 
 }

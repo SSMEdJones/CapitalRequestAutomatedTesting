@@ -33,7 +33,7 @@ namespace CapitalRequestAutomatedTesting.Data
 
         Task<List<SSMWorkflow.API.Models.Dashboard>> GetCapitalRequestDashboard(DashboardSearchFilter dashboardSearchFilter);
 
-        Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAll(WorkFlowInstanceActionHistorySearchFilter filter);
+        Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAllWorkflowInstanceActionHistory(WorkFlowInstanceActionHistorySearchFilter filter);
 
     }
     public class SSMWorkflowServices : ISSMWorkflowServices
@@ -136,7 +136,7 @@ namespace CapitalRequestAutomatedTesting.Data
             return _ssmMWorkFlowInstanceActionHistory.Get(Optionid);
         }
 
-        public Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAll(WorkFlowInstanceActionHistorySearchFilter filter)
+        public Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAllWorkflowInstanceActionHistory(WorkFlowInstanceActionHistorySearchFilter filter)
         {
             return _ssmMWorkFlowInstanceActionHistory.GetAll(filter);
         }

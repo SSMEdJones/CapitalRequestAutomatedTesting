@@ -19,5 +19,12 @@
         public const string RESPONSE_WORFLOW_OVERRIDDEN = "Overrode Workflow";
         public const string RESPONSE_RESENT = "Email sent to all active reviewers.";
         public const string RESPONSE_VERIFY_WBS = "Verified WBS";
+
+        //Responder Types
+        public const string RESPONDER_REQUEST = "Request";
+        public const string RESPONDER_ADD_INFO = "AddInfo";
+        public const string RESPONDER_REPLY = "Reply";
+        public const string RESPONDER_VERIFY = "Verify";
+
     }
 }

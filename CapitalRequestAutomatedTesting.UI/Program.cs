@@ -1,18 +1,13 @@
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
-using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequestAutomatedTesting.Data;
-using CapitalRequestAutomatedTesting.UI.Services;
+using CapitalRequestAutomatedTesting.UI;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
-using SSMWorkflow.API.DataAccess.Services;
-using SSMWorkflow.API.DataAccess.Services.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
 
 builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
    .AddNegotiate();
@@ -23,40 +18,15 @@ builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = options.DefaultPolicy;
 });
 
-builder.Services.AddAutoMapper(typeof(Program));
 
-#region Workflow API
-builder.Services.AddScoped<WorkflowControllerService>();
-builder.Services.AddScoped<ISSMWorkflowServices, SSMWorkflowServices>();
-builder.Services.AddScoped<IDashboards, Dashboards>();
-builder.Services.AddScoped<ISSMNotification, SSMNotification>();
-builder.Services.AddScoped<ISSMWorkFlow, SSMWorkFlow>();
-builder.Services.AddScoped<ISSMWorkFlowInstance, SSMWorkFlowInstance>();
-builder.Services.AddScoped<ISSMWorkFlowInstanceActionHistory, SSMWorkFlowInstanceActionHistory>();
-builder.Services.AddScoped<ISSMWorkFlowStakeholder, SSMWorkFlowStakeholder>();
-builder.Services.AddScoped<ISSMWorkFlowStep, SSMWorkFlowStep>();
-builder.Services.AddScoped<ISSMWorkFlowStepOption, SSMWorkFlowStepOption>();
-builder.Services.AddScoped<ISSMWorkFlowStepResponder, SSMWorkFlowStepResponder>();
-builder.Services.AddScoped<IWorkflowServices, WorkflowServices>();
-#endregion
+var configuration = new ConfigurationBuilder()
+ .SetBasePath(Directory.GetCurrentDirectory())
+ .AddJsonFile("appsettings.json")
+ .Build();
 
-#region CapitalRequest API
-builder.Services.AddScoped<IApplicationUsers, ApplicationUsers>();
-builder.Services.AddScoped<IAssets, Assets>();
-builder.Services.AddScoped<IAttachments, Attachments>();
-builder.Services.AddScoped<IProposals, Proposals>();
-builder.Services.AddScoped<IProvidedInfos, ProvidedInfos>();
-builder.Services.AddScoped<IQuotes, Quotes>();
-builder.Services.AddScoped<IRequestedInfos, RequestedInfos>();
-builder.Services.AddScoped<IReviewerGroups, ReviewerGroups>();
-builder.Services.AddScoped<IReviewers, Reviewers>();
-builder.Services.AddScoped<IWBSs, WBSs>();
-builder.Services.AddScoped<IWorkflowActions, WorkflowActions>();
-builder.Services.AddScoped<IWorkflowTemplates, WorkflowTemplates>();
-builder.Services.AddScoped<ICapitalRequestServices, CapitalRequestServices>();
-builder.Services.AddScoped<IUserContextService, UserContextService>();
-
-#endregion
+var services = new ServiceCollection();
+services.AddApplicationServices(configuration);
+var provider = services.BuildServiceProvider();
 
 var env = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEB_SQL_ENV", EnvironmentVariableTarget.Machine))
     ? "DEV"
