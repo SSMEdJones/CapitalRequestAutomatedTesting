@@ -16,6 +16,10 @@ namespace CapitalRequestAutomatedTesting.Data
         Task<List<CapitalRequest.API.Models.Attachment>> GetAllAttachments(AttachmentSearchFilter filter);
         Task DeleteAllAttachments(AttachmentSearchFilter filter);
 
+        //// EmailTemplates
+        Task<CapitalRequest.API.Models.EmailTemplate> GetEmailTemplate(int id);
+        Task<List<CapitalRequest.API.Models.EmailTemplate>> GetAllEmailTemplates(EmailTemplateSearchFilter filter);
+
         //// Proposals
         Task<CapitalRequest.API.Models.Proposal> GetProposal(int id);
         Task DeleteProposal(int id);
@@ -52,7 +56,6 @@ namespace CapitalRequestAutomatedTesting.Data
         //// WorkflowTemplates
         Task<CapitalRequest.API.Models.WorkflowTemplate> GetWorkflowTemplate(int id);
         Task<List<CapitalRequest.API.Models.WorkflowTemplate>> GetAllWorkflowTemplates(WorkflowTemplateSearchFilter filter);
-        Task DeleteAllWorkflowTemplates(WorkflowTemplateSearchFilter filter);
 
         //// WorkflowActions
         Task<List<CapitalRequest.API.Models.WorkflowAction>> GetAllWorkflowActions(WorkflowActionSearchFilter filter);
@@ -76,6 +79,7 @@ namespace CapitalRequestAutomatedTesting.Data
         private readonly IReviewers _reviewers;
         private readonly IWBSs _wbss;
         private readonly IWorkflowTemplates _workflowTemplates;
+        private readonly IEmailTemplates _emailTemplates;
         private readonly IWorkflowActions _workflowActions;
         private readonly IApplicationUsers _applicationUsers;
 
@@ -90,6 +94,7 @@ namespace CapitalRequestAutomatedTesting.Data
             IReviewers reviewers,
             IWBSs wbss,
             IWorkflowTemplates workflowTemplates,
+            IEmailTemplates emailTemplates,
             IWorkflowActions workflowActions,
             IApplicationUsers applicationUsers
             )
@@ -104,6 +109,7 @@ namespace CapitalRequestAutomatedTesting.Data
             _reviewers = reviewers;
             _wbss = wbss;
             _workflowTemplates = workflowTemplates;
+            _emailTemplates = emailTemplates;
             _workflowActions = workflowActions;
             _applicationUsers = applicationUsers;
         }
@@ -142,6 +148,19 @@ namespace CapitalRequestAutomatedTesting.Data
 
         }
         #endregion
+
+        #region EmailTemplates
+        public Task<CapitalRequest.API.Models.EmailTemplate> GetEmailTemplate(int id)
+        {
+            return _emailTemplates.Get(id);
+        }
+
+        public Task<List<CapitalRequest.API.Models.EmailTemplate>> GetAllEmailTemplates(EmailTemplateSearchFilter filter)
+        {
+            return _emailTemplates.GetAll(filter);
+        }
+        #endregion
+
 
         #region Proposals
         public Task<CapitalRequest.API.Models.Proposal> GetProposal (int id)
@@ -281,12 +300,6 @@ namespace CapitalRequestAutomatedTesting.Data
         public Task<List<CapitalRequest.API.Models.WorkflowTemplate>> GetAllWorkflowTemplates(WorkflowTemplateSearchFilter filter)
         {
             return _workflowTemplates.GetAll(filter);
-        }
-
-        public async Task DeleteAllWorkflowTemplates(WorkflowTemplateSearchFilter filter)
-        {
-            await _workflowTemplates.DeleteAll(filter);
-
         }
         #endregion
 

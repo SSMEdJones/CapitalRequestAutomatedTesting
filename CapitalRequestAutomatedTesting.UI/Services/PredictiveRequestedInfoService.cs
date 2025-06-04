@@ -10,7 +10,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services;
 
 public interface IPredictiveRequestedInfoService
 {
-    dto.RequestedInfo CreateRequestedInfo(vm.Proposal proposal);
+    dto.RequestedInfo CreateRequestedInfo(vm.Proposal proposal, int increment);
     string GetActionString(vm.RequestedInfo requestedInfo, string action);
 }
 
@@ -35,7 +35,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
         _mapper = mapper;
     }
 
-    public dto.RequestedInfo CreateRequestedInfo(vm.Proposal proposal)
+    public dto.RequestedInfo CreateRequestedInfo(vm.Proposal proposal, int increment)
     {
         // Resolve WorkflowStepOptionId
         var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId).Result;
@@ -82,6 +82,9 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
         };
 
         requestedInfo.Action = GetActionString(requestedInfo, Constants.RESPONSE_REQUEST_MORE_INFORMATION);
+
+        var requestedinfoId = _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter()).Result.Max(x => x.Id) + increment;
+        requestedInfo.Id = requestedinfoId;
 
         return _mapper.Map<dto.RequestedInfo>(requestedInfo);
     }

@@ -78,6 +78,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IApplicationUsers, ApplicationUsers>();
             services.AddScoped<IAssets, Assets>();
             services.AddScoped<IAttachments, Attachments>();
+            services.AddScoped<IEmailTemplates, EmailTemplates>();
             services.AddScoped<IProposals, Proposals>();
             services.AddScoped<IProvidedInfos, ProvidedInfos>();
             services.AddScoped<IQuotes, Quotes>();
@@ -94,7 +95,8 @@ namespace CapitalRequestAutomatedTesting.UI
 
             #region Predictive Services
             services.AddScoped<IPredictiveRequestedInfoService, PredictiveRequestedInfoService>();
-            services.AddScoped<IPredictiveWorkflowStepResponserService, PredictiveWorkflowStepResponserService>();
+            services.AddScoped<IPredictiveWorkflowStepResponderService, PredictiveWorkflowStepResponderService>();
+            services.AddScoped<IPredictiveWorkflowStepOptionService, PredictiveWorkflowStepOptionService>();
 
 
             #endregion

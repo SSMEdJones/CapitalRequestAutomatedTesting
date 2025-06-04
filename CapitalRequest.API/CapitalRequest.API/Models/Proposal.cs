@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using CapitalRequest.API.Enums;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+
 
 namespace CapitalRequest.API.Models
 {
@@ -321,7 +323,7 @@ namespace CapitalRequest.API.Models
         //public ProposalSubmissionPages CurrentPage { get; set; } = ProposalSubmissionPages.BasicInfo;
 
         //[DisplayName("Is this a System led project managed by the EPMO team?")]
-        //public int IsProjectManagerDesired { get; set; } = (int)ProjectManagerDesired.No;
+        public int IsProjectManagerDesired { get; set; } = (int)ProjectManagerDesired.No;
 
         [DisplayName("Does this project affect multiple regions/markets/segments?")]
         public bool AffectsMultipleSegments { get; set; }

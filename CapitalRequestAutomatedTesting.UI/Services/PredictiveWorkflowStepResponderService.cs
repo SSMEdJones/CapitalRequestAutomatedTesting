@@ -12,18 +12,18 @@ using CapitalRequest.API.DataAccess.Services.Api;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
-    public interface IPredictiveWorkflowStepResponserService
+    public interface IPredictiveWorkflowStepResponderService
     {
         WorkflowStepResponder CreateWorkflowStepResponder(vm.Proposal proposal, string responderType);
     }
-    public class PredictiveWorkflowStepResponserService : IPredictiveWorkflowStepResponserService
+    public class PredictiveWorkflowStepResponderService : IPredictiveWorkflowStepResponderService
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IUserContextService _userContextService;
         private readonly IMapper _mapper;
 
-        public PredictiveWorkflowStepResponserService(
+        public PredictiveWorkflowStepResponderService(
             ISSMWorkflowServices ssmWorkflowServices,
             ICapitalRequestServices capitalRequestServices,
             IUserContextService userContextService,
@@ -38,7 +38,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public WorkflowStepResponder CreateWorkflowStepResponder(vm.Proposal proposal, string responderType)
         {
             // Resolve WorkflowStepOptionId
-            var reviwewerGroupdId = proposal.ReviewerGroupId;
+            var reviewerGroupdId = proposal.ReviewerGroupId;
             var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId).Result;
             var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
             var workflowStepOptions = _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID).Result
@@ -48,7 +48,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             if (workflowStepOptions.Any())
             {
                 var optionsByGroup = workflowStepOptions
-                    .Where(x => x.ReviewerGroupId == reviwewerGroupdId);
+                    .Where(x => x.ReviewerGroupId == reviewerGroupdId);
 
                 if (optionsByGroup.Any())
                 {

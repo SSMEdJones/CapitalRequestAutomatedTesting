@@ -5,21 +5,21 @@ using CapitalRequestAutomatedTesting.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 
-public class PredictiveWorkflowStepResponserServiceTests : IntegrationTestBase
+public class PredictiveWorkflowStepResponderServiceTests : IntegrationTestBase
 {
-    private readonly IPredictiveWorkflowStepResponserService _service;
+    private readonly IPredictiveWorkflowStepResponderService _service;
     private readonly ICapitalRequestServices _capitalRequestservices;
     private readonly ISSMWorkflowServices _ssmWorkflowServices;
 
-    public PredictiveWorkflowStepResponserServiceTests()
+    public PredictiveWorkflowStepResponderServiceTests()
     {
-        _service = _provider.GetRequiredService<IPredictiveWorkflowStepResponserService>();
+        _service = _provider.GetRequiredService<IPredictiveWorkflowStepResponderService>();
         _capitalRequestservices = _provider.GetRequiredService<ICapitalRequestServices>();
         _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
     }
 
     [Fact]
-    public void CreateWorkflowStepResponser_ShouldReturneWorkflowStepResponser()
+    public void CreateWorkflowStepResponder_ShouldReturneWorkflowStepResponder()
     {
 
         int proposalId = 2884;

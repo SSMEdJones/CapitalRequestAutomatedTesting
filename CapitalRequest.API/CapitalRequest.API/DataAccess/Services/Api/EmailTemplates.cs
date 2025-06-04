@@ -6,22 +6,22 @@ using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using WorkflowTemplate = CapitalRequest.API.Models.WorkflowTemplate;
+using EmailTemplate = CapitalRequest.API.Models.EmailTemplate;
 
 namespace CapitalRequest.API.DataAccess.Services.Api
 {
-    public interface IWorkflowTemplates
+    public interface IEmailTemplates
     {
-        Task<WorkflowTemplate> Get(int id);
-        Task<List<WorkflowTemplate>> GetAll(WorkflowTemplateSearchFilter filter);
+        Task<EmailTemplate> Get(int id);
+        Task<List<EmailTemplate>> GetAll(EmailTemplateSearchFilter filter);
     }
 
-    public class WorkflowTemplates : IWorkflowTemplates
+    public class EmailTemplates : IEmailTemplates
     {
         private readonly CapitalRequestSettings _capitalRequestSettings;
         private readonly IMapper _mapper;
 
-        public WorkflowTemplates(
+        public EmailTemplates(
             IOptionsMonitor<CapitalRequestSettings> capitalRequestSettings,
             IMapper mapper)
         {
@@ -29,19 +29,19 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             _mapper = mapper;
         }
 
-        public async Task<WorkflowTemplate> Get(int id)
+        public async Task<EmailTemplate> Get(int id)
         {
             try
             {
                 var response = await _capitalRequestSettings.BaseApiUrl
-                    .AppendPathSegment("WorkflowTemplate")
+                    .AppendPathSegment("EmailTemplate")
                     .AppendPathSegment($"{id}")
                     .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var result = JsonConvert.DeserializeObject<WorkflowTemplate>(responseObject);
+                var result = JsonConvert.DeserializeObject<EmailTemplate>(responseObject);
 
-                return _mapper.Map<WorkflowTemplate>(result);
+                return _mapper.Map<EmailTemplate>(result);
             }
             catch (FlurlHttpException ex)
             {
@@ -50,34 +50,33 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             }
         }
 
-        public async Task<List<WorkflowTemplate>> GetAll(WorkflowTemplateSearchFilter filter)
+        public async Task<List<EmailTemplate>> GetAll(EmailTemplateSearchFilter filter)
         {
             try
             {
-                var WorkflowTemplate = new List<WorkflowTemplate>();
+                var EmailTemplate = new List<EmailTemplate>();
 
                 var response = await _capitalRequestSettings.BaseApiUrl
-                    .AppendPathSegment("WorkflowTemplate")
+                    .AppendPathSegment("EmailTemplate")
                     .SetQueryParams(new
                     {
-                        filter.StepName,
-                        filter.StepDescription,
-                        filter.StepNumber
+                        filter.Name,
+                        filter.OptionType
                     })
                     .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var results = JsonConvert.DeserializeObject<List<WorkflowTemplate>>(responseObject);
+                var results = JsonConvert.DeserializeObject<List<EmailTemplate>>(responseObject);
 
                 if (results != null)
                 {
                     foreach (var result in results)
                     {
-                        WorkflowTemplate.Add(result);
+                        EmailTemplate.Add(result);
                     }
                 }
 
-                return WorkflowTemplate;
+                return EmailTemplate;
             }
             catch (FlurlHttpException ex)
             {
@@ -85,6 +84,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                 throw new Exception($"Failed attempting to send get all request to CapitalRequest. {exceptionResponse}");
             }
         }
+
         
     }
 }

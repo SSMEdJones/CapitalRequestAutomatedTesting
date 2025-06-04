@@ -2,6 +2,14 @@
 {
     public static class Constants
     {
+        //Email Templates
+        public const string EMAIL_REQUEST_MORE_INFORMATION = "Request More Information Email";
+        public const string EMAIL_PROVIDE_MORE_INFORMATION = "Return of Requested Information";
+        public const string EMAIL_PURCHASING_FINANCE_AUTHOR = "Purchasing, Finance, and Author Email";
+
+        //Email Types
+        public const string EMAIL_TYPE_NOTIFY = "Notify";
+
         //Response Messages
         public const string RESPONSE_ACTION_TAKEN = "Thank you for trying to take action. Someone has already taken action on this request.";
 
@@ -26,5 +34,22 @@
         public const string RESPONDER_REPLY = "Reply";
         public const string RESPONDER_VERIFY = "Verify";
 
+        //Review Types 
+        public const string REVIEW_TYPE_REVIEW = "Review";
+
+        //Reviewer Groups
+        public const string REVIEWER_GROUP_AUTHOR = "Author";
+        public const string REVIEWER_GROUP_CORPORATE = "Corporate";
+        public const string REVIEWER_GROUP_VPOps = "VP Ops";
+
+        //WorkFlow
+        public const int STEP_ONE = 1;
+        public const int STEP_SIX = 6;
+        public const string STAKE_HOLDER_NOTIFICATION_TYPE = "Email";
+        public const string COMPLETE_MESSAGE = "Verified";
+        public const string CANCELLED_MESSAGE = "Cancelled";
+        public const string EPMO_GROUP = "EPMO";
+        public const string ADMIN_GROUP = "Admin";
+        public const string PURCHASING_GROUP = "Purchasing";
     }
 }

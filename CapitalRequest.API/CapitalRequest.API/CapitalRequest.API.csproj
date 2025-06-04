@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Folder Include="DataAccess\AutoMapper\MappingProfile\" />
+    <Folder Include="Enums\" />
   </ItemGroup>
 
   <ItemGroup>

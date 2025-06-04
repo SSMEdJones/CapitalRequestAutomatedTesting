@@ -32,8 +32,8 @@ public class PredictiveRequestedInfoServiceTests : IntegrationTestBase
 
         proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
         proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
-        
-        var predicted = _service.CreateRequestedInfo(proposal);
+
+        var predicted = _service.CreateRequestedInfo(proposal, 0);
 
         var filter = new RequestedInfoSearchFilter
         {
@@ -50,6 +50,7 @@ public class PredictiveRequestedInfoServiceTests : IntegrationTestBase
             .FirstOrDefault();
 
         Assert.NotNull(actual);
+        Assert.Equal(predicted.Id, actual.Id);
         Assert.Equal(predicted.ProposalId, actual.ProposalId);
         Assert.Equal(predicted.RequestingReviewerGroupId, actual.RequestingReviewerGroupId);
         Assert.Equal(predicted.RequestingReviewerId, actual.RequestingReviewerId);
