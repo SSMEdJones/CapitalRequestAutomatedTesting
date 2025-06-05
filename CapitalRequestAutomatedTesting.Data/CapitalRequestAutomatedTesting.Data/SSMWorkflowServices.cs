@@ -35,6 +35,10 @@ namespace CapitalRequestAutomatedTesting.Data
 
         Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAllWorkflowInstanceActionHistory(WorkFlowInstanceActionHistorySearchFilter filter);
 
+        Task<SSMWorkflow.API.Models.EmailNotification> GeEmailNotification(int id);
+
+        Task<List<SSMWorkflow.API.Models.EmailNotification>> GetAllEmailNotifications(EmailNotificationSearchFilter filter);
+
     }
     public class SSMWorkflowServices : ISSMWorkflowServices
     {
@@ -46,6 +50,7 @@ namespace CapitalRequestAutomatedTesting.Data
         private readonly ISSMWorkFlowInstance _ssmMWorkFlowInstance;
         private readonly ISSMWorkFlowInstanceActionHistory _ssmMWorkFlowInstanceActionHistory;
         private readonly ISSMNotification _ssmMNotification;
+        private readonly IEmailNotifications _emailNotification;
         private readonly IDashboards _dashboards;
         private readonly SSMWorkFlowSettings _settings;
 
@@ -59,8 +64,9 @@ namespace CapitalRequestAutomatedTesting.Data
             ISSMWorkFlowInstance ssmMWorkFlowInstance,
             ISSMWorkFlowInstanceActionHistory ssmMWorkFlowInstanceActionHistory,
             ISSMNotification ssmMNotification,
+            IEmailNotifications emailNotification,
             IDashboards dashboards,
-            IOptions<SSMWorkFlowSettings> settings)
+            IOptionsMonitor<SSMWorkFlowSettings> settings)
         {
             _ssmMWorkFlow = ssmMWorkFlow;
             _ssmMWorkFlowStakeholder = ssmMWorkFlowStakeholder;
@@ -70,10 +76,12 @@ namespace CapitalRequestAutomatedTesting.Data
             _ssmMWorkFlowInstance = ssmMWorkFlowInstance;
             _ssmMWorkFlowInstanceActionHistory = ssmMWorkFlowInstanceActionHistory;
             _ssmMNotification = ssmMNotification;
+            _emailNotification = emailNotification;
             _dashboards = dashboards;
-            _settings = settings.Value;
+            _settings = settings.CurrentValue;
 
             Debug.WriteLine($"✅ Loaded BaseApiUrl from config: {_settings.BaseApiUrl}");
+            Debug.WriteLine($"✅ Loaded ProjectReviewLink from config: {_settings.ProjectReviewLink}");
         }
 
         public Task<List<WorkFlowStepViewModel>> GetAllWorkFlowSteps(Guid workflowID)
@@ -139,6 +147,16 @@ namespace CapitalRequestAutomatedTesting.Data
         public Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAllWorkflowInstanceActionHistory(WorkFlowInstanceActionHistorySearchFilter filter)
         {
             return _ssmMWorkFlowInstanceActionHistory.GetAll(filter);
+        }
+
+        public Task<SSMWorkflow.API.Models.EmailNotification> GeEmailNotification(int id)
+        {
+            return _emailNotification.Get(id);
+        }
+
+        public Task<List<SSMWorkflow.API.Models.EmailNotification>> GetAllEmailNotifications(EmailNotificationSearchFilter filter)
+        {
+            return _emailNotification.GetAll(filter);
         }
 
     }

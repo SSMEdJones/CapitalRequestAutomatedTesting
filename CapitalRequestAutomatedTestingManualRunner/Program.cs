@@ -85,7 +85,7 @@ class Program
         services.AddAutoMapper(typeof(WorkflowProfile));
 
         // Register your service
-        services.AddScoped<PredictiveRequestedInfoService>();
+        //services.AddScoped<PredictiveRequestedInfoService>();
 
 
         var testSettings = new SSMWorkFlowSettings();
@@ -93,30 +93,30 @@ class Program
         Debug.WriteLine($"🔍 Direct bind test: {testSettings.BaseApiUrl}");
 
 
-        var provider = services.BuildServiceProvider();
+        //var provider = services.BuildServiceProvider();
 
-        var service = provider.GetRequiredService<PredictiveRequestedInfoService>();
-        var workflowSettings = provider.GetRequiredService<IOptions<SSMWorkFlowSettings>>().Value;
-        var captitalRequestSettings = provider.GetRequiredService<IOptions<CapitalRequestSettings>>().Value;
+        //var service = provider.GetRequiredService<PredictiveRequestedInfoService>();
+        //var workflowSettings = provider.GetRequiredService<IOptions<SSMWorkFlowSettings>>().Value;
+        //var captitalRequestSettings = provider.GetRequiredService<IOptions<CapitalRequestSettings>>().Value;
 
-        Debug.WriteLine($"✅ Loaded WorkflowApiUrl: {workflowSettings.BaseApiUrl}");
-        Debug.WriteLine($"✅ Loaded CapitalRequestApiUrl: {captitalRequestSettings.BaseApiUrl}");
+        //Debug.WriteLine($"✅ Loaded WorkflowApiUrl: {workflowSettings.BaseApiUrl}");
+        //Debug.WriteLine($"✅ Loaded CapitalRequestApiUrl: {captitalRequestSettings.BaseApiUrl}");
 
 
-        var capitalRequestService = provider.GetRequiredService<ICapitalRequestServices>();
+        //var capitalRequestService = provider.GetRequiredService<ICapitalRequestServices>();
 
-        int proposalId = 2884;
-        var proposal = capitalRequestService.GetProposal(proposalId).Result;
-        proposal.ReviewerGroupId = 2;
-        proposal.RequestedInfo.ReviewerGroupId = 3;
-        if (proposal != null)
-        {
-            Console.WriteLine($"✅ Proposal Retrieved: ID = {proposal.Id}, Author = {proposal.Author}, WorkflowId = {proposal.WorkflowId}");
-        }
-        else
-        {
-            Console.WriteLine("⚠️ Proposal not found.");
-        }
+        //int proposalId = 2884;
+        //var proposal = capitalRequestService.GetProposal(proposalId).Result;
+        //proposal.ReviewerGroupId = 2;
+        //proposal.RequestedInfo.ReviewerGroupId = 3;
+        //if (proposal != null)
+        //{
+        //    Console.WriteLine($"✅ Proposal Retrieved: ID = {proposal.Id}, Author = {proposal.Author}, WorkflowId = {proposal.WorkflowId}");
+        //}
+        //else
+        //{
+        //    Console.WriteLine("⚠️ Proposal not found.");
+        //}
 
         //CreatePredictiveRequestedInfo(service, proposal);
         //int proposalId = 2884;
@@ -138,7 +138,7 @@ class Program
 
     //public dto.RequestedInfo CreatePredictiveRequestedInfo(PredictiveRequestedInfoService service, vm.Proposal proposal)
     //{
-        
+
 
     //    var result = service.CreateRequestedInfo(proposal);
     //    Debug.WriteLine($"RequestedInfo: {System.Text.Json.JsonSerializer.Serialize(result)}");

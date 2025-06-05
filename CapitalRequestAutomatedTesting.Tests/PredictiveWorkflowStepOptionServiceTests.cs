@@ -4,7 +4,6 @@ using CapitalRequestAutomatedTesting.Tests;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
-using SSMWorkflow.API.DataAccess.Models;
 using System.Diagnostics;
 
 public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase

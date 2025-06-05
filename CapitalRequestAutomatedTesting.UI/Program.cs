@@ -3,6 +3,7 @@ using CapitalRequestAutomatedTesting.UI;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,9 +25,7 @@ var configuration = new ConfigurationBuilder()
  .AddJsonFile("appsettings.json")
  .Build();
 
-var services = new ServiceCollection();
-services.AddApplicationServices(configuration);
-var provider = services.BuildServiceProvider();
+builder.Services.AddApplicationServices(configuration);
 
 var env = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEB_SQL_ENV", EnvironmentVariableTarget.Machine))
     ? "DEV"
@@ -36,20 +35,30 @@ builder.Configuration.GetConnectionString($"CapitalRequest_{env}");
 
 ConfigurationSettings _configuration = new ConfigurationSettings();
 
-var baseUrl = string.Empty;
-//baseUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "BaseApiUrl").LookupValue.ToString();
+//builder.Services.PostConfigureAll<SSMWorkFlowSettings>(options =>
+//{
+//    options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI").LookupValue.ToString();
+//    options.ProjectReviewLink = _configuration.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink").LookupValue.ToString();
 
-builder.Services.PostConfigureAll<SSMWorkFlowSettings>(options =>
-{
-    options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "BaseApiUrl").LookupValue.ToString();
-    //baseUrl = options.BaseApiUrl;
-});
+//});
 
-builder.Services.PostConfigureAll<CapitalRequestSettings>(options =>
-{
-    options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestApiUrl").LookupValue.ToString();
-    //baseUrl = options.BaseApiUrl;
-});
+//var baseUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "BaseApiUrl")?.LookupValue?.ToString();
+//var projectReviewLink = _configuration.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink")?.LookupValue?.ToString();
+//Debug.WriteLine($"BaseApiUrl: {baseUrl}");
+//Debug.WriteLine($"ProjectReviewLink: {projectReviewLink}");
+
+//builder.Services.PostConfigureAll<SSMWorkFlowSettings>(options =>
+//{
+//    options.BaseApiUrl = baseUrl;
+//    options.ProjectReviewLink = projectReviewLink;
+
+//});
+
+//builder.Services.PostConfigureAll<CapitalRequestSettings>(options =>
+//{
+//    options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestApiUrl").LookupValue.ToString();
+
+//});
 
 
 //Debug.WriteLine($"BaseApiUrl configured as: {baseUrl}");

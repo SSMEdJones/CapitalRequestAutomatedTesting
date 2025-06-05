@@ -1,15 +1,8 @@
-using AutoMapper;
-using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.Tests;
-using CapitalRequestAutomatedTesting.Tests.Helpers;
 using CapitalRequestAutomatedTesting.UI.Services;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
-using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using System.Diagnostics;
 
 public class PredictiveRequestedInfoServiceTests : IntegrationTestBase

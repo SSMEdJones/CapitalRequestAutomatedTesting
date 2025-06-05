@@ -103,8 +103,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         private List<vm.Reviewer> GetReviewers(vm.Proposal proposal)
         {
-            return _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter { SegmentId = proposal.SegmentId })
-                                .Result;
+            return _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter { SegmentId = proposal.SegmentId }).Result;
         }
 
         public List<WorkflowStepOption> CloseOptions(vm.Proposal proposal, Guid optionId, string optionType, int? requestedInfoId, string actionType)

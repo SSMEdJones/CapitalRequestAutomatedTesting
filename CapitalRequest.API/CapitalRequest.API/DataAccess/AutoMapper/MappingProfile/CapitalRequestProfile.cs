@@ -43,6 +43,7 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
 
             //Predictive models
             CreateMap<vm.RequestedInfo, dto.RequestedInfo>();
+            CreateMap<dto.RequestedInfo, vm.RequestedInfo>();
             //using dto = CapitalRequest.API.DataAccess.Models;
             //using vm = CapitalRequest.API.Models;
 

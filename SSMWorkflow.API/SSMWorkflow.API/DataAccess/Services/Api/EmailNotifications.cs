@@ -3,9 +3,11 @@ using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
+using System.Diagnostics;
 using EmailNotification = SSMWorkflow.API.Models.EmailNotification;
 
 namespace SSMWorkflow.API.DataAccess.Services.Api
@@ -22,10 +24,16 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
         private readonly SSMWorkFlowSettings _ssmWorkFlowSettings;
         private readonly IMapper _mapper;
 
-        public EmailNotifications(IOptionsMonitor<SSMWorkFlowSettings> ssmWorkFlowSettings, IMapper mapper)
+        public EmailNotifications(
+            IOptionsMonitor<SSMWorkFlowSettings> ssmWorkFlowSettings,
+            IMapper mapper
+            )
         {
             _ssmWorkFlowSettings = ssmWorkFlowSettings.CurrentValue;
             _mapper = mapper;
+
+            Debug.WriteLine($"✅ Loaded BaseApiUrl in EmailNotifications from config: {_ssmWorkFlowSettings.BaseApiUrl}");
+            Debug.WriteLine($"✅ Loaded ProjectReviewLink in EmailNotifications from config: {_ssmWorkFlowSettings.ProjectReviewLink}");
 
         }
 
@@ -35,9 +43,9 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
             {
                 var emailNotification = new EmailNotification();
                 var response = await _ssmWorkFlowSettings.BaseApiUrl
-                    .AppendPathSegment("EmailNotification")
-                    .SetQueryParam($"id={id}")
+                    .AppendPathSegment($"EmailNotification/{id}")
                     .GetJsonAsync<Response<dynamic>>();
+
                 var responseObject = JsonConvert.SerializeObject(response.Result);
                 var results = JsonConvert.DeserializeObject<EmailNotification>(responseObject);
 
@@ -63,19 +71,35 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
                 var emailNotifications = new List<EmailNotification>();
 
                 var response = await _ssmWorkFlowSettings.BaseApiUrl
-                        .AppendPathSegment("EmailNotification")
-                        .SetQueryParam($"WorkflowStepId={filter.WorkflowStepId}")
-                        .SetQueryParam($"EmailQuery={filter.EmailQuery}")
-                        .GetJsonAsync<Response<dynamic>>();
+                    .AppendPathSegment("EmailNotification")
+                    .SetQueryParam($"WorkflowStepId={filter.WorkflowStepId}")
+                    .SetQueryParam($"EmailQuery={filter.EmailQuery}")
+                    .GetJsonAsync<Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
-                var results = JsonConvert.DeserializeObject<List<EmailNotifications>>(responseObject);
+                var rawItems = JsonConvert.DeserializeObject<List<JToken>>(responseObject);
 
-                if (results != null)
+                if (rawItems != null)
                 {
-                    foreach (var result in results)
+                    int index = 0;
+                    foreach (var item in rawItems)
                     {
-                        emailNotifications.Add(result);
+                        try
+                        {
+                            var notification = item.ToObject<EmailNotification>();
+                            if (notification != null)
+                            {
+                                emailNotifications.Add(notification);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log or handle the specific item that failed
+                            Console.WriteLine($"Deserialization failed at index {index}: {ex.Message}");
+                            // Optionally log the raw item for inspection
+                            Console.WriteLine($"Raw item: {item}");
+                        }
+                        index++;
                     }
                 }
 
@@ -89,5 +113,9 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
         }
 
         
+
+
+
+
     }
 }

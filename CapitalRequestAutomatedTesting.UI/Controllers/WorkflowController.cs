@@ -6,9 +6,9 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 {
     public class WorkflowController : Controller
     {
-        private readonly WorkflowControllerService _workflowControllerService;
+        private readonly IWorkflowControllerService _workflowControllerService;
 
-        public WorkflowController(WorkflowControllerService workflowControllerService)
+        public WorkflowController(IWorkflowControllerService workflowControllerService)
         {
             _workflowControllerService = workflowControllerService;
         }
@@ -34,7 +34,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         {
             var actions = _workflowControllerService.GetActionsFromWorkflowDashboard(id);
 
-            _workflowControllerService.RegisterWorkflowActions(actions);
+            //_workflowControllerService.RegisterWorkflowActions(actions);
 
             var actionModels = actions.Select(a => new WorkflowAction
             {
@@ -56,7 +56,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                     .ToList();
 
                 actions.ForEach(a => a.SelectedAction = selectedAction);
-                _workflowControllerService.RegisterWorkflowActions(actions);
 
                 WorkflowTestResult result;
 
@@ -78,21 +77,10 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                         })
                         .FirstOrDefault();
 
-                    //var context = new WorkflowTestContext
-                    //{
-                    //    ReqId = action,
-                    //    Identifier = ,
-                    //    // You can hardcode or later pass these values
-                    //    ButtonText = "Verify",
-                    //    WaitForElementId = "btnRequestMoreInfo"
-                    //};
 
                     result = _workflowControllerService.RunLoadVerifyButtonTest(context);
                 }
-                else if (_workflowControllerService._scenarioMap.TryGetValue(scenario, out var testFunc))
-                {
-                    result = testFunc.Invoke(id);
-                }
+
                 else
                 {
                     return Json(new { success = false, message = $"Unknown scenario: {scenario}" });
@@ -106,34 +94,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             }
         }
 
-        //[HttpGet]
-
-        //public async Task<IActionResult> RunScenario(string scenario, string id, string selectedAction)
-        //{
-        //    try
-        //    {
-        //        var actions = _workflowControllerService.GetActionsFromWorkflowDashboard(id)
-        //            .Where(x => x.ScenarioId == scenario)
-        //            .ToList();
-
-        //        actions.ForEach(a => a.SelectedAction = selectedAction);
-        //        _workflowControllerService.RegisterWorkflowActions(actions);
-        //        //_workflowControllerService._workflowActions =  _workflowControllerService.GetWorkflowActionsFromApiAsync(Convert.ToInt32(id)).Result;
-
-        //        if (!_workflowControllerService._scenarioMap.TryGetValue(scenario, out var testFunc))
-        //        {
-        //            return Json(new { success = false, message = $"Unknown scenario: {scenario}" });
-        //        }
-
-        //        var result = testFunc.Invoke(id);
-
-        //        return Json(new { success = result.Passed, message = result.Message });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = $"Error: {ex.Message}" });
-        //    }
-        //}
+        
 
     }
 }

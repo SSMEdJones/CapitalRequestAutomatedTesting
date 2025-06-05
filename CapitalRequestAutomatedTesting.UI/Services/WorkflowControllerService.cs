@@ -1,43 +1,68 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
-using Newtonsoft.Json;
 using OpenQA.Selenium;
-using OpenQA.Selenium.BiDi.Modules.Browser;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
+using SSMAuthenticationCore;
 using SSMAuthenticationCore.Models;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
 using System.Diagnostics;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 using WorkflowAction = CapitalRequestAutomatedTesting.UI.Models.WorkflowAction;
-//using WorkflowAction = CapitalRequest.API.DataAccess.Models.WorkflowAction;
-using SSMAuthenticationCore;
-using SSMAuthenticationCore.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
-
-    public class WorkflowControllerService
+    public interface IWorkflowControllerService
     {
+
+        Task<DashboardInitializationResult> InitializeDashboardItemsAsync();
+        Task<List<CapitalRequest.API.Models.WorkflowAction>> GetWorkflowActionsFromApiAsync(int? id);
+        Request GetRequestById(int id);
+        //void RegisterWorkflowActions(List<WorkflowAction> actions);
+        //WorkflowTestResult RunDynamicScenario(string scenarioId, string requestId);
+        WorkflowTestResult RunLoadButtonTest(WorkflowTestContext context);
+        WorkflowTestResult RunLoadVerifyButtonTest(WorkflowTestContext context);
+        WorkflowTestResult RunLoadApproveWBSButtonTest(string reqId, string groupName);
+        WorkflowTestResult RunLoadReplyButtonTest(string reqId, string identifier);
+        WorkflowTestResult RunLoadApproveButtonTest(string reqId, string identifier);
+        WorkflowTestResult RunExpectMessageTest(string reqId, string identifier, string buttonText, string expectedMessage);
+        WorkflowTestResult RunLoadWorkflowDashboardTest(string id);
+        WorkflowTestResult RunLoadRequestTest(string requestId);
+        Task<List<SSMWorkflow.API.Models.Dashboard>> GetDashboardItemsFromApiAsync();
+        List<WorkflowAction> GetActionsFromWorkflowDashboard(string id);
+        string GenerateScenarioId(string identifier, string action);
+        ActionDecision DecideTestAction(Request request, string dashboardText);
+        AppKeyValues GetAppKeyValueByKey(string AppName, string LookupKey);
+
+    }
+
+    public class WorkflowControllerService : IWorkflowControllerService
+    {
+
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IUserContextService _userContextService;
         private readonly IMapper _mapper;
 
+        //private readonly ISSMWorkflowServices _ssmWorkflowServices;
+        //private readonly ICapitalRequestServices _capitalRequestServices;
+        //private readonly IUserContextService _userContextService;
+        //private Dictionary<string, Func<string, WorkflowTestResult>> _scenarioMap;
+        //private List<CapitalRequest.API.Models.WorkflowAction> _workflowActions;
+        //private List<SSMWorkflow.API.Models.Dashboard> _dashboardItems;
+        //private readonly IMapper _mapper;
+
         public WorkflowControllerService(
-            ISSMWorkflowServices ssmWorkflowServices,
-            ICapitalRequestServices capitalRequestServices,
-            IUserContextService userContextService,
-            IMapper mapper)
+         ISSMWorkflowServices ssmWorkflowServices,
+         ICapitalRequestServices capitalRequestServices,
+         IUserContextService userContextService,
+         IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
@@ -45,16 +70,25 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _mapper = mapper;
         }
 
-        public Dictionary<string, Func<string, WorkflowTestResult>> _scenarioMap;
-        public List<SSMWorkflow.API.Models.Dashboard> _dashboardItems;
-        public List<CapitalRequest.API.Models.WorkflowAction> _workflowActions;
+
+        //public Dictionary<string, Func<string, WorkflowTestResult>> _scenarioMap;
+        //public List<SSMWorkflow.API.Models.Dashboard> _dashboardItems;
+        //public List<CapitalRequest.API.Models.WorkflowAction> _workflowActions;
 
         // Async Initialization Method
-        public async Task InitializeDashboardItemsAsync()
+
+        public async Task<DashboardInitializationResult> InitializeDashboardItemsAsync()
         {
-            _workflowActions = await GetWorkflowActionsFromApiAsync(null);
-            _dashboardItems = await GetDashboardItemsFromApiAsync();
+            var workflowActions = await GetWorkflowActionsFromApiAsync(null);
+            var dashboardItems = await GetDashboardItemsFromApiAsync();
+
+            return new DashboardInitializationResult
+            {
+                WorkflowActions = workflowActions,
+                DashboardItems = dashboardItems
+            };
         }
+
 
         public async Task<List<CapitalRequest.API.Models.WorkflowAction>> GetWorkflowActionsFromApiAsync(int? id)
         {
@@ -72,7 +106,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public Request GetRequestById(int id)
         {
-            var item = _dashboardItems.FirstOrDefault(d => d.ReqId == id);
+            var initResult = InitializeDashboardItemsAsync().Result;
+            var actions = initResult.WorkflowActions;
+            var dashboardItems = initResult.DashboardItems;
+
+            var item = dashboardItems.FirstOrDefault(d => d.ReqId == id);
             if (item == null) return null;
 
             var request = new Request
@@ -120,43 +158,43 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return request;
         }
 
-        public void RegisterWorkflowActions(List<WorkflowAction> actions)
-        {
-            _scenarioMap = new Dictionary<string, Func<string, WorkflowTestResult>>(StringComparer.OrdinalIgnoreCase);
+        //public void RegisterWorkflowActions(List<WorkflowAction> actions)
+        //{
+        //    _scenarioMap = new Dictionary<string, Func<string, WorkflowTestResult>>(StringComparer.OrdinalIgnoreCase);
 
 
-            foreach (var action in actions)
-            {
-                var methodInfo = this.GetType().GetMethod(action.MethodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (methodInfo != null)
-                {
-                    var scenarioId = action.ScenarioId;
-                    var targetId = action.TargetId;
-                    var identifier = action.Identifier;
-                    var reqid = action.ReqId;
+        //    foreach (var action in actions)
+        //    {
+        //        var methodInfo = this.GetType().GetMethod(action.MethodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        //        if (methodInfo != null)
+        //        {
+        //            var scenarioId = action.ScenarioId;
+        //            var targetId = action.TargetId;
+        //            var identifier = action.Identifier;
+        //            var reqid = action.ReqId;
 
-                    _scenarioMap[scenarioId] = (id) =>
-                    {
-                        return (WorkflowTestResult)methodInfo.Invoke(this, new object[] { reqid, identifier });
-                    };
-                }
-            }
+        //            _scenarioMap[scenarioId] = (id) =>
+        //            {
+        //                return (WorkflowTestResult)methodInfo.Invoke(this, new object[] { reqid, identifier });
+        //            };
+        //        }
+        //    }
 
-        }
+        //}
 
-        public WorkflowTestResult RunDynamicScenario(string scenarioId, string requestId)
-        {
-            if (_scenarioMap.TryGetValue(scenarioId, out var testMethod))
-            {
-                return testMethod(requestId);
-            }
+        //public WorkflowTestResult RunDynamicScenario(string scenarioId, string requestId)
+        //{
+        //    if (_scenarioMap.TryGetValue(scenarioId, out var testMethod))
+        //    {
+        //        return testMethod(requestId);
+        //    }
 
-            return new WorkflowTestResult
-            {
-                Passed = false,
-                Message = $"Unknown scenario: {scenarioId}"
-            };
-        }
+        //    return new WorkflowTestResult
+        //    {
+        //        Passed = false,
+        //        Message = $"Unknown scenario: {scenarioId}"
+        //    };
+        //}
 
         private ChromeOptions GetChromeOptions()
         {
@@ -261,7 +299,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public WorkflowTestResult RunLoadVerifyButtonTest(WorkflowTestContext context)
         {
-            InitializeDashboardItemsAsync().Wait();
+
 
             if (!int.TryParse(context.ReqId, out int requestId))
                 throw new ArgumentException("Invalid request ID");
@@ -421,8 +459,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             });
         }
 
-
-
         public WorkflowTestResult RunLoadWorkflowDashboardTest(string id)
         {
             return SeleniumHelper.RunWithSafeChromeDriver(driver =>
@@ -505,7 +541,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             };
 
 
-            var workflowActions = _workflowActions
+            var workflowActions = (await GetWorkflowActionsFromApiAsync(null))
              .GroupBy(x => x.ProposalId)
              .Select(g => g.First())
              .ToList();
@@ -633,7 +669,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 //        ? $"Verify' button clicked Expected message. '{actualMessage}'."
                 //        : $"Expected '{expectedMessage}', but found '{actualMessage}'"
                 //};
-                
+
 
                 return new WorkflowTestResult
                 {

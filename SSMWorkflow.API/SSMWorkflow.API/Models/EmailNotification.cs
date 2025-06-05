@@ -4,7 +4,7 @@ namespace SSMWorkflow.API.Models
 {
     public class EmailNotification
     {
-        public int Id { get; set; }
+        public int Id {     get; set; }
         public Guid WorkflowStepId { get; set; }
         public string WorkflowName { get; set; }
         public string WorkflowDescription { get; set; }

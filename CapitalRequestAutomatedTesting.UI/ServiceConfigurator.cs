@@ -8,6 +8,7 @@ using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Services;
 using SSMWorkflow.API.DataAccess.Services.Api;
+using System.Diagnostics;
 using System.Security.Claims;
 
 namespace CapitalRequestAutomatedTesting.UI
@@ -19,6 +20,7 @@ namespace CapitalRequestAutomatedTesting.UI
          this IServiceCollection services,
          IConfiguration configuration)
         {
+
             services.Configure<SSMWorkFlowSettings>(configuration.GetSection("ssmWorkFlowAPISettings"));
             services.Configure<CapitalRequestSettings>(configuration.GetSection("capitalRequestAPISettings"));
 
@@ -26,39 +28,35 @@ namespace CapitalRequestAutomatedTesting.UI
 
             services.PostConfigureAll<SSMWorkFlowSettings>(options =>
             {
-                options.BaseApiUrl = customConfig.GetAppKeyValueByKey("CapitalRequest", "BaseApiUrl")?.LookupValue?.ToString();
+                options.BaseApiUrl = customConfig.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI")?.LookupValue?.ToString();
+                options.ProjectReviewLink = customConfig.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink")?.LookupValue?.ToString();
             });
+
+            //services.PostConfigureAll<SSMWorkFlowSettings>(options =>
+            //{
+            //    var baseApiUrl = customConfig.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI")?.LookupValue?.ToString();
+            //    var projectReviewLink = customConfig.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink")?.LookupValue?.ToString();
+
+            //    Debug.WriteLine($"🔧 PostConfigureAll setting BaseApiUrl to: {baseApiUrl ?? "NULL"}");
+            //    Debug.WriteLine($"🔧 PostConfigureAll setting ProjectReviewLink to: {projectReviewLink ?? "NULL"}");
+
+            //    options.BaseApiUrl = baseApiUrl;
+            //    options.ProjectReviewLink = projectReviewLink;
+            //});
 
             services.PostConfigureAll<CapitalRequestSettings>(options =>
             {
                 options.BaseApiUrl = customConfig.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestApiUrl")?.LookupValue?.ToString();
             });
 
-            // Register services...
-
-
-            // Register all required services
-            
             services.AddAutoMapper(typeof(WorkflowProfile), typeof(CapitalRequestProfile));
 
-            //services.AddAutoMapper(typeof(WorkflowProfile));
-            //services.AddAutoMapper(typeof(CapitalRequestProfile));
 
-            #region Context Accessor
-            var context = new DefaultHttpContext();
-            context.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                    new Claim(ClaimTypes.Email, "edward.jones@ssmhealth.com"),
-                    new Claim(ClaimTypes.Name, "DS\\ejones08"),
-                    new Claim(ClaimTypes.GivenName, "Edward"),
-                    new Claim(ClaimTypes.Surname, "Jones")
-            }, "TestAuth"));
-
-            services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor { HttpContext = context });
+            #region UI
+            services.AddScoped<IWorkflowControllerService, WorkflowControllerService>();
             #endregion
 
             #region Workflow API
-            services.AddScoped<WorkflowControllerService>();
             services.AddScoped<ISSMWorkflowServices, SSMWorkflowServices>();
             services.AddScoped<IDashboards, Dashboards>();
             services.AddScoped<ISSMNotification, SSMNotification>();
@@ -98,8 +96,13 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveRequestedInfoService, PredictiveRequestedInfoService>();
             services.AddScoped<IPredictiveWorkflowStepResponderService, PredictiveWorkflowStepResponderService>();
             services.AddScoped<IPredictiveWorkflowStepOptionService, PredictiveWorkflowStepOptionService>();
+            services.AddScoped<IPredictiveEmailNotificationService, PredictiveEmailNotificationService>();
 
 
+            #endregion
+
+            #region Actual Services
+            services.AddScoped<IActualEmailNotificataionService, ActualEmailNotificataionService>();
             #endregion
 
             return services;
