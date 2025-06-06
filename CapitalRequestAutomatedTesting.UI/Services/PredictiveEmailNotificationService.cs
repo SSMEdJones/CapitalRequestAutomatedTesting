@@ -4,14 +4,9 @@ using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using Microsoft.Extensions.Options;
-using OpenQA.Selenium.BiDi.Modules.Network;
-using OpenQA.Selenium.BiDi.Modules.Script;
 using Scriban;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Models;
-using SSMWorkflow.API.Models;
-using System.Net.Mail;
-using System.Xml.Linq;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
@@ -19,6 +14,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
     public interface IPredictiveEmailNotificationService
     {
         List<SSMWorkflow.API.DataAccess.Models.EmailNotification> CreateEmailNotifications(vm.Proposal proposal, string emailType);
+        string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullname);
     }
     public class PredictiveEmailNotificationService : IPredictiveEmailNotificationService
     {
@@ -47,7 +43,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var url = _ssmWorkFlowSettings.BaseApiUrl;
             var link = _ssmWorkFlowSettings.ProjectReviewLink;
 
-            var emailNotifications = new List<SSMWorkflow.API.DataAccess.Models.EmailNotification>();
+            var emailNotifications = new List<EmailNotification>();
 
             var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId).Result;
             var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
@@ -76,8 +72,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             reviewers.ForEach(reviewer =>
             {
-               
-                var action = GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_ACTION_REQUEST_MORE_INFORMATION);
+                var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
+                var action = GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_ACTION_REQUEST_MORE_INFORMATION, fullName);
                 var emailMessage = GenerateEmailMessage(emailTemplate, reviewer, requestingGroup, proposal);
 
                 var emallQueryViewModel = new EmailQueryViewModel
@@ -202,10 +198,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return template.Render(model);
         }
 
-        private string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate)
+        public string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName)
         {
-            //emailActionTemplate = "{{ fullName }} from {{ requestingGroupName }} requested more information from {{ requestedGroup }} on {{ requestDate }}.";
-            var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
             var requestingGroupName = requestingGroup.Name;
             var requestedGroup = reviewerGroup.Name;
             var requestDate = DateTime.Now.ToString("MM/dd/yyyy");

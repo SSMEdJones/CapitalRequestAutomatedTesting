@@ -3,6 +3,7 @@ using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Services;
+using ScenarioFramework;
 using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
@@ -96,13 +97,19 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveRequestedInfoService, PredictiveRequestedInfoService>();
             services.AddScoped<IPredictiveWorkflowStepResponderService, PredictiveWorkflowStepResponderService>();
             services.AddScoped<IPredictiveWorkflowStepOptionService, PredictiveWorkflowStepOptionService>();
+            services.AddScoped<IPredictiveWorkflowStepService, PredictiveWorkflowStepService>();
             services.AddScoped<IPredictiveEmailNotificationService, PredictiveEmailNotificationService>();
+            services.AddScoped<IPredictiveProposalControllerService, PredictiveProposalControllerService>();
 
 
             #endregion
 
             #region Actual Services
             services.AddScoped<IActualEmailNotificataionService, ActualEmailNotificataionService>();
+            #endregion
+
+            #region Scenario Framework
+            services.AddScoped<ITestActionService, WorkflowTestActionService>();
             #endregion
 
             return services;
