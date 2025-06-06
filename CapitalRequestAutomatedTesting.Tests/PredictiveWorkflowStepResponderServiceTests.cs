@@ -19,7 +19,7 @@ public class PredictiveWorkflowStepResponderServiceTests : IntegrationTestBase
     }
 
     [Fact]
-    public void CreateWorkflowStepResponder_ShouldReturneWorkflowStepResponder()
+    public async Task CreateWorkflowStepResponder_ShouldReturneWorkflowStepResponder()
     {
 
         int proposalId = 2884;
@@ -28,11 +28,9 @@ public class PredictiveWorkflowStepResponderServiceTests : IntegrationTestBase
         proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
         proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
         
-        var predicted = _service.CreateWorkflowStepResponder(proposal, Constants.RESPONDER_REQUEST);
+        var predicted = await _service.CreateWorkflowStepResponderAsync(proposal, Constants.RESPONDER_REQUEST);
 
-        var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId)
-            .Result;
-           
+        var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
 
         var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
 
@@ -41,8 +39,7 @@ public class PredictiveWorkflowStepResponderServiceTests : IntegrationTestBase
             throw new Exception("No workflow steps found for the given proposal.");
         }
 
-        var workflowStepResponders = _ssmWorkflowServices.GetAllAddWorkFlowStepResponder(workflowStep.WorkflowStepID)
-            .Result;
+        var workflowStepResponders = await _ssmWorkflowServices.GetAllAddWorkFlowStepResponder(workflowStep.WorkflowStepID);
 
         var actual = workflowStepResponders.Where(x => x.ReviewerGroupId == predicted.ReviewerGroupId &&
                     x.WorkflowStepOptionID == predicted.WorkflowStepOptionID &&

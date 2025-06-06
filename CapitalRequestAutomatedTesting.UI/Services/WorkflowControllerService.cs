@@ -23,19 +23,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         Task<DashboardInitializationResult> InitializeDashboardItemsAsync();
         Task<List<CapitalRequest.API.Models.WorkflowAction>> GetWorkflowActionsFromApiAsync(int? id);
-        Request GetRequestById(int id);
-        //void RegisterWorkflowActions(List<WorkflowAction> actions);
-        //WorkflowTestResult RunDynamicScenario(string scenarioId, string requestId);
+        Task<Request> GetRequestByIdAsync(int id);
         WorkflowTestResult RunLoadButtonTest(WorkflowTestContext context);
-        WorkflowTestResult RunLoadVerifyButtonTest(WorkflowTestContext context);
-        WorkflowTestResult RunLoadApproveWBSButtonTest(string reqId, string groupName);
+        Task<WorkflowTestResult> RunLoadVerifyButtonTestAsync(WorkflowTestContext context);
+        Task<WorkflowTestResult> RunLoadApproveWBSButtonTestAsync(string reqId, string groupName);
         WorkflowTestResult RunLoadReplyButtonTest(string reqId, string identifier);
         WorkflowTestResult RunLoadApproveButtonTest(string reqId, string identifier);
         WorkflowTestResult RunExpectMessageTest(string reqId, string identifier, string buttonText, string expectedMessage);
         WorkflowTestResult RunLoadWorkflowDashboardTest(string id);
         WorkflowTestResult RunLoadRequestTest(string requestId);
         Task<List<SSMWorkflow.API.Models.Dashboard>> GetDashboardItemsFromApiAsync();
-        List<WorkflowAction> GetActionsFromWorkflowDashboard(string id);
+        Task<List<WorkflowAction>> GetActionsFromWorkflowDashboardAsync(string id);
         string GenerateScenarioId(string identifier, string action);
         ActionDecision DecideTestAction(Request request, string dashboardText);
         AppKeyValues GetAppKeyValueByKey(string AppName, string LookupKey);
@@ -50,13 +48,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private readonly IUserContextService _userContextService;
         private readonly IMapper _mapper;
 
-        //private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        //private readonly ICapitalRequestServices _capitalRequestServices;
-        //private readonly IUserContextService _userContextService;
-        //private Dictionary<string, Func<string, WorkflowTestResult>> _scenarioMap;
-        //private List<CapitalRequest.API.Models.WorkflowAction> _workflowActions;
-        //private List<SSMWorkflow.API.Models.Dashboard> _dashboardItems;
-        //private readonly IMapper _mapper;
 
         public WorkflowControllerService(
          ISSMWorkflowServices ssmWorkflowServices,
@@ -70,12 +61,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _mapper = mapper;
         }
 
-
-        //public Dictionary<string, Func<string, WorkflowTestResult>> _scenarioMap;
-        //public List<SSMWorkflow.API.Models.Dashboard> _dashboardItems;
-        //public List<CapitalRequest.API.Models.WorkflowAction> _workflowActions;
-
-        // Async Initialization Method
 
         public async Task<DashboardInitializationResult> InitializeDashboardItemsAsync()
         {
@@ -104,9 +89,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return workflowActions;
         }
 
-        public Request GetRequestById(int id)
+        public async Task<Request> GetRequestByIdAsync(int id)
         {
-            var initResult = InitializeDashboardItemsAsync().Result;
+            var initResult = await InitializeDashboardItemsAsync();
             var actions = initResult.WorkflowActions;
             var dashboardItems = initResult.DashboardItems;
 
@@ -126,8 +111,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 VPFinanceReviewStatus = item.VPFinanceReviewStatus
             };
 
-            var proposal = _capitalRequestServices.GetProposal(item.ReqId).Result;
-            var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId).Result;
+            var proposal = await _capitalRequestServices.GetProposal(item.ReqId);
+            var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId);
             var workflowStep = new WorkFlowStepViewModel();
             int? stepNumber = null;
 
@@ -136,7 +121,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
             }
 
-            var workflowTemplates = _capitalRequestServices.GetAllWorkflowTemplates(new CapitalRequest.API.DataAccess.Models.WorkflowTemplateSearchFilter()).Result;
+            var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new CapitalRequest.API.DataAccess.Models.WorkflowTemplateSearchFilter());
             if (workflowStep != null)
             {
                 stepNumber = workflowTemplates
@@ -146,7 +131,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             }
             //TODO Constant
-            var allGroups = _capitalRequestServices.GetAllReviewerGroups(new ReviewerGroupSearchFilter()).Result
+            var allGroups = ( await _capitalRequestServices.GetAllReviewerGroups(new ReviewerGroupSearchFilter()))
                 .Where(x => x.StepNumber.HasValue && x.StepNumber.Value == stepNumber && x.ReviewerType == "Review")
                 .Select(x => x.Name)
                 .ToArray();
@@ -156,45 +141,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 .ToList();
 
             return request;
-        }
-
-        //public void RegisterWorkflowActions(List<WorkflowAction> actions)
-        //{
-        //    _scenarioMap = new Dictionary<string, Func<string, WorkflowTestResult>>(StringComparer.OrdinalIgnoreCase);
-
-
-        //    foreach (var action in actions)
-        //    {
-        //        var methodInfo = this.GetType().GetMethod(action.MethodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-        //        if (methodInfo != null)
-        //        {
-        //            var scenarioId = action.ScenarioId;
-        //            var targetId = action.TargetId;
-        //            var identifier = action.Identifier;
-        //            var reqid = action.ReqId;
-
-        //            _scenarioMap[scenarioId] = (id) =>
-        //            {
-        //                return (WorkflowTestResult)methodInfo.Invoke(this, new object[] { reqid, identifier });
-        //            };
-        //        }
-        //    }
-
-        //}
-
-        //public WorkflowTestResult RunDynamicScenario(string scenarioId, string requestId)
-        //{
-        //    if (_scenarioMap.TryGetValue(scenarioId, out var testMethod))
-        //    {
-        //        return testMethod(requestId);
-        //    }
-
-        //    return new WorkflowTestResult
-        //    {
-        //        Passed = false,
-        //        Message = $"Unknown scenario: {scenarioId}"
-        //    };
-        //}
+        }        
 
         private ChromeOptions GetChromeOptions()
         {
@@ -256,55 +203,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             });
         }
 
-        //public WorkflowTestResult RunLoadButtonTest(string reqId, string identifier, string buttonText, string waitForElementId = null)
-        //{
-        //    return SeleniumHelper.RunWithSafeChromeDriver(driver =>
-        //    {
-
-        //        var baseUrl = GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
-
-        //        var url = $"{baseUrl}/Proposal/WorkflowActions/{reqId}";
-        //        driver.Navigate().GoToUrl(url);
-
-        //        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-
-        //        try
-        //        {
-        //            // Click the button in the correct row
-        //            var button = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementToBeClickable(
-        //                By.XPath($"//tr[td[1][text()='{identifier}']]//button[text()='{buttonText}']")));
-        //            button.Click();
-
-        //            if (!string.IsNullOrEmpty(waitForElementId))
-        //            {
-        //                wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id(waitForElementId)));
-        //            }
-
-        //            return new WorkflowTestResult
-        //            {
-        //                Passed = true,
-        //                Message = $"'{buttonText}' button clicked successfully for '{identifier}'."
-        //            };
-        //        }
-        //        catch (WebDriverTimeoutException)
-        //        {
-        //            return new WorkflowTestResult
-        //            {
-        //                Passed = false,
-        //                Message = $"Failed to click '{buttonText}' or find expected element for '{identifier}'."
-        //            };
-        //        }
-        //    });
-        //}
-
-        public WorkflowTestResult RunLoadVerifyButtonTest(WorkflowTestContext context)
+        
+        public async Task<WorkflowTestResult> RunLoadVerifyButtonTestAsync(WorkflowTestContext context)
         {
 
 
             if (!int.TryParse(context.ReqId, out int requestId))
                 throw new ArgumentException("Invalid request ID");
 
-            var request = GetRequestById(requestId);
+            var request = await GetRequestByIdAsync(requestId);
             var decision = DecideTestAction(request, context.Identifier);
 
             context.ButtonText = "Verify";
@@ -351,14 +258,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         //    }
         //}
 
-        public WorkflowTestResult RunLoadApproveWBSButtonTest(string reqId, string groupName)
+        public async Task<WorkflowTestResult> RunLoadApproveWBSButtonTestAsync(string reqId, string groupName)
         {
             InitializeDashboardItemsAsync().Wait(); // Assuming this is an instance method
 
             if (!int.TryParse(reqId, out int requestId))
                 throw new ArgumentException("Invalid request ID");
 
-            var request = GetRequestById(requestId);
+            var request = await GetRequestByIdAsync(requestId);
             var decision = DecideTestAction(request, groupName);
 
             decision.ElementId = "btnApproveWBS";
@@ -559,17 +466,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return dashboardData;
         }
 
-        public List<WorkflowAction> GetActionsFromWorkflowDashboard(string id)
+        public async Task<List<WorkflowAction>> GetActionsFromWorkflowDashboardAsync(string id)
         {
 
             var allWorkflowActions = new List<CapitalRequest.API.Models.WorkflowAction>();
             if (id != null && int.TryParse(id.ToString(), out int parsedId))
             {
-                allWorkflowActions = GetWorkflowActionsFromApiAsync(parsedId).Result.ToList();
+                allWorkflowActions = (await GetWorkflowActionsFromApiAsync(parsedId)).ToList();
             }
             else
             {
-                allWorkflowActions = GetWorkflowActionsFromApiAsync(null).Result.ToList();
+                allWorkflowActions = (await GetWorkflowActionsFromApiAsync(null)).ToList();
             }
 
             var workflowActions = allWorkflowActions
@@ -640,6 +547,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 submitButton.Click();
 
                 //TODO Verify message 
+                
+                
+                //Verify home page status 
                 //wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id("confirmationElementId")));
                 //var elements = driver.FindElements(By.XPath("//*[contains(text(), 'Thank you')]"));
 

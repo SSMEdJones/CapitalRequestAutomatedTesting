@@ -30,12 +30,9 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetWorkflowDashboardActions(string id)
+        public async Task<IActionResult> GetWorkflowDashboardActions(string id)
         {
-            var actions = _workflowControllerService.GetActionsFromWorkflowDashboard(id);
-
-            //_workflowControllerService.RegisterWorkflowActions(actions);
-
+            var actions = await _workflowControllerService.GetActionsFromWorkflowDashboardAsync(id);
             var actionModels = actions.Select(a => new WorkflowAction
             {
                 Identifier = a.Identifier,
@@ -51,7 +48,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         {
             try
             {
-                var actions = _workflowControllerService.GetActionsFromWorkflowDashboard(id)
+                var actions = (await _workflowControllerService.GetActionsFromWorkflowDashboardAsync(id))
                     .Where(x => x.ScenarioId == scenario)
                     .ToList();
 
@@ -78,7 +75,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                         .FirstOrDefault();
 
 
-                    result = _workflowControllerService.RunLoadVerifyButtonTest(context);
+                    result = await _workflowControllerService.RunLoadVerifyButtonTestAsync(context);
                 }
 
                 else

@@ -99,7 +99,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveWorkflowStepOptionService, PredictiveWorkflowStepOptionService>();
             services.AddScoped<IPredictiveWorkflowStepService, PredictiveWorkflowStepService>();
             services.AddScoped<IPredictiveEmailNotificationService, PredictiveEmailNotificationService>();
-            services.AddScoped<IPredictiveProposalControllerService, PredictiveProposalControllerService>();
+            //services.AddScoped<IPredictiveProposalControllerService, PredictiveProposalControllerService>();
 
 
             #endregion

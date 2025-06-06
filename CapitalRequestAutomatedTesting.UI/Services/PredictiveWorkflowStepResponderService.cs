@@ -14,7 +14,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 {
     public interface IPredictiveWorkflowStepResponderService
     {
-        WorkflowStepResponder CreateWorkflowStepResponder(vm.Proposal proposal, string responderType);
+        Task<WorkflowStepResponder> CreateWorkflowStepResponderAsync(vm.Proposal proposal, string responderType);
     }
     public class PredictiveWorkflowStepResponderService : IPredictiveWorkflowStepResponderService
     {
@@ -35,15 +35,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _mapper = mapper;
         }
 
-        public WorkflowStepResponder CreateWorkflowStepResponder(vm.Proposal proposal, string responderType)
+        public async Task<WorkflowStepResponder> CreateWorkflowStepResponderAsync(vm.Proposal proposal, string responderType)
         {
             // Resolve WorkflowStepOptionId
             var reviewerGroupdId = proposal.ReviewerGroupId;
-            var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId).Result;
+            var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
             var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
-            var workflowStepOptions = _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID).Result
+            var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
                 .Where(x => !x.IsComplete && !x.IsTerminate)
                 .ToList();
+
             WorkFlowStepOptionViewModel workflowStepOption = null;
             if (workflowStepOptions.Any())
             {

@@ -13,8 +13,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 {
     public interface IPredictiveEmailNotificationService
     {
-        List<SSMWorkflow.API.DataAccess.Models.EmailNotification> CreateEmailNotifications(vm.Proposal proposal, string emailType);
-        string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullname);
+        Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal, string emailType);
+        Task<string> GenerateEmailMessageAsync(vm.EmailTemplate emailTemplate, vm.Reviewer reviewer, vm.ReviewerGroup requestingGroup, vm.Proposal proposal);
+        string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName);
     }
     public class PredictiveEmailNotificationService : IPredictiveEmailNotificationService
     {
@@ -38,14 +39,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _mapper = mapper;
         }
 
-        public List<SSMWorkflow.API.DataAccess.Models.EmailNotification> CreateEmailNotifications(vm.Proposal proposal, string emailType)
+        public async Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal, string emailType)
         {
-            var url = _ssmWorkFlowSettings.BaseApiUrl;
-            var link = _ssmWorkFlowSettings.ProjectReviewLink;
-
             var emailNotifications = new List<EmailNotification>();
 
-            var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId).Result;
+            var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
             var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
 
             var worflowStepId = workflowStep.WorkflowStepID;
@@ -53,29 +51,28 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var reviewerGroupdId = proposal.RequestedInfo.ReviewerGroupId;
             var requestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId.Value;
 
-            var reviewerGroup = _capitalRequestServices.GetReviewerGroup(reviewerGroupdId).Result;
-            var requestingGroup = _capitalRequestServices.GetReviewerGroup(requestingGroupId).Result;
+            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
+            var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
 
-            var emailTemplate = _capitalRequestServices
-                .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = emailType })
-                .Result
+            var emailTemplate = (await _capitalRequestServices
+                .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = emailType }))
                 .FirstOrDefault();
 
-            var workflowTemplate = _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep.StepName })
-                .Result
+            var workflowTemplate = (await _capitalRequestServices
+                .GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep.StepName }))
                 .FirstOrDefault();
 
-            var reviewers = GetReviewers(proposal)
-                    .Where(x => x.ReviewerGroupId == reviewerGroupdId)
-                    .Select(z => _mapper.Map<vm.Reviewer>(z))
-                    .ToList();
+            var reviewers = (await GetReviewers(proposal))
+                .Where(x => x.ReviewerGroupId == reviewerGroupdId)
+                .Select(z => _mapper.Map<vm.Reviewer>(z))
+                .ToList();
 
-            reviewers.ForEach(reviewer =>
+            foreach(var reviewer in reviewers)
             {
                 var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
                 var action = GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_ACTION_REQUEST_MORE_INFORMATION, fullName);
-                var emailMessage = GenerateEmailMessage(emailTemplate, reviewer, requestingGroup, proposal);
-
+                var emailMessage = await GenerateEmailMessageAsync(emailTemplate, reviewer, requestingGroup, proposal);
+                
                 var emallQueryViewModel = new EmailQueryViewModel
                 {
                     WorkflowStepId = workflowStep.WorkflowStepID.ToString(),
@@ -105,10 +102,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 };
 
                 emailNotifications.Add(emailNotification);
-            });
-           
+            };
+
             return emailNotifications;
         }
+
 
         private string GenerateEmailQuery(EmailQueryViewModel emailQueryViewModel)
         {
@@ -128,10 +126,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return emailQuery;
         }
 
-        private string GenerateEmailMessage(vm.EmailTemplate emailTemplate, vm.Reviewer reviewer, vm.ReviewerGroup requestingGroup, vm.Proposal proposal)
+        public async Task<string> GenerateEmailMessageAsync(vm.EmailTemplate emailTemplate, vm.Reviewer reviewer, vm.ReviewerGroup requestingGroup, vm.Proposal proposal)
         {
-            var emailStyle = _capitalRequestServices
-                .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name  = "Email Style"}).Result
+            var emailStyle = (await _capitalRequestServices
+                .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name  = "Email Style"}))
                 .FirstOrDefault();
 
             var emailMessage = string.Empty;
@@ -176,15 +174,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var emailBody = TemplateHelper.Render(body, emailModel);
 
                 emailMessage = $"{emailStyle.Body}{emailBody}";
-                //emailMessage = RenderEmailTemplate(body, new
-                //{
-                //    UserFirstName = firstName,
-                //    RequestReviewerGroup = requestingGroupName,
-                //    ProjectName = projectName,
-                //    ReqId = reqId,
-                //    RequestedInformation = requestedInformation,
-                //    ProjectLink = projectLink
-                //});
 
             }
 
@@ -257,9 +246,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return $"{baseUrl}{idParam}{paramName}{paramValue}&ActionType={optionType}\" target=\"_blank";
         }
 
-        private List<vm.Reviewer> GetReviewers(vm.Proposal proposal)
+        private async Task<List<vm.Reviewer>> GetReviewers(vm.Proposal proposal)
         {
-            return _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter { SegmentId = proposal.SegmentId }).Result;
+            return await _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter { SegmentId = proposal.SegmentId });
         }
 
 

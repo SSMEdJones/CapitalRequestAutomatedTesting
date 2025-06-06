@@ -25,19 +25,18 @@ public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase
     }
 
     [Fact]
-    public void CloseWorkflowStepOptions_ShouldReturnWorkflowStepOptionList()
+    public async Task CloseWorkflowStepOptionsAsync_ShouldReturnWorkflowStepOptionList()
     {
 
         int proposalId = 2884;
-        var proposal = _capitalRequestservices.GetProposal(proposalId).Result;
+        var proposal = await _capitalRequestservices.GetProposal(proposalId);
 
         proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
         proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
 
+        var predicted = await _service.CloseOptionsAsync(proposal, Guid.Empty, Constants.OPTION_TYPE_VERIFY, null, Constants.OPTION_TYPE_REQUEST);
 
-        var predicted = _service.CloseOptions(proposal, Guid.Empty, Constants.OPTION_TYPE_VERIFY, null, Constants.OPTION_TYPE_REQUEST);
-
-        var actual = _service.GetFilteredOptions(proposal, Constants.OPTION_TYPE_VERIFY, null);
+        var actual = await _service.GetFilteredOptionsAsync(proposal, Constants.OPTION_TYPE_VERIFY, null);
 
         Assert.Equal(predicted.Count, actual.Count); // Ensure both lists have the same number of items
 
@@ -66,17 +65,18 @@ public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase
     }
 
     [Fact]
-    public void CreateWorkflowStepOptions_ReturnsListofWorkflowStepOptions()
+    public async Task CreateWorkflowStepOptionsAsync_ReturnsListofWorkflowStepOptions()
     {
         int proposalId = 2884;
-        var proposal = _capitalRequestservices.GetProposal(proposalId).Result;
+        var proposal = await _capitalRequestservices.GetProposal(proposalId);
         proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
         proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
-        proposal.RequestedInfo.Id = _requestedInfoService.CreateRequestedInfo(proposal, 0).Id;
+        proposal.RequestedInfo.Id = (await _requestedInfoService.CreateRequestedInfoAsync(proposal, 0)).Id;
 
-        var predicted = _service.CreateWorkflowStepOptions(proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, proposal.RequestedInfo.Id);
+        var predicted = await _service.CreateWorkflowStepOptionsAsync(proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, proposal.RequestedInfo.Id);
 
-        var actual = _ssmWorkflowServices.GetAllWorkFlowStepOptions(predicted.First().WorkflowStepID).Result
+
+        var actual = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(predicted.First().WorkflowStepID))
             .Where(x => x.OptionType == Constants.OPTION_TYPE_ADD_INFO && 
                    x.RequestedInfoId == proposal.RequestedInfo.Id)
             .ToList();

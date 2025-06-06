@@ -32,9 +32,6 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
             _ssmWorkFlowSettings = ssmWorkFlowSettings.CurrentValue;
             _mapper = mapper;
 
-            Debug.WriteLine($"✅ Loaded BaseApiUrl in EmailNotifications from config: {_ssmWorkFlowSettings.BaseApiUrl}");
-            Debug.WriteLine($"✅ Loaded ProjectReviewLink in EmailNotifications from config: {_ssmWorkFlowSettings.ProjectReviewLink}");
-
         }
 
         public async Task<EmailNotification> Get(int id)

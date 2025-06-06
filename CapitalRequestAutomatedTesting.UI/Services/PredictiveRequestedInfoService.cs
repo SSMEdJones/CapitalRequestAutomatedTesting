@@ -12,8 +12,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services;
 
 public interface IPredictiveRequestedInfoService
 {
-    dto.RequestedInfo CreateRequestedInfo(vm.Proposal proposal, int increment);
-    dto.RequestedInfo GetRequestedInfo(vm.Proposal proposal);
+    Task<dto.RequestedInfo> CreateRequestedInfoAsync(vm.Proposal proposal, int increment);
+    Task<dto.RequestedInfo> GetRequestedInfoAsync(vm.Proposal proposal);
 }
 
 public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
@@ -39,13 +39,13 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
         _mapper = mapper;
     }
 
-    public dto.RequestedInfo CreateRequestedInfo(vm.Proposal proposal, int increment)
+    public async Task<dto.RequestedInfo> CreateRequestedInfoAsync(vm.Proposal proposal, int increment)
     {
-        WorkFlowStepViewModel? workflowStep = GetWorkflowStep(proposal);
+        WorkFlowStepViewModel? workflowStep = await GetWorkflowStepAsync(proposal);
 
         // Resolve WorkflowStepOptionId
 
-        var workflowStepOptions = _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID).Result
+        var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
             .Where(x => !x.IsComplete && !x.IsTerminate)
             .ToList();
 
@@ -65,9 +65,10 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
             }
         }
 
-        var reviewerGroup = _capitalRequestServices.GetReviewerGroup(proposal.RequestedInfo.ReviewerGroupId).Result;
-        var requestingGroup = _capitalRequestServices.GetReviewerGroup(proposal.ReviewerGroupId).Result;
-        var reviewer = _capitalRequestServices.GetReviewers(proposal.SegmentId).Result
+        var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(proposal.RequestedInfo.ReviewerGroupId);
+        var requestingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.ReviewerGroupId);
+
+        var reviewer = (await _capitalRequestServices.GetReviewers(proposal.SegmentId))
             .Where(x => x.ReviewerGroupId == proposal.RequestedInfo.ReviewerGroupId &&
                         x.Email.ToLower() == _userContextService.Email.ToLower())
             .FirstOrDefault();
@@ -75,6 +76,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
         var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
 
         var action = _predictiveEmailNotificationService.GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_ACTION_REQUEST_MORE_INFORMATION, fullName);
+
         // Generate RequestedInfo object
         var requestedInfo = new vm.RequestedInfo
         {
@@ -101,17 +103,16 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
         return _mapper.Map<dto.RequestedInfo>(requestedInfo);
     }
 
-    public dto.RequestedInfo GetRequestedInfo(vm.Proposal proposal)
+    public async Task<dto.RequestedInfo> GetRequestedInfoAsync(vm.Proposal proposal)
     {
 
-        var requestedInfo = _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter
+        var requestedInfo = ( await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter
             {
                 ProposalId = proposal.Id,
                 ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
                 RequestingReviewerGroupId = proposal.ReviewerGroupId,
                 IsOpen = true
-            })
-            .Result
+            }))
             .FirstOrDefault();
 
         return _mapper.Map<dto.RequestedInfo>(requestedInfo);
@@ -141,11 +142,11 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
     //    return $"{requestingUser} from {requestingGroup} {action.ToLower()} from {requestedGroup} on {DateTime.Today.ToShortDateString()}.";
     //}
 
-    public WorkFlowStepViewModel? GetWorkflowStep(vm.Proposal proposal)
+    public async Task<WorkFlowStepViewModel?> GetWorkflowStepAsync(vm.Proposal proposal)
     {
-        var workflowSteps = _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId).Result;
-        var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
-        return workflowStep;
+        var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
+
+        return workflowSteps.FirstOrDefault(x => !x.IsComplete);
     }
 
     

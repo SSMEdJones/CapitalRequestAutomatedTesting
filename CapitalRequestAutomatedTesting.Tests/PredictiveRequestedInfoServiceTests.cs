@@ -17,16 +17,16 @@ public class PredictiveRequestedInfoServiceTests : IntegrationTestBase
     }
 
     [Fact]
-    public void CreateRequestedInfo_ShouldReturnRequestedInfo()
+    public async Task CreateRequestedInfoAsync_ShouldReturnRequestedInfo()
     {
 
         int proposalId = 2884;
-        var proposal = _capitalRequestservices.GetProposal(proposalId).Result;
+        var proposal = await _capitalRequestservices.GetProposal(proposalId);
 
         proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
         proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
 
-        var predicted = _service.CreateRequestedInfo(proposal, 0);
+        var predicted = await _service.CreateRequestedInfoAsync(proposal, 0);
 
         var filter = new RequestedInfoSearchFilter
         {
@@ -37,9 +37,8 @@ public class PredictiveRequestedInfoServiceTests : IntegrationTestBase
             IsOpen = predicted.IsOpen
         };
 
-        var actual = _capitalRequestservices
-            .GetAllRequestedInfos(filter)
-            .Result
+        var actual = (await _capitalRequestservices
+            .GetAllRequestedInfos(filter))
             .FirstOrDefault();
 
         Assert.NotNull(actual);
@@ -63,7 +62,7 @@ public class PredictiveRequestedInfoServiceTests : IntegrationTestBase
     }
 
     [Fact]
-    public void GetRequestedInfo_ShouldReturnRequestedInfo()
+    public async Task GetRequestedInfo_ShouldReturnRequestedInfo()
     {
 
         int proposalId = 2884;
@@ -72,7 +71,7 @@ public class PredictiveRequestedInfoServiceTests : IntegrationTestBase
         proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
         proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
 
-        var predicted = _service.GetRequestedInfo(proposal);
+        var predicted = await _service.CreateRequestedInfoAsync(proposal, 0);
 
         var filter = new RequestedInfoSearchFilter
         {
@@ -83,9 +82,8 @@ public class PredictiveRequestedInfoServiceTests : IntegrationTestBase
             IsOpen = predicted.IsOpen
         };
 
-        var actual = _capitalRequestservices
-            .GetAllRequestedInfos(filter)
-            .Result
+        var actual = (await _capitalRequestservices
+            .GetAllRequestedInfos(filter))
             .FirstOrDefault();
 
         Assert.NotNull(actual);
