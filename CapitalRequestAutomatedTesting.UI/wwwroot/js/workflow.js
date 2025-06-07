@@ -248,44 +248,21 @@ async function loadWorkflowActions(id) {
     }
 }
 
-//async function loadWorkflowActions(id) {
-//    try {
-//        showLoading('Loading available scenarios...');
 
-//        const response = await fetch(`Workflow/GetWorkflowDashboardActions?id=${encodeURIComponent(id)}`);
-//        const data = await response.json(); // Parse as JSON
+async function loadScenarios() {
+    const response = await fetch('/Workflow/GetAvailableScenarios');
+    const scenarios = await response.json();
 
-//        // Extract unique actions from the JSON structure
-//        const actionsSet = new Set();
-//        data.forEach(action => {
-//            actionsSet.add(JSON.stringify(action)); // Use JSON.stringify to ensure uniqueness
-//        });
+    const dropdown = document.getElementById('scenarioDropdown');
+    dropdown.innerHTML = '';
 
-//        const actions = Array.from(actionsSet).map(item => JSON.parse(item));
+    scenarios.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.Id;
+        option.textContent = s.Name;
+        dropdown.appendChild(option);
+    });
+}
 
-//        const container = document.getElementById('scenarioList');
-//        container.innerHTML = ''; // Clear existing
-
-//        actions.forEach(item => {
-//            const label = document.createElement('label');
-//            const checkbox = document.createElement('input');
-//            checkbox.type = 'checkbox';
-//            checkbox.name = 'scenario';
-//            checkbox.value = item.scenarioId;
-//            label.appendChild(checkbox);
-//            label.appendChild(document.createTextNode(` ${item.identifier} - ${item.actionName}`));
-//            container.appendChild(label);
-//            container.appendChild(document.createElement('br'));
-//        });
-
-
-//    } catch (error) {
-//        console.error('Error loading workflow actions:', error);
-//        alert('Failed to load workflow actions. Please try again.');
-//    } finally {
-//        hideLoading()
-//    }
-    
-//}
 
 

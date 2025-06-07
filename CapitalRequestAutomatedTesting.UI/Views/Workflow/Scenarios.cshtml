@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Title"] = "Scenario";
+}
+
+<h2>Select a Scenario</h2>
+
+<form asp-controller="Workflow" asp-action="RunScenario" method="post">
+    <div class="form-group">
+        <label for="scenarioSelect">Choose a scenario:</label>
+        <select class="form-control" id="scenarioSelect" name="selectedScenario">
+            <option value="Scenario1">Scenario 1</option>
+            <option value="Scenario2">Scenario 2</option>
+            <option value="Scenario3">Scenario 3</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Run Scenario</button>
+</form>
