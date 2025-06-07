@@ -1,4 +1,9 @@
-﻿<h2>Run Automated Test</h2>
+
+@{
+    ViewData["Title"] = "Scenario";
+}
+
+<h2>Run Automated Test</h2>
 
 <div>
     <h3>Request ID</h3>
@@ -11,14 +16,12 @@
     </select>
 </div>
 
-
-<form id="scenarioForm">
+<form id="scenarioForm" method="post" asp-action="RunSelected">
     <div id="scenarioList" style="display: none;"></div>
-    <button id="runSelectedButton" type="button" onclick="runSelectedScenarios()" style="display: none;">
+    <button id="runSelectedButton" type="submit" style="display: none;">
         Run Selected
     </button>
 </form>
-
 
 <div id="spinner" style="display:none;"></div>
 <div id="status" style="display:none;"></div>
@@ -29,5 +32,6 @@
         <p id="loadingMessage">Loading Request's...</p>
     </div>
 </div>
+
 <link rel="stylesheet" href="~/css/workflow.css" asp-append-version="true" />
-<script src="~/js/workflow.js" asp-append-version="true"></script>
+<script src="~/js/scenario.js" asp-append-version="true"></script>

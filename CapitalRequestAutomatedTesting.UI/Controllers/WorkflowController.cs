@@ -187,6 +187,11 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             });
         }
 
+        [HttpGet]
+        public IActionResult Scenarios()
+        {
+            return View();
+        }
 
 
         [HttpPost]
@@ -194,7 +199,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         {
             // Add logic to handle the selected scenario
             ViewBag.Message = $"You selected: {selectedScenario}";
-            return View("Scenario");
+            return View("Scenarios");
         }
 
 
