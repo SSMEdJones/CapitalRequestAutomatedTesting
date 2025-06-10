@@ -3,6 +3,7 @@ using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Services;
+using CapitalRequestAutomatedTesting.UI.Services.Interfaces;
 using ScenarioFramework;
 using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
@@ -110,6 +111,7 @@ namespace CapitalRequestAutomatedTesting.UI
 
             #region Scenario Framework
             services.AddScoped<ITestActionService, WorkflowTestActionService>();
+            services.AddScoped<IScenarioControllerService, ScenarioControllerService>();
             #endregion
 
             return services;

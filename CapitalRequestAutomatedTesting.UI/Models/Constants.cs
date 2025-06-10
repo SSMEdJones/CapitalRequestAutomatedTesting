@@ -51,6 +51,7 @@
         public const string EPMO_GROUP = "EPMO";
         public const string ADMIN_GROUP = "Admin";
         public const string PURCHASING_GROUP = "Purchasing";
+        public const string AUTHOR_GROUP = "Author";
 
         public const string EMAIL_ACTION_REQUEST_MORE_INFORMATION = "{{ fullName }} from {{ requestingGroupName }} requested more information from {{ requestedGroup }} on {{ requestDate }}.";
     }

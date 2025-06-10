@@ -1,4 +1,5 @@
-
+@using CapitalRequestAutomatedTesting.UI.ScenarioFramework
+@model ScenarioFormViewModel
 @{
     ViewData["Title"] = "Scenario";
 }
@@ -11,17 +12,44 @@
         <span>Loading Request IDs...</span>
         <img src="~/images/spinner.gif" alt="Loading..." style="height: 20px;" />
     </div>
-    <select id="requestIdDropdown">
-        <option value="">-- Select One --</option>
-    </select>
+
 </div>
 
 <form id="scenarioForm" method="post" asp-action="RunSelected">
-    <div id="scenarioList" style="display: none;"></div>
+    <div>
+        @* <label for="requestIdDropdown">Select Request</label> *@
+        <select id="requestIdDropdown" name="RequestId">
+            <option value="">-- Select One --</option>
+        </select>
+    </div>
+
+    <div id="scenarioList" style="display: none;">
+        <label>Select Scenario</label>
+
+        @for (int i = 0; i < Model.ScenarioDetails.Count; i++)
+        {
+            var detail = Model.ScenarioDetails[i];
+            var partialId = $"partial-{detail.ScenarioId}";
+
+            <div class="scenario-wrapper">
+                <label style="display: inline-flex; align-items: center; gap: 6px;">
+                    <input type="checkbox" name="selectedScenarioIds" value="@detail.ScenarioId" data-target="@partialId" />
+                    @detail.DisplayText
+                    
+                </label>
+                <div id="@partialId" class="scenario-partial" style="display: none;">
+                    @await Html.PartialAsync(detail.PartialViewName, detail)
+                </div>
+            </div>
+        }
+    </div>
+    
+
     <button id="runSelectedButton" type="submit" style="display: none;">
         Run Selected
     </button>
 </form>
+
 
 <div id="spinner" style="display:none;"></div>
 <div id="status" style="display:none;"></div>
@@ -29,9 +57,18 @@
 <div id="loadingModal" class="modal-overlay" style="display: none;">
     <div class="spinner-container">
         <img src="~/images/spinner.gif" alt="Loading..." />
-        <p id="loadingMessage">Loading Request's...</p>
+        <p id="loadingMessage">Loading Requests...</p>
     </div>
 </div>
 
 <link rel="stylesheet" href="~/css/workflow.css" asp-append-version="true" />
 <script src="~/js/scenario.js" asp-append-version="true"></script>
+
+
+
+
+
+
+
+
+

@@ -1,9 +1,5 @@
-
 namespace ScenarioFramework
 {
-    using System;
-    using System.Threading.Tasks;
-
     public class ScenarioRunner
     {
         public async Task<ScenarioStatus> RunScenario(TestScenario scenario)
