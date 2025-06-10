@@ -78,13 +78,24 @@ async function onRequestingGroupChange(selectElement) {
     const container = selectElement.closest('.scenario-partial');
 
     // Get the selected proposalId (RequestId) from the main dropdown
-    const proposalId = document.getElementById('requestIdDropdown').value;
+    const requestId = document.getElementById('requestIdDropdown').value;
+
+    // Get the scenarioId from a hidden input or checkbox inside the same wrapper
+    const scenarioWrapper = container.closest('.scenario-wrapper');
+    const scenarioIdInput = scenarioWrapper.querySelector('input[type="checkbox"]');
+    const scenarioId = scenarioIdInput ? scenarioIdInput.value : null;
+
+    if (!scenarioId || !requestId) {
+        console.error('Missing scenarioId or requestId');
+        return;
+    }
 
     // Find the target and reviewer dropdowns within the same partial
-    const targetGroupDropdown = container.querySelector('[name$=".TargetGroupId"]');
-    const reviewerDropdown = container.querySelector('[name$=".ReviewerId"]');
     try {
-    const response = await fetch(`/Scenario/LoadScenarioPartial?scenarioId=${scenarioId}&requestId=${requestId}`)
+
+     const targetDiv = container;
+
+     const response = await fetch(`/Scenario/LoadScenarioPartial?scenarioId=${scenarioId}&requestId=${requestId}`)
         .then(response => response.text())
         .then(html => {
             targetDiv.innerHTML = html;
