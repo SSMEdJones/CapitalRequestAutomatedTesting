@@ -62,7 +62,7 @@ document.getElementById('requestIdDropdown').addEventListener('change', function
 
 // Toggle partial views when checkboxes are clicked
 document.addEventListener('change', function (e) {
-    if (e.target.name === 'selectedScenarioIds') {
+    if (e.target.name === 'SelectedScenarioIds') {
         const targetId = e.target.getAttribute('data-target');
         const partial = document.getElementById(targetId);
         if (partial) {
@@ -71,48 +71,29 @@ document.addEventListener('change', function (e) {
     }
 });
 
+
 async function onRequestingGroupChange(selectElement) {
     const requestingGroupId = selectElement.value;
 
-    // Find the closest scenario-partial container
     const container = selectElement.closest('.scenario-partial');
-
-    // Get the selected proposalId (RequestId) from the main dropdown
     const requestId = document.getElementById('requestIdDropdown').value;
 
-    // Get the scenarioId from a hidden input or checkbox inside the same wrapper
-    const scenarioWrapper = container.closest('.scenario-wrapper');
-    const scenarioIdInput = scenarioWrapper.querySelector('input[type="checkbox"]');
-    const scenarioId = scenarioIdInput ? scenarioIdInput.value : null;
+    const targetGroupDropdown = document.getElementById('TargetGroupId');
+    const reviewerDropdown = document.getElementById('ReviewerId');
 
-    if (!scenarioId || !requestId) {
-        console.error('Missing scenarioId or requestId');
+    if (!requestingGroupId || !requestId || !targetGroupDropdown || !reviewerDropdown) {
+        console.warn('Missing required data or elements');
         return;
     }
 
-    // Find the target and reviewer dropdowns within the same partial
     try {
+        const response = await fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${requestId}&requestingGroupId=${requestingGroupId}`);
+        if (!response.ok) throw new Error('Failed to fetch target groups and reviewers');
 
-     const targetDiv = container;
-
-     const response = await fetch(`/Scenario/LoadScenarioPartial?scenarioId=${scenarioId}&requestId=${requestId}`)
-        .then(response => response.text())
-        .then(html => {
-            targetDiv.innerHTML = html;
-
-            // Now that the partial is loaded, query the elements
-            const container = targetDiv.closest('.scenario-wrapper');
-            const targetGroupDropdown = container.querySelector('[name$=".TargetGroupId"]');
-            const reviewerDropdown = container.querySelector('[name$=".ReviewerId"]');
-
-            console.log('Target Group:', targetGroupDropdown);
-            console.log('Reviewer:', reviewerDropdown);
-        });
-        if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
 
-        // Clear and populate Target Groups
-        targetGroupDropdown.innerHTML = '';
+        // Populate Target Groups
+        targetGroupDropdown.innerHTML = '<option value="">--Select One--</option>';
         data.targetGroups.forEach(item => {
             const option = document.createElement('option');
             option.value = item.value;
@@ -120,18 +101,81 @@ async function onRequestingGroupChange(selectElement) {
             targetGroupDropdown.appendChild(option);
         });
 
-        // Clear and populate Reviewers
-        reviewerDropdown.innerHTML = '';
+        // Populate Reviewers
+        reviewerDropdown.innerHTML = '<option value="">--Select One--</option>';
         data.reviewers.forEach(item => {
             const option = document.createElement('option');
             option.value = item.value;
             option.text = item.text;
             reviewerDropdown.appendChild(option);
         });
+
     } catch (error) {
         console.error('Error fetching filtered data:', error);
     }
 }
+
+//async function onRequestingGroupChange(selectElement) {
+//    const requestingGroupId = selectElement.value;
+
+//    // Find the closest scenario-partial container
+//    const container = selectElement.closest('.scenario-partial');
+
+//    // Get the selected proposalId (RequestId) from the main dropdown
+//    const requestId = document.getElementById('requestIdDropdown').value;
+
+//    // Get the scenarioId from a hidden input or checkbox inside the same wrapper
+//    const scenarioWrapper = container.closest('.scenario-wrapper');
+//    const scenarioIdInput = scenarioWrapper.querySelector('input[type="checkbox"]');
+//    const scenarioId = scenarioIdInput ? scenarioIdInput.value : null;
+
+//    if (!scenarioId || !requestId) {
+//        console.error('Missing scenarioId or requestId');
+//        return;
+//    }
+
+//    // Find the target and reviewer dropdowns within the same partial
+//    try {
+
+//     const targetDiv = container;
+
+//     const response = await fetch(`/Scenario/LoadScenarioPartial?scenarioId=${scenarioId}&requestId=${requestId}`)
+//        .then(response => response.text())
+//        .then(html => {
+//            targetDiv.innerHTML = html;
+
+//            // Now that the partial is loaded, query the elements
+//            const container = targetDiv.closest('.scenario-wrapper');
+//            const targetGroupDropdown = container.querySelector('[name$=".TargetGroupId"]');
+//            const reviewerDropdown = container.querySelector('[name$=".ReviewerId"]');
+
+//            console.log('Target Group:', targetGroupDropdown);
+//            console.log('Reviewer:', reviewerDropdown);
+//        });
+//        if (!response.ok) throw new Error('Network response was not ok');
+//        const data = await response.json();
+
+//        // Clear and populate Target Groups
+//        targetGroupDropdown.innerHTML = '';
+//        data.targetGroups.forEach(item => {
+//            const option = document.createElement('option');
+//            option.value = item.value;
+//            option.text = item.text;
+//            targetGroupDropdown.appendChild(option);
+//        });
+
+//        // Clear and populate Reviewers
+//        reviewerDropdown.innerHTML = '';
+//        data.reviewers.forEach(item => {
+//            const option = document.createElement('option');
+//            option.value = item.value;
+//            option.text = item.text;
+//            reviewerDropdown.appendChild(option);
+//        });
+//    } catch (error) {
+//        console.error('Error fetching filtered data:', error);
+//    }
+//}
 
     //try {
     //    const response = await fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&requestingGroupId=${requestingGroupId}`);

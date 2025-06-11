@@ -102,13 +102,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         }
         public async Task<List<CapitalRequest.API.Models.ReviewerGroup>> GetFilteredReviewerGroups(int proposalId, int? requestingGroupId)
         {
-            var proposal = await _capitalRequestServices.GetProposal(proposalId);            
-            var workflowActions = await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId);
+            var proposal = await _capitalRequestServices.GetProposal(proposalId);
+            var WorkflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId))
+                .Select(x => x.WorkflowPortion)
+                .Distinct()
+                .ToList();
+            
             var availableNames = new List<string>();
             
-            workflowActions.ForEach(x =>
+            WorkflowPortions.ForEach(x =>
             {
-                var groupName = ExtractGroupName(x.WorkflowPortion);
+                var groupName = ExtractGroupName(x);
                 availableNames.Add(groupName);
 
             });

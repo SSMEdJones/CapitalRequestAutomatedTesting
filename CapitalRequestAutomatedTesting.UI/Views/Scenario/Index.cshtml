@@ -32,16 +32,23 @@
             var partialId = $"partial-{detail.ScenarioId}";
 
             <div class="scenario-wrapper">
-                <label style="display: inline-flex; align-items: center; gap: 6px;">
-                    <input type="checkbox" name="selectedScenarioIds" value="@detail.ScenarioId" data-target="@partialId" />
+                <label>
+                    <input type="checkbox" name="SelectedScenarioIds" value="@detail.ScenarioId" data-target="@partialId" />
                     @detail.DisplayText
-                    
                 </label>
+
                 <div id="@partialId" class="scenario-partial" style="display: none;">
-                    @await Html.PartialAsync(detail.PartialViewName, detail)
+                    @{
+                        var viewData = new ViewDataDictionary(ViewData);
+                        viewData.TemplateInfo.HtmlFieldPrefix = $"ScenarioDetails[{i}]";
+                    }
+
+                    @await Html.PartialAsync(detail.PartialViewName, detail, viewData)
                 </div>
             </div>
         }
+
+
     </div>
     
 

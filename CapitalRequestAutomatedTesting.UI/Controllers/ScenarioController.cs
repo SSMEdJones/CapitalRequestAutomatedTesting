@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ScenarioFramework;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -112,12 +113,42 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         //    };
 
 
+
         [HttpPost]
-        public IActionResult RunSelected(List<string> selectedScenarioIds)
+        public IActionResult RunSelected(ScenarioFormViewModel model)
         {
-            // Add logic to handle the selected scenarios
-            ViewBag.Message = $"You selected: {string.Join(", ", selectedScenarioIds)}";
-            return View("Index");
+
+            // Check if model.ScenarioDetails has data
+            if (model.ScenarioDetails == null || !model.ScenarioDetails.Any())
+            {
+                // Log or debug here
+                Debug.WriteLine("ScenarioDetails is empty");
+            }
+
+
+            foreach (var key in Request.Form.Keys)
+            {
+                Console.WriteLine($"{key}: {Request.Form[key]}");
+            }
+
+            var selectedScenarios = model.ScenarioDetails
+            .Where(s => model.SelectedScenarioIds.Contains(s.ScenarioId))
+            .ToList();
+
+            // Now you have full access to each selected scenario's form data
+            foreach (var scenario in selectedScenarios)
+            {
+                // Process each scenario
+                var requestingGroupId = scenario.RequestingGroupId;
+                var targetGroupId = scenario.TargetGroupId;
+                var reviewerId = scenario.ReviewerId;
+                var message = scenario.Message;
+                // etc.
+            }
+
+            ViewBag.Message = $"You selected: {string.Join(", ", selectedScenarios.Select(s => s.ScenarioId))}";
+            return View("Index", model);
         }
+
     }
 }

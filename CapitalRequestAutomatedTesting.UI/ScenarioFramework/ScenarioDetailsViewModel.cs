@@ -11,8 +11,10 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public int RequestingGroupId { get; set; }
         public int TargetGroupId { get; set; }
         public int ReviewerId { get; set; }
-        public string UserInformation { get; set; }
+        public string ReviewerEmail { get; set; }
         public int SequenceNumber { get; set; }
+        public string RequestedInformation { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
 
         public List<SelectListItem> RequestingGroups { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> TargetGroups { get; set; } = new List<SelectListItem>();
