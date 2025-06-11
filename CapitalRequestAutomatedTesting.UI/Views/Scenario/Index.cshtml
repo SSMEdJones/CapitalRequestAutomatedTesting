@@ -16,46 +16,60 @@
 </div>
 
 <form id="scenarioForm" method="post" asp-action="RunSelected">
+    <input type="hidden" name="ActionType" id="actionType" value="SelectRequest" />
+
     <div>
-        @* <label for="requestIdDropdown">Select Request</label> *@
-        <select id="requestIdDropdown" name="RequestId">
-            <option value="">-- Select One --</option>
+        <select asp-for="RequestId" asp-items="Model.RequestIds" class="form-control">
+            <option value="">--Select One--</option>
         </select>
     </div>
 
-    <div id="scenarioList" style="display: none;">
-        <label>Select Scenario</label>
+    @if (Model.RequestId.HasValue && Model.ScenarioDetails?.Any() == true)
+    {
+        <div id="scenarioList">
+            <label>Select Scenario</label>
 
-        @for (int i = 0; i < Model.ScenarioDetails.Count; i++)
-        {
-            var detail = Model.ScenarioDetails[i];
-            var partialId = $"partial-{detail.ScenarioId}";
+            @for (int i = 0; i < Model.ScenarioDetails.Count; i++)
+            {
+                var detail = Model.ScenarioDetails[i];
+                var partialId = $"partial-{detail.ScenarioId}";
 
-            <div class="scenario-wrapper">
-                <label>
-                    <input type="checkbox" name="SelectedScenarioIds" value="@detail.ScenarioId" data-target="@partialId" />
-                    @detail.DisplayText
-                </label>
+                <div class="scenario-wrapper">
+                    <label>
+                        <input type="checkbox" name="SelectedScenarioIds" value="@detail.ScenarioId" data-target="@partialId" />
+                        @detail.DisplayText
+                    </label>
 
-                <div id="@partialId" class="scenario-partial" style="display: none;">
-                    @{
-                        var viewData = new ViewDataDictionary(ViewData);
-                        viewData.TemplateInfo.HtmlFieldPrefix = $"ScenarioDetails[{i}]";
-                    }
+                    <div id="@partialId" class="scenario-partial" style="display: none;">
+                        @{
+                            var viewData = new ViewDataDictionary<ScenarioDetailsViewModel>(
+                            ViewData,
+                            detail
+                            );
+                            viewData.TemplateInfo.HtmlFieldPrefix = $"ScenarioDetails[{i}]";
+                        }
 
-                    @await Html.PartialAsync(detail.PartialViewName, detail, viewData)
+                        @await Html.PartialAsync(detail.PartialViewName, detail, viewData)
+                    </div>
                 </div>
-            </div>
-        }
+            }
+
+            <button type="submit" onclick="document.getElementById('actionType').value='RunSelected';">
+                Run Selected
+            </button>
+        </div>
+    }
 
 
-    </div>
-    
 
-    <button id="runSelectedButton" type="submit" style="display: none;">
+
+
+    <button type="submit" onclick="document.getElementById('actionType').value='RunSelected';">
         Run Selected
     </button>
+
 </form>
+
 
 
 <div id="spinner" style="display:none;"></div>

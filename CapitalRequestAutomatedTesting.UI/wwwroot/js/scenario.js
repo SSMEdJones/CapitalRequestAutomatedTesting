@@ -1,20 +1,20 @@
-window.onload = async function () {
-    const modal = document.getElementById('loadingModal');
-    modal.style.display = 'flex';
+//window.onload = async function () {
+//    const modal = document.getElementById('loadingModal');
+//    modal.style.display = 'flex';
 
-    // Load request IDs
-    const requestResponse = await fetch('/Scenario/GetRequestIds');
-    const requests = await requestResponse.json();
-    const dropdown = document.getElementById('requestIdDropdown');
-    requests.forEach(r => {
-        const option = document.createElement('option');
-        option.value = r.id;
-        option.text = r.name;
-        dropdown.appendChild(option);
-    });
+//    // Load request IDs
+//    const requestResponse = await fetch('/Scenario/GetRequestIds');
+//    const requests = await requestResponse.json();
+//    const dropdown = document.getElementById('requestIdDropdown');
+//    requests.forEach(r => {
+//        const option = document.createElement('option');
+//        option.value = r.id;
+//        option.text = r.name;
+//        dropdown.appendChild(option);
+//    });
 
-    modal.style.display = 'none';
-};
+//    modal.style.display = 'none';
+//};
 
 // Show scenario list after request is selected
 document.getElementById('requestIdDropdown').addEventListener('change', function () {
@@ -47,18 +47,6 @@ document.getElementById('requestIdDropdown').addEventListener('change', function
     }
 });
 
-//document.getElementById('requestIdDropdown').addEventListener('change', function () {
-//    const scenarioListDiv = document.getElementById('scenarioList');
-//    const runButton = document.getElementById('runSelectedButton');
-
-//    if (this.value) {
-//        scenarioListDiv.style.display = 'block';
-//        runButton.style.display = 'block';
-//    } else {
-//        scenarioListDiv.style.display = 'none';
-//        runButton.style.display = 'none';
-//    }
-//});
 
 // Toggle partial views when checkboxes are clicked
 document.addEventListener('change', function (e) {
@@ -115,95 +103,6 @@ async function onRequestingGroupChange(selectElement) {
     }
 }
 
-//async function onRequestingGroupChange(selectElement) {
-//    const requestingGroupId = selectElement.value;
-
-//    // Find the closest scenario-partial container
-//    const container = selectElement.closest('.scenario-partial');
-
-//    // Get the selected proposalId (RequestId) from the main dropdown
-//    const requestId = document.getElementById('requestIdDropdown').value;
-
-//    // Get the scenarioId from a hidden input or checkbox inside the same wrapper
-//    const scenarioWrapper = container.closest('.scenario-wrapper');
-//    const scenarioIdInput = scenarioWrapper.querySelector('input[type="checkbox"]');
-//    const scenarioId = scenarioIdInput ? scenarioIdInput.value : null;
-
-//    if (!scenarioId || !requestId) {
-//        console.error('Missing scenarioId or requestId');
-//        return;
-//    }
-
-//    // Find the target and reviewer dropdowns within the same partial
-//    try {
-
-//     const targetDiv = container;
-
-//     const response = await fetch(`/Scenario/LoadScenarioPartial?scenarioId=${scenarioId}&requestId=${requestId}`)
-//        .then(response => response.text())
-//        .then(html => {
-//            targetDiv.innerHTML = html;
-
-//            // Now that the partial is loaded, query the elements
-//            const container = targetDiv.closest('.scenario-wrapper');
-//            const targetGroupDropdown = container.querySelector('[name$=".TargetGroupId"]');
-//            const reviewerDropdown = container.querySelector('[name$=".ReviewerId"]');
-
-//            console.log('Target Group:', targetGroupDropdown);
-//            console.log('Reviewer:', reviewerDropdown);
-//        });
-//        if (!response.ok) throw new Error('Network response was not ok');
-//        const data = await response.json();
-
-//        // Clear and populate Target Groups
-//        targetGroupDropdown.innerHTML = '';
-//        data.targetGroups.forEach(item => {
-//            const option = document.createElement('option');
-//            option.value = item.value;
-//            option.text = item.text;
-//            targetGroupDropdown.appendChild(option);
-//        });
-
-//        // Clear and populate Reviewers
-//        reviewerDropdown.innerHTML = '';
-//        data.reviewers.forEach(item => {
-//            const option = document.createElement('option');
-//            option.value = item.value;
-//            option.text = item.text;
-//            reviewerDropdown.appendChild(option);
-//        });
-//    } catch (error) {
-//        console.error('Error fetching filtered data:', error);
-//    }
-//}
-
-    //try {
-    //    const response = await fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&requestingGroupId=${requestingGroupId}`);
-    //    if (!response.ok) throw new Error('Network response was not ok');
-
-    //    const data = await response.json();
-
-    //    // Clear and populate Target Groups
-    //    targetGroupDropdown.innerHTML = '';
-    //    data.targetGroups.forEach(item => {
-    //        const option = document.createElement('option');
-    //        option.value = item.value;
-    //        option.text = item.text;
-    //        targetGroupDropdown.appendChild(option);
-    //    });
-
-    //    // Clear and populate Reviewers
-    //    reviewerDropdown.innerHTML = '';
-    //    data.reviewers.forEach(item => {
-    //        const option = document.createElement('option');
-    //        option.value = item.value;
-    //        option.text = item.text;
-    //        reviewerDropdown.appendChild(option);
-    //    });
-
-    //} catch (error) {
-    //    console.error('Error fetching filtered data:', error);
-    //}
 
 
 

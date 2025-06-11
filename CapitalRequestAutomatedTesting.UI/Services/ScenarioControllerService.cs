@@ -16,6 +16,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         string GetScenarioViewName(string scenarioId);
         Task<ScenarioFormViewModel> GenerateScenarioFormViewModel(int? requestId);
         Task<List<SelectListItem>> GetTargetGroupsByRequestIdAsync(int proposalId, int requestingGroupId);
+        Task<List<SelectListItem>> GetRequestSelectListAsync();
     }
 
     public class ScenarioControllerService : IScenarioControllerService
@@ -61,11 +62,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return new ScenarioFormViewModel
             {
+                RequestIds = await GetRequestSelectListAsync(),
                 RequestId = requestId ?? 0,
                 ScenarioDetails = scenarioDetails
             };
         }
 
+        public async Task<List<SelectListItem>> GetRequestSelectListAsync()
+        {
+            return (await _workflowControllerService.GetDashboardItemsFromApiAsync())
+                    .Select(x => new SelectListItem
+                    {
+                        Text = x.ReqId.ToString(),
+                        Value = x.ReqId.ToString()
+                    }).ToList();
+        }
 
         public async Task<List<SelectListItem>> GetRequestingGroupsAsync(int proposalId)
         {

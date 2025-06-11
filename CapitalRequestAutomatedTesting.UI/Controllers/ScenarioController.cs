@@ -34,6 +34,48 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             return View(formModel);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> Index(ScenarioFormViewModel model, string actionType)
+        {
+            if (actionType == "RunSelected")
+            {
+                // Handle the selected scenarios
+                var selectedIds = model.SelectedScenarioIds;
+
+                // Do something with them (e.g., run tests)
+                // Then redirect or return a result view
+                return RedirectToAction("RunSelected", new { ids = selectedIds });
+            }
+
+            // Otherwise, just reload the form with scenarios for the selected RequestId
+            if (model.RequestId.HasValue)
+            {
+                model = await _scenarioControllerService.GenerateScenarioFormViewModel(model.RequestId.Value);
+            }
+            else
+            {
+                model.RequestIds = await _scenarioControllerService.GetRequestSelectListAsync();
+            }
+
+            return View(model);
+        }
+
+        //[HttpPost]
+        //public async Task<IActionResult> Index(ScenarioFormViewModel model)
+        //{
+        //    if (model.RequestId.HasValue)
+        //    {
+        //        // Rebuild the full model with scenarios for the selected RequestId
+        //        model = await _scenarioControllerService.GenerateScenarioFormViewModel(model.RequestId.Value);
+        //    }
+        //    else
+        //    {
+        //        model.RequestIds = await _scenarioControllerService.GetRequestSelectListAsync();
+        //    }
+
+        //    return View(model);
+        //}
+
 
         [HttpGet]
         public async Task<IActionResult> LoadScenarioPartial(string scenarioId, int requestId)
@@ -46,13 +88,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
             return PartialView(detail.PartialViewName, detail);
         }
-
-        private List<SelectListItem> GetRequestingGroups()
-        {
-            var groups = _capitalRequestServices.GetAllReviewerGroups(new ReviewerGroupSearchFilter { ReviewerType = "Reviewer" });
-            throw new NotImplementedException();
-        }
-
+       
         [HttpGet]
         public IActionResult LoadScenarioView(string scenarioId, string requestId)
         {

@@ -2,26 +2,27 @@
 @model ScenarioDetailsViewModel
 
 <div>
-    <label asp-for="DisplayText">Requesting Group:</label>
+   <label asp-for="DisplayText">Requesting Group:</label>
      <select asp-for="RequestingGroupId" asp-items="Model.RequestingGroups" onchange="onRequestingGroupChange(this)" class="form-control">
-        <option value="" selected>--Select One--</option>
+        <option value="">--Select One--</option>
     </select>
 
     <label asp-for="TargetGroupId">Target Group:</label>
     <select asp-for="TargetGroupId" asp-items="Model.TargetGroups" class="form-control">
-        <option value="" selected>--Select One--</option>
+        <option value="">--Select One--</option>
     </select>
 
     <label asp-for="ReviewerId">Reviewer:</label>
     <select asp-for="ReviewerId" asp-items="Model.Reviewers" class="form-control">
-        <option value="" selected>--Select One--</option>
+        <option value="">--Select One--</option>
     </select>
 
     <label asp-for="ReviewerEmail">Reviewer Email:</label>
-    <input asp-for="ReviewerEmail" class="form-control" />
+    <input asp-for="ReviewerEmail" class="form-control" /> 
 
     <label asp-for="RequestedInformation">Requested Information:</label>
-    <textarea asp-for="RequestedInformation" class="form-control">>Please provide more information...</textarea>
+    <textarea asp-for="RequestedInformation" class="form-control"></textarea>
+    <textarea asp-for="Message" class="form-control"></textarea>
 
 </div>
 
