@@ -1,30 +1,59 @@
 ﻿@using CapitalRequestAutomatedTesting.UI.ScenarioFramework
 @model ScenarioDetailsViewModel
 
+
 <div>
-   <label asp-for="DisplayText">Requesting Group:</label>
-    <select asp-for="RequestingGroupId" asp-items="Model.RequestingGroups" class="form-control"
-                   onchange="document.getElementById('actionType').value='RequestingGroupChanged'; this.form.submit();">
-        <option value="">-- Select One --</option>
-    </select>
+    <div class="form-group">
+        <label asp-for="RequestingGroupId" class="control-label"></label>
+        <select asp-for="RequestingGroupId" asp-items="Model.RequestingGroups" class="form-control"
+                onchange="document.getElementById('actionType').value='RequestingGroupChanged'; this.form.submit();">
+            <option value="">-- Select One --</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="TargetGroupId" class="control-label"></label>
+        <select asp-for="TargetGroupId" asp-items="Model.TargetGroups" class="form-control">
+            <option value="">--Select One--</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ReviewerId" class="control-label"></label>
+        <select asp-for="ReviewerId"
+                asp-items="Model.Reviewers"
+                class="form-control"
+                onchange="document.getElementById('actionType').value='ReviewerSelected'; this.form.submit();">
+            <option value="">-- Select Reviewer --</option>
+        </select>
+    </div>
+@* 
+    <div class="form-group">
+        <label asp-for="ReviewerEmail" class="control-label"></label>
+        <input asp-for="ReviewerEmail" class="form-control" disabled />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ReviewerUserId" class="control-label"></label>
+        <input asp-for="ReviewerUserId" class="form-control" disabled />
+    </div> *@
 
 
-    <label asp-for="TargetGroupId">Target Group:</label>
-    <select asp-for="TargetGroupId" asp-items="Model.TargetGroups" class="form-control">
-        <option value="">--Select One--</option>
-    </select>
+    <div class="form-group">
+        <label asp-for="ReviewerEmail" class="control-label"></label>
+        <p class="form-control-plaintext">@Model.ReviewerEmail</p>
+    </div>
 
-    <label asp-for="ReviewerId">Reviewer:</label>
-    <select asp-for="ReviewerId" asp-items="Model.Reviewers" class="form-control">
-        <option value="">--Select One--</option>
-    </select>
+    <div class="form-group">
+        <label asp-for="ReviewerUserId" class="control-label"></label>
+        <p class="form-control-plaintext">@Model.ReviewerUserId</p>
+    </div>
 
-    <label asp-for="ReviewerEmail">Reviewer Email:</label>
-    <input asp-for="ReviewerEmail" class="form-control" /> 
 
-    <label asp-for="RequestedInformation">Requested Information:</label>
-    <textarea asp-for="RequestedInformation" class="form-control"></textarea>
-    <textarea asp-for="Message" class="form-control"></textarea>
-
+    <div class="form-group">
+        <label asp-for="RequestedInformation" class="control-label"></label>
+        <textarea asp-for="RequestedInformation" class="form-control"></textarea>
+    </div>
 </div>
+
 

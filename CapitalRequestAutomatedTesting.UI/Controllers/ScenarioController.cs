@@ -6,6 +6,7 @@ using CapitalRequestAutomatedTesting.UI.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Newtonsoft.Json;
 using ScenarioFramework;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -35,21 +36,75 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Index(ScenarioFormViewModel model, string actionType)
+        public async Task<IActionResult> Index([FromForm] ScenarioFormViewModel model, string actionType)
         {
+            if (actionType == "SelectRequest" && model.RequestId.HasValue)
+            {
+                model = await _scenarioControllerService.GenerateScenarioFormViewModel(model.RequestId.Value);
+            }
+            else if (actionType == "SelectRequest")
+            {
+                model.RequestIds = await _scenarioControllerService.GetRequestSelectListAsync();
+            }
 
             if (actionType == "RequestingGroupChanged")
             {
                 var proposalId = model.RequestId.Value;
-                var requestingGroupId = model.ScenarioDetails.FirstOrDefault().RequestingGroupId;
+
 
                 var detail = model.ScenarioDetails.FirstOrDefault(d => d.ScenarioId == "SCN001");
+
                 if (detail != null)
                 {
                     detail.TargetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(proposalId, detail.RequestingGroupId);
                     detail.Reviewers = await _scenarioControllerService.GetReviewersByRequestingGroupAsync(proposalId, detail.RequestingGroupId);
+
+                    var requestingGroups = await _scenarioControllerService.GetRequestingGroupsAsync(proposalId);
+
+                    requestingGroups.ForEach(x =>
+                    {
+                        x.Selected = x.Value == detail.RequestingGroupId.ToString();
+                    });
+
+                    detail.RequestingGroups = requestingGroups;
+
                 }
 
+                var requestList = await _scenarioControllerService.GetRequestSelectListAsync();
+                requestList.ForEach(x =>
+                {
+                    x.Selected = x.Value == model.RequestId?.ToString();
+                });
+                
+                model.RequestIds = requestList;
+
+
+            }
+
+            if (actionType == "ReviewerSelected")
+            {
+                var proposalId = model.RequestId.Value;
+
+                var detail = model.ScenarioDetails.FirstOrDefault(d => d.ScenarioId == "SCN001");
+                if (detail != null)
+                {
+                    var reviewer = await _scenarioControllerService.GetReviewerByIdAsync(detail.ReviewerId);
+
+                    detail.ReviewerUserId = reviewer.UserId;
+                    detail.ReviewerEmail = reviewer.Email;
+
+                    // Rebuild dropdowns
+                    detail.RequestingGroups = await _scenarioControllerService.GetRequestingGroupsAsync(model.RequestId.Value);
+                    detail.TargetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(model.RequestId.Value, detail.RequestingGroupId);
+                    detail.Reviewers = await _scenarioControllerService.GetReviewersByRequestingGroupAsync(model.RequestId.Value, detail.RequestingGroupId);
+
+                    // Set selected items
+                    detail.RequestingGroups.ForEach(x => x.Selected = x.Value == detail.RequestingGroupId.ToString());
+                    detail.TargetGroups.ForEach(x => x.Selected = x.Value == detail.TargetGroupId.ToString());
+                    detail.Reviewers.ForEach(x => x.Selected = x.Value == detail.ReviewerId.ToString());
+                }
+
+                
             }
 
             if (actionType == "RunSelected")
@@ -57,22 +112,52 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 // Handle the selected scenarios
                 var selectedIds = model.SelectedScenarioIds;
 
-                // Do something with them (e.g., run tests)
-                // Then redirect or return a result view
+                model.ScenarioDetails.ForEach(x =>
+                {
+                    x.ProposalId = model.RequestId ?? 0;
+                });
+
+                TempData["ScenarioModel"] = JsonConvert.SerializeObject(model);
+
                 return RedirectToAction("RunSelected", new { ids = selectedIds });
             }
 
-            // Otherwise, just reload the form with scenarios for the selected RequestId
-            if (model.RequestId.HasValue)
-            {
-                model = await _scenarioControllerService.GenerateScenarioFormViewModel(model.RequestId.Value);
-            }
-            else
-            {
-                model.RequestIds = await _scenarioControllerService.GetRequestSelectListAsync();
-            }
+            
 
             return View(model);
+        }
+
+        
+        public IActionResult RunSelected()
+        {
+
+            var modelJson = TempData["ScenarioModel"] as string;
+            var model = JsonConvert.DeserializeObject<ScenarioFormViewModel>(modelJson);
+
+            // Check if model.ScenarioDetails has data
+            if (model.ScenarioDetails == null || !model.ScenarioDetails.Any())
+            {
+                // Log or debug here
+                Debug.WriteLine("ScenarioDetails is empty");
+            }
+
+            var selectedScenarios = model.ScenarioDetails
+            .Where(s => model.SelectedScenarioIds.Contains(s.ScenarioId))
+            .ToList();
+
+            // Now you have full access to each selected scenario's form data
+            foreach (var scenario in selectedScenarios)
+            {
+                // Process each scenario
+                var requestingGroupId = scenario.RequestingGroupId;
+                var targetGroupId = scenario.TargetGroupId;
+                var reviewerId = scenario.ReviewerId;
+                var message = scenario.Message;
+
+                // etc.
+            }
+
+            return View("Index", model);
         }
 
         //[HttpPost]
@@ -107,7 +192,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         [HttpGet]
         public IActionResult LoadScenarioView(string scenarioId, string requestId)
         {
-            ViewBag.RequestId = requestId;
+            //ViewBag.RequestId = requestId;
             var viewName = _scenarioControllerService.GetScenarioViewName(scenarioId);
             return PartialView(viewName);
         }
@@ -165,41 +250,41 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
 
 
-        [HttpPost]
-        public IActionResult RunSelected(ScenarioFormViewModel model)
-        {
+        //[HttpPost]
+        //public IActionResult RunSelected(ScenarioFormViewModel model)
+        //{
 
-            // Check if model.ScenarioDetails has data
-            if (model.ScenarioDetails == null || !model.ScenarioDetails.Any())
-            {
-                // Log or debug here
-                Debug.WriteLine("ScenarioDetails is empty");
-            }
+        //    // Check if model.ScenarioDetails has data
+        //    if (model.ScenarioDetails == null || !model.ScenarioDetails.Any())
+        //    {
+        //        // Log or debug here
+        //        Debug.WriteLine("ScenarioDetails is empty");
+        //    }
 
 
-            foreach (var key in Request.Form.Keys)
-            {
-                Console.WriteLine($"{key}: {Request.Form[key]}");
-            }
+        //    foreach (var key in Request.Form.Keys)
+        //    {
+        //        Console.WriteLine($"{key}: {Request.Form[key]}");
+        //    }
 
-            var selectedScenarios = model.ScenarioDetails
-            .Where(s => model.SelectedScenarioIds.Contains(s.ScenarioId))
-            .ToList();
+        //    var selectedScenarios = model.ScenarioDetails
+        //    .Where(s => model.SelectedScenarioIds.Contains(s.ScenarioId))
+        //    .ToList();
 
-            // Now you have full access to each selected scenario's form data
-            foreach (var scenario in selectedScenarios)
-            {
-                // Process each scenario
-                var requestingGroupId = scenario.RequestingGroupId;
-                var targetGroupId = scenario.TargetGroupId;
-                var reviewerId = scenario.ReviewerId;
-                var message = scenario.Message;
-                // etc.
-            }
+        //    // Now you have full access to each selected scenario's form data
+        //    foreach (var scenario in selectedScenarios)
+        //    {
+        //        // Process each scenario
+        //        var requestingGroupId = scenario.RequestingGroupId;
+        //        var targetGroupId = scenario.TargetGroupId;
+        //        var reviewerId = scenario.ReviewerId;
+        //        var message = scenario.Message;
+        //        // etc.
+        //    }
 
-            ViewBag.Message = $"You selected: {string.Join(", ", selectedScenarios.Select(s => s.ScenarioId))}";
-            return View("Index", model);
-        }
+        //    //ViewBag.Message = $"You selected: {string.Join(", ", selectedScenarios.Select(s => s.ScenarioId))}";
+        //    return View("Index", model);
+        //}
 
     }
 }

@@ -7,21 +7,21 @@
 <h2>Run Automated Test</h2>
 
 <div>
-    <h3>Request ID</h3>
     <div id="requestIdSpinner" style="display: none;">
         <span>Loading Request IDs...</span>
         <img src="~/images/spinner.gif" alt="Loading..." style="height: 20px;" />
     </div>
-
 </div>
 
 <form id="scenarioForm" method="post" asp-action="Index">
     <input type="hidden" name="ActionType" id="actionType" value="SelectRequest" />
 
-    <select asp-for="RequestId" asp-items="Model.RequestIds" class="form-control" onchange="document.getElementById('actionType').value='SelectRequest'; this.form.submit();">
-        <option value="">-- Select One --</option>
-    </select>
-
+    <div class="form-group">
+        <label asp-for="RequestId" class="control-label"></label>
+        <select asp-for="RequestId" asp-items="Model.RequestIds" class="form-control" onchange="document.getElementById('actionType').value='SelectRequest'; this.form.submit();">
+            <option value="">-- Select One --</option>
+        </select>
+    </div>
   
     @if (Model.RequestId.HasValue && Model.RequestId.Value > 0 && Model.ScenarioDetails?.Any() == true)
     {
@@ -30,16 +30,29 @@
 
             @for (int i = 0; i < Model.ScenarioDetails.Count; i++)
             {
+                <input type="hidden" asp-for=@Model.ScenarioDetails[i].ScenarioId />
+                <input type="hidden" asp-for=@Model.ScenarioDetails[i].PartialViewName />
+                <input type="hidden" asp-for=@Model.ScenarioDetails[i].DisplayText />
+                <input type="hidden" asp-for=@Model.ScenarioDetails[i].ReviewerEmail />
+                <input type="hidden" asp-for=@Model.ScenarioDetails[i].ReviewerUserId />
+
                 var detail = Model.ScenarioDetails[i];
                 var partialId = $"partial-{detail.ScenarioId}";
 
                 <div class="scenario-wrapper">
                     <label>
-                        <input type="checkbox" name="SelectedScenarioIds" value="@detail.ScenarioId" data-target="@partialId" />
+                        @* <input type="checkbox" name="SelectedScenarioIds" value="@detail.ScenarioId" data-target="@partialId" /> *@
+                        <input type="checkbox"
+                               name="SelectedScenarioIds"
+                               value="@detail.ScenarioId"
+                               data-target="@partialId"
+                        @(Model.SelectedScenarioIds?.Contains(detail.ScenarioId) == true ? "checked" : "") />
                         @detail.DisplayText
                     </label>
 
-                    <div id="@partialId" class="scenario-partial" style="display: none;">
+                    @* <div id="@partialId" class="scenario-partial" style="display: none;"> *@
+                    <div id="@partialId" class="scenario-partial"
+                         style="display: @(Model.SelectedScenarioIds?.Contains(detail.ScenarioId) == true ? "block" : "none")">
                         @{
                             var viewData = new ViewDataDictionary<ScenarioDetailsViewModel>(
                             ViewData,

@@ -17,6 +17,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<ScenarioFormViewModel> GenerateScenarioFormViewModel(int? requestId);
         Task<List<SelectListItem>> GetTargetGroupsByRequestIdAsync(int proposalId, int requestingGroupId);
         Task<List<SelectListItem>> GetRequestSelectListAsync();
+        Task<List<SelectListItem>> GetRequestingGroupsAsync(int proposalId);
+        Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id);
     }
 
     public class ScenarioControllerService : IScenarioControllerService
@@ -258,6 +260,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             };
 
             return request;
+        }
+
+        public async Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id)
+        {
+            return  await _capitalRequestServices.GetReviewer(id);
         }
     }
 }
