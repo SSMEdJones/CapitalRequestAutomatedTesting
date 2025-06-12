@@ -37,6 +37,21 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         [HttpPost]
         public async Task<IActionResult> Index(ScenarioFormViewModel model, string actionType)
         {
+
+            if (actionType == "RequestingGroupChanged")
+            {
+                var proposalId = model.RequestId.Value;
+                var requestingGroupId = model.ScenarioDetails.FirstOrDefault().RequestingGroupId;
+
+                var detail = model.ScenarioDetails.FirstOrDefault(d => d.ScenarioId == "SCN001");
+                if (detail != null)
+                {
+                    detail.TargetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(proposalId, detail.RequestingGroupId);
+                    detail.Reviewers = await _scenarioControllerService.GetReviewersByRequestingGroupAsync(proposalId, detail.RequestingGroupId);
+                }
+
+            }
+
             if (actionType == "RunSelected")
             {
                 // Handle the selected scenarios

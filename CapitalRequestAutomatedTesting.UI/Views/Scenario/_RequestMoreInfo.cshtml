@@ -3,9 +3,11 @@
 
 <div>
    <label asp-for="DisplayText">Requesting Group:</label>
-     <select asp-for="RequestingGroupId" asp-items="Model.RequestingGroups" onchange="onRequestingGroupChange(this)" class="form-control">
-        <option value="">--Select One--</option>
+    <select asp-for="RequestingGroupId" asp-items="Model.RequestingGroups" class="form-control"
+                   onchange="document.getElementById('actionType').value='RequestingGroupChanged'; this.form.submit();">
+        <option value="">-- Select One --</option>
     </select>
+
 
     <label asp-for="TargetGroupId">Target Group:</label>
     <select asp-for="TargetGroupId" asp-items="Model.TargetGroups" class="form-control">

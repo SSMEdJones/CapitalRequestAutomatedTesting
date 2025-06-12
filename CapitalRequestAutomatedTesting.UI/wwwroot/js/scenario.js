@@ -17,35 +17,35 @@
 //};
 
 // Show scenario list after request is selected
-document.getElementById('requestIdDropdown').addEventListener('change', function () {
-    const requestId = this.value;
-    const scenarioListDiv = document.getElementById('scenarioList');
-    const runButton = document.getElementById('runSelectedButton');
+//document.getElementById('requestIdDropdown').addEventListener('change', function () {
+//    const requestId = this.value;
+//    const scenarioListDiv = document.getElementById('scenarioList');
+//    const runButton = document.getElementById('runSelectedButton');
 
-    if (requestId) {
-        scenarioListDiv.style.display = 'block';
-        runButton.style.display = 'block';
+//    if (requestId) {
+//        scenarioListDiv.style.display = 'block';
+//        runButton.style.display = 'block';
 
-        // Load partials for each scenario
-        document.querySelectorAll('.scenario-wrapper').forEach(wrapper => {
-            const scenarioId = wrapper.querySelector('input[type="checkbox"]').value;
-            const targetDiv = wrapper.querySelector('.scenario-partial');
+//        // Load partials for each scenario
+//        document.querySelectorAll('.scenario-wrapper').forEach(wrapper => {
+//            const scenarioId = wrapper.querySelector('input[type="checkbox"]').value;
+//            const targetDiv = wrapper.querySelector('.scenario-partial');
 
-            fetch(`/Scenario/LoadScenarioPartial?scenarioId=${scenarioId}&requestId=${requestId}`)
-                .then(response => response.text())
-                .then(html => {
-                    targetDiv.innerHTML = html;
-                })
-                .catch(error => {
-                    console.error('Error loading partial view:', error);
-                });
-        });
+//            fetch(`/Scenario/LoadScenarioPartial?scenarioId=${scenarioId}&requestId=${requestId}`)
+//                .then(response => response.text())
+//                .then(html => {
+//                    targetDiv.innerHTML = html;
+//                })
+//                .catch(error => {
+//                    console.error('Error loading partial view:', error);
+//                });
+//        });
 
-    } else {
-        scenarioListDiv.style.display = 'none';
-        runButton.style.display = 'none';
-    }
-});
+//    } else {
+//        scenarioListDiv.style.display = 'none';
+//        runButton.style.display = 'none';
+//    }
+//});
 
 
 // Toggle partial views when checkboxes are clicked
@@ -60,48 +60,48 @@ document.addEventListener('change', function (e) {
 });
 
 
-async function onRequestingGroupChange(selectElement) {
-    const requestingGroupId = selectElement.value;
+//async function onRequestingGroupChange(selectElement) {
+//    const requestingGroupId = selectElement.value;
 
-    const container = selectElement.closest('.scenario-partial');
-    const requestId = document.getElementById('requestIdDropdown').value;
+//    const container = selectElement.closest('.scenario-partial');
+//    const requestId = document.getElementById('requestIdDropdown').value;
 
-    const targetGroupDropdown = document.getElementById('TargetGroupId');
-    const reviewerDropdown = document.getElementById('ReviewerId');
+//    const targetGroupDropdown = document.getElementById('TargetGroupId');
+//    const reviewerDropdown = document.getElementById('ReviewerId');
 
-    if (!requestingGroupId || !requestId || !targetGroupDropdown || !reviewerDropdown) {
-        console.warn('Missing required data or elements');
-        return;
-    }
+//    if (!requestingGroupId || !requestId || !targetGroupDropdown || !reviewerDropdown) {
+//        console.warn('Missing required data or elements');
+//        return;
+//    }
 
-    try {
-        const response = await fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${requestId}&requestingGroupId=${requestingGroupId}`);
-        if (!response.ok) throw new Error('Failed to fetch target groups and reviewers');
+//    try {
+//        const response = await fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${requestId}&requestingGroupId=${requestingGroupId}`);
+//        if (!response.ok) throw new Error('Failed to fetch target groups and reviewers');
 
-        const data = await response.json();
+//        const data = await response.json();
 
-        // Populate Target Groups
-        targetGroupDropdown.innerHTML = '<option value="">--Select One--</option>';
-        data.targetGroups.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.value;
-            option.text = item.text;
-            targetGroupDropdown.appendChild(option);
-        });
+//        // Populate Target Groups
+//        targetGroupDropdown.innerHTML = '<option value="">--Select One--</option>';
+//        data.targetGroups.forEach(item => {
+//            const option = document.createElement('option');
+//            option.value = item.value;
+//            option.text = item.text;
+//            targetGroupDropdown.appendChild(option);
+//        });
 
-        // Populate Reviewers
-        reviewerDropdown.innerHTML = '<option value="">--Select One--</option>';
-        data.reviewers.forEach(item => {
-            const option = document.createElement('option');
-            option.value = item.value;
-            option.text = item.text;
-            reviewerDropdown.appendChild(option);
-        });
+//        // Populate Reviewers
+//        reviewerDropdown.innerHTML = '<option value="">--Select One--</option>';
+//        data.reviewers.forEach(item => {
+//            const option = document.createElement('option');
+//            option.value = item.value;
+//            option.text = item.text;
+//            reviewerDropdown.appendChild(option);
+//        });
 
-    } catch (error) {
-        console.error('Error fetching filtered data:', error);
-    }
-}
+//    } catch (error) {
+//        console.error('Error fetching filtered data:', error);
+//    }
+//}
 
 
 

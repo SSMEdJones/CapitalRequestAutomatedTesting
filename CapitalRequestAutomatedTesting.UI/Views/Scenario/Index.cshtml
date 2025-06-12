@@ -15,16 +15,15 @@
 
 </div>
 
-<form id="scenarioForm" method="post" asp-action="RunSelected">
+<form id="scenarioForm" method="post" asp-action="Index">
     <input type="hidden" name="ActionType" id="actionType" value="SelectRequest" />
 
-    <div>
-        <select asp-for="RequestId" asp-items="Model.RequestIds" class="form-control">
-            <option value="">--Select One--</option>
-        </select>
-    </div>
+    <select asp-for="RequestId" asp-items="Model.RequestIds" class="form-control" onchange="document.getElementById('actionType').value='SelectRequest'; this.form.submit();">
+        <option value="">-- Select One --</option>
+    </select>
 
-    @if (Model.RequestId.HasValue && Model.ScenarioDetails?.Any() == true)
+  
+    @if (Model.RequestId.HasValue && Model.RequestId.Value > 0 && Model.ScenarioDetails?.Any() == true)
     {
         <div id="scenarioList">
             <label>Select Scenario</label>
@@ -59,14 +58,6 @@
             </button>
         </div>
     }
-
-
-
-
-
-    <button type="submit" onclick="document.getElementById('actionType').value='RunSelected';">
-        Run Selected
-    </button>
 
 </form>
 
