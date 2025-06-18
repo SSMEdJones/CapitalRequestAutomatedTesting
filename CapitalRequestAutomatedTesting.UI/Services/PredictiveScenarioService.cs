@@ -1,18 +1,18 @@
 ﻿using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using SSMWorkflow.API.DataAccess.Models;
-using SSMWorkflow.API.Models;
-using System.Diagnostics;
 using System.Reflection;
-using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
     public interface IPredictiveScenarioService
     {
-        ScenarioDataViewModel ExecuteScenarioMethods(List<PredictiveTable> tables, List<PredictiveMethod> methods, ScenarioDetailsViewModel scenarioDetail);
+        Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(
+            List<PredictiveMethod> methods,
+            ScenarioDetailsViewModel scenarioDetail);
     }
     public class PredictiveScenarioService : IPredictiveScenarioService
     {
@@ -25,10 +25,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private IPredictiveEmailNotificationService _predictiveEmailNotificationService;
         private readonly IServiceProvider _serviceProvider;
 
-        public PredictiveScenarioService(ICapitalRequestServices capitalRequestServices, 
-            ISSMWorkflowServices ssmWorkflowServices, 
+        public PredictiveScenarioService(ICapitalRequestServices capitalRequestServices,
+            ISSMWorkflowServices ssmWorkflowServices,
             IWorkflowControllerService workflowControllerService,
-            IPredictiveRequestedInfoService  predictiveRequestedInfoService,
+            IPredictiveRequestedInfoService predictiveRequestedInfoService,
             IPredictiveWorkflowStepResponderService predictiveWorkflowStepResponderService,
             IPredictiveWorkflowStepOptionService predictiveWorkflowStepOptionService,
             IPredictiveEmailNotificationService predictiveEmailNotificationService,
@@ -44,104 +44,175 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _serviceProvider = serviceProvider;
         }
 
-        public ScenarioDataViewModel GenerateScenarioData(ScenarioDetailsViewModel scenarioDetail)
+        public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
             if (scenarioId == "SCN001")
             {
-
-                var tables = GetScenarioTables(scenarioId);
                 var methods = GetScenarioMethods(scenarioId);
-
-                var results = ExecuteScenarioMethods(tables, methods, scenarioDetail);
+                var results = await ExecuteScenarioMethodsAsync( methods, scenarioDetail);
             }
 
             return scenarioDataViewModel;
         }
 
-        //private ScenarioDataViewModel ExecuteScenarioMethods(List<PredictiveMethod> methods)
-        public ScenarioDataViewModel ExecuteScenarioMethods(List<PredictiveTable> tables, List<PredictiveMethod> methods, ScenarioDetailsViewModel scenarioDetail)
+        public async Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(
+            List<PredictiveMethod> methods,
+            ScenarioDetailsViewModel scenarioDetail)
         {
+            var scenarioData = new ScenarioDataViewModel();
+
             var scenarioDataViewModel = new ScenarioDataViewModel();
 
-            methods.ForEach(method =>
+            foreach (var method in methods)
             {
-                // Resolve service dynamically via DI
-                Debug.WriteLine($"Resolved Type: {typeof(IPredictiveRequestedInfoService)}");
-                Debug.WriteLine($"Service Instance: {_serviceProvider.GetService(typeof(IPredictiveRequestedInfoService))}");
-
-                var debug = _serviceProvider.GetService(Type.GetType(method.ServiceName));
-
-                var serviceInstance = _serviceProvider.GetService(typeof(IPredictiveRequestedInfoService));
-
-                if (serviceInstance == null) return;
-
-                // Get method info
-                MethodInfo methodInfo = serviceInstance.GetType().GetMethod(method.MethodName);
-                if (methodInfo == null) return;
-
-                // Convert parameters to an object array
-                object[] parameters = method.Parameters?.Select(p => Convert.ChangeType(p, methodInfo.GetParameters()[0].ParameterType)).ToArray() ?? new object[] { };
-
-                // Invoke the method dynamically
-                object result = methodInfo.Invoke(serviceInstance, parameters);
-
-                // Map results dynamically to ViewModel
-                MapResultsToViewModel(scenarioDataViewModel, method.ServiceName, result);
-            });
+                scenarioDataViewModel = await ExecuteScenarioMethodAsync(method, scenarioDetail, scenarioData);
+            }
 
             return scenarioDataViewModel;
         }
-        private void MapResultsToViewModel(ScenarioDataViewModel scenarioDataViewModel, string serviceName, object result)
+
+
+        public async Task<ScenarioDataViewModel> ExecuteScenarioMethodAsync(PredictiveMethod method, ScenarioDetailsViewModel scenarioDetail, ScenarioDataViewModel scenarioDataViewModel)
         {
-            switch (serviceName)
+            var nameSpace = "CapitalRequestAutomatedTesting.UI.Services.";
+            object serviceInstance = null;
+            Type serviceType = null;
+
+            var serviceName = $"{nameSpace}{method.ServiceName}";
+            // Resolve service type
+            if (serviceName == $"{nameSpace}IPredictiveRequestedInfoService")
+                serviceType = typeof(IPredictiveRequestedInfoService);
+            else if (serviceName == $"{nameSpace}IPredictiveWorkflowStepResponderService")
+                serviceType = typeof(IPredictiveWorkflowStepResponderService);
+            else if (serviceName == $"{nameSpace}IPredictiveWorkflowStepOptionService")
+                serviceType = typeof(IPredictiveWorkflowStepOptionService);
+            else if (serviceName == $"{nameSpace}IPredictiveWorkflowStepService")
+                serviceType = typeof(IPredictiveWorkflowStepService);
+            else if (serviceName == $"{nameSpace}IPredictiveEmailNotificationService")
+                serviceType = typeof(IPredictiveEmailNotificationService);
+            else if (serviceName == $"{nameSpace}IPredictiveScenarioService")
+                serviceType = typeof(IPredictiveScenarioService);
+
+            if (serviceType == null) return scenarioDataViewModel;
+
+            // Get service instance
+            serviceInstance = _serviceProvider.GetService(serviceType);
+            if (serviceInstance == null) return scenarioDataViewModel;
+
+            // Get method info
+            MethodInfo methodInfo = serviceInstance.GetType().GetMethod(method.MethodName);
+            if (methodInfo == null) return scenarioDataViewModel;
+
+            object[] formattedParameters = method.Parameters?.ToArray() ?? new object[] { };
+
+            object result = methodInfo.Invoke(serviceInstance, formattedParameters);
+            var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
+
+            proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
+            proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
+
+            if (result is Task taskResult) // If method returns a Task
             {
-                case "_predictiveRequestedInfoService":
-                    scenarioDataViewModel.RequestedInfo = (dto.RequestedInfo)result;
-                    break;
-                case "_predictiveWorkflowStepResponderService":
-                    scenarioDataViewModel.WorkflowStepResponder = (WorkflowStepResponder)result;
-                    break;
-                case "_predictiveWorkflowStepOptionService":
-                    scenarioDataViewModel.WorkflowStepOptions = (List<WorkFlowStepOptionViewModel>)result;
-                    break;
-                case "_predictiveEmailNotificationService":
-                    scenarioDataViewModel.EmailNotifications = (List<SSMWorkflow.API.DataAccess.Models.EmailNotification>)result;
-                    break;
+                await taskResult.ConfigureAwait(false); // Await task completion
+                await Task.Delay(200); // Temporary delay to test execution timing
+
+                // If Task<T>, retrieve the actual result
+                var resultProperty = taskResult.GetType().GetProperty("Result");
+                result = resultProperty?.GetValue(taskResult);
             }
+
+            // Ensure inner async methods are awaited properly
+            if (result is Task innerTaskResult)
+            {
+                //await innerTaskResult.ConfigureAwait(false);
+                var innerResultProperty = innerTaskResult.GetType().GetProperty("Result");
+                result = innerResultProperty?.GetValue(innerTaskResult);
+            }
+
+            
+            // Map results dynamically to ViewModel
+            MapResultsToTables(scenarioDataViewModel, method.ServiceName, result, method.Operation);
+
+            return scenarioDataViewModel;
         }
-        //private ScenarioDataViewModel ExecuteScenarioMethods(List<PredictiveTable> tables, List<PredictiveMethod> methods, ScenarioDetailsViewModel scenarioDetail)
+
+        private string DetermineTableName(string serviceName)
+        {
+
+            return serviceName switch
+            {
+                "IPredictiveRequestedInfoService" => "RequestedInfo",
+                "IPredictiveWorkflowStepResponderService" => "WorkflowStepResponder",
+                "IPredictiveWorkflowStepOptionService" => "WorkflowStepOption",
+                "IPredictiveEmailNotificationService" => "EmailNotification",
+                _ => "UnknownTable"
+            };
+        }
+
+        private void MapResultsToTables(ScenarioDataViewModel scenarioDataViewModel, string serviceName, object result, CrudOperationType operationType)
+        {
+            var tableName = DetermineTableName(serviceName);
+
+            if (string.IsNullOrEmpty(tableName)) return;
+
+            if (!scenarioDataViewModel.Tables.ContainsKey(tableName))
+            {
+                scenarioDataViewModel.Tables[tableName] = new TableData
+                {
+                    TableName = tableName,
+                    Records = new List<RecordEntry>()
+                };
+            }
+
+            // Add new record with operation type
+            scenarioDataViewModel.Tables[tableName].Records.Add(new RecordEntry
+            {
+                Operation = operationType,
+                Data = result
+            });
+        }
+
+
+        //private void MapResultsToTables(ScenarioDataViewModel scenarioDataViewModel, string serviceName, object result, CrudOperationType operationType)
         //{
-        //    var scenarioDataViewModel = new ScenarioDataViewModel();
+        //    var tableName = DetermineTableName(serviceName);
 
-        //    methods.ForEach(x =>
+        //    if (string.IsNullOrEmpty(tableName)) return;
+
+        //    if (!scenarioDataViewModel.Tables.ContainsKey(tableName))
         //    {
-        //        switch (x.ServiceName)
+        //        scenarioDataViewModel.Tables[tableName] = new TableData
         //        {
-        //            case "PredictiveRequestedInfoService":
-        //                scenarioDataViewModel.RequestedInfo = x.ServiceName + x.MethodName + ParameterList
-        //                break;
-        //            case "PredictiveWorkflowStepResponderService":
-        //                scenarioDataViewModel.WorkflowStepResponder = _ssmWorkflowServices.CreateWorkflowStepResponderAsync(x.MethodName).Result;
-        //                break;
-        //            case "PredictiveWorkflowStepOptionService":
-        //                if (x.MethodName == "CloseOptionsAsync")
-        //                {
-        //                    scenarioDataViewModel.WorkflowStepOptions = _ssmWorkflowServices.CloseOptionsAsync().Result;
-        //                }
-        //                else if (x.MethodName == "CreateWorkflowStepOptionsAsync")
-        //                {
-        //                    scenarioDataViewModel.WorkflowStepOptions = _ssmWorkflowServices.CreateWorkflowStepOptionsAsync().Result;
-        //                }
-        //                break;
-        //            case "PredictiveEmailNotificationService":
-        //                scenarioDataViewModel.EmailNotifications = _ssmWorkflowServices.CreateEmailNotificationsAsync().Result;
-        //                break;
-        //        }
+        //            TableName = tableName,
+        //            Operation = operationType,
+        //            Records = new List<object> { result }
+        //        };
+        //    }
+        //    else
+        //    {
+        //        scenarioDataViewModel.Tables[tableName].Records.Add(result);
+        //    }
+        //}
 
-        //    });
-        //    return scenarioDataViewModel;
+        //private void MapResultsToTables(ScenarioDataViewModel scenarioDataViewModel, string serviceName, object result)
+        //{
+        //    var tableName = DetermineTableName(serviceName);
+
+        //    if (string.IsNullOrEmpty(tableName)) return;
+
+        //    // Check if the table already exists
+        //    if (!scenarioDataViewModel.Tables.ContainsKey(tableName))
+        //    {
+        //        // If not, create a new list and add the result
+        //        scenarioDataViewModel.Tables[tableName] = new List<object> { result };
+        //    }
+        //    else
+        //    {
+        //        // If it exists, add to the existing list
+        //        (scenarioDataViewModel.Tables[tableName] as List<object>)?.Add(result);
+        //    }
         //}
 
         private List<PredictiveMethod> GetScenarioMethods(string scenarioId)
@@ -157,7 +228,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     ScenarioId = "SCN001",
                     ServiceName = "_predictiveRequestedInfoService",
                     MethodName = "CreateRequestedInfoAsync",
-                    Parameters = new string[] { "proposal", "increment" }
+                    Parameters = new List<object> { new vm.Proposal(), 0},
+                    Operation = CrudOperationType.Insert
                 });
                 predictiveMethods.Add(new PredictiveMethod
                 {
@@ -166,7 +238,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     ScenarioId = "SCN001",
                     ServiceName = "_predictiveWorkflowStepResponderService",
                     MethodName = "CreateWorkflowStepResponderAsync",
-                    Parameters = new string[] { "proposal", "responderType" }
+                    Parameters = new List<object> { new vm.Proposal(), string.Empty },
+                    Operation = CrudOperationType.Insert
+
                 });
                 predictiveMethods.Add(new PredictiveMethod
                 {
@@ -175,7 +249,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     ScenarioId = "SCN001",
                     ServiceName = "_predictiveWorkflowStepOptionService",
                     MethodName = "CloseOptionsAsync",
-                    Parameters = new string[] { "proposal, optionId, OptionType, requestedInfoId, actionType" }
+                    Parameters = new List<object> { new vm.Proposal(), Guid.Empty, string.Empty, null, string.Empty },
+                    Operation = CrudOperationType.Update
+
+
                 });
                 predictiveMethods.Add(new PredictiveMethod
                 {
@@ -184,7 +261,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     ScenarioId = "SCN001",
                     ServiceName = "_predictiveWorkflowStepOptionService",
                     MethodName = "CreateWorkflowStepOptionsAsync",
-                    Parameters = new string[] { "proposal,OptionType, requestedInfoId " }
+                    Parameters = new List<object> { new vm.Proposal(), string.Empty, 0},
+                    Operation = CrudOperationType.Insert
+                    
                 });
                 predictiveMethods.Add(new PredictiveMethod
                 {
@@ -193,7 +272,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     ScenarioId = "SCN001",
                     ServiceName = "_predictiveEmailNotificationService",
                     MethodName = "CreateEmailNotificationsAsync",
-                    Parameters = new string[] { "proposal, emailType" }
+                    Parameters = new List<object> { new vm.Proposal(), string.Empty },
+                    Operation = CrudOperationType.Insert
+
                 });
 
 
@@ -202,21 +283,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return predictiveMethods;
         }
 
-        private List<PredictiveTable> GetScenarioTables(string scenarioId)
-        {
-            var predictiveTables = new List<PredictiveTable>();
-
-            if (scenarioId == "SCN001")
-            {
-                predictiveTables.Add(new PredictiveTable { DatabaseName = "SSMWorkflow", TableName = "EmailNotifications" });
-                predictiveTables.Add(new PredictiveTable { DatabaseName = "SSMWorkflow", TableName = "WorkflowInstanceActionHistory" });
-                predictiveTables.Add(new PredictiveTable { DatabaseName = "SSMWorkflow", TableName = "WorkflowStepOption" });
-                predictiveTables.Add(new PredictiveTable { DatabaseName = "SSMWorkflow", TableName = "WorkflowStepResponder" });
-                predictiveTables.Add(new PredictiveTable { DatabaseName = "CapitalRequest", TableName = "RequestedInfo" });
-
-            }
-
-            return predictiveTables;
-        }
+        
     }
 }

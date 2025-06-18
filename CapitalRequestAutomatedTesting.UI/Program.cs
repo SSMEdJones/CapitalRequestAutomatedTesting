@@ -5,6 +5,12 @@ using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using System.Diagnostics;
 
+//TODO Remove when debugging complete
+AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+{
+    Debug.WriteLine($"Unhandled Exception: {args.ExceptionObject}");
+};
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.

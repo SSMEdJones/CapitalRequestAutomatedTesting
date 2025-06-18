@@ -37,9 +37,5 @@
 
         public string UpdatedBy { get; set; }
 
-
-        //public virtual Workflow Workflow { get; set; }
-        //public virtual ICollection<WorkflowStepOption> WorkflowStepOption { get; set; }
-        //public virtual ICollection<WorkflowStepResponder> WorkflowStepResponder { get; set; }
     }
 }

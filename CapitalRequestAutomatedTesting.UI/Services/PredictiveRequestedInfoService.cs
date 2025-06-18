@@ -42,7 +42,6 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
     public async Task<dto.RequestedInfo> CreateRequestedInfoAsync(vm.Proposal proposal, int increment)
     {
         WorkFlowStepViewModel? workflowStep = await GetWorkflowStepAsync(proposal);
-
         // Resolve WorkflowStepOptionId
 
         var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
@@ -77,17 +76,24 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
 
         var action = _predictiveEmailNotificationService.GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_ACTION_REQUEST_MORE_INFORMATION, fullName);
 
+        var requestingReviewer = (await _capitalRequestServices
+                .GetReviewers(proposal.SegmentId))
+                .FirstOrDefault(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
+                            x.Email.ToLower() == _userContextService.Email.ToLower());
+
+        var requestingReviewerId = 0;
+
+        if (requestingReviewer != null)
+        {
+            requestingReviewerId = requestingReviewer.Id;
+        }
+
         // Generate RequestedInfo object
         var requestedInfo = new vm.RequestedInfo
         {
             ProposalId = proposal.Id,
             RequestingReviewerGroupId = proposal.ReviewerGroupId,
-            RequestingReviewerId = _capitalRequestServices
-                .GetReviewers(proposal.SegmentId).Result
-                .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
-                            x.Email.ToLower() == _userContextService.Email.ToLower())
-                .First()
-                .Id,
+            RequestingReviewerId = requestingReviewerId,
             ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
             RequestedInformation = "This message brought to you by Workflow Automated Testing.",
             Action = action,
@@ -97,7 +103,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
             CreatedBy = _userContextService.UserId
         };
 
-        var requestedinfoId = _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter()).Result.Max(x => x.Id) + increment;
+        var requestedinfoId = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id) + increment;
         requestedInfo.Id = requestedinfoId;
 
         return _mapper.Map<dto.RequestedInfo>(requestedInfo);

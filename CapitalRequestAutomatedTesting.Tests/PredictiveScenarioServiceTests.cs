@@ -1,239 +1,102 @@
-using Xunit;
-using Moq;
-using System;
-using System.Collections.Generic;
-using CapitalRequestAutomatedTesting.UI.Services;
-using dto = CapitalRequest.API.DataAccess.Models;
-using vm = CapitalRequest.API.Models;
-using SSMWorkflow.API.DataAccess.Models;
+using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Tests;
+using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using System.Diagnostics;
+using System.Reflection;
 
-public class ScenarioMethodExecutionTests
+public class PredictiveScenarioServiceTests : IntegrationTestBase
 {
-    private readonly Mock<ICapitalRequestServices> _capitalRequestMock;
-    private readonly Mock<ISSMWorkflowServices> _ssmWorkflowMock;
-    private readonly Mock<IWorkflowControllerService> _workflowControllerMock;
-    private readonly Mock<IPredictiveRequestedInfoService> _requestedInfoMock;
-    private readonly Mock<IPredictiveWorkflowStepResponderService> _responderMock;
-    private readonly Mock<IPredictiveWorkflowStepOptionService> _optionMock;
-    private readonly Mock<IPredictiveEmailNotificationService> _emailMock;
-    private readonly Mock<IServiceProvider> _serviceProviderMock;
+    private readonly IPredictiveScenarioService _service;
+    private readonly ICapitalRequestServices _capitalRequestservices;
+    private readonly ISSMWorkflowServices _ssmWorkflowServices;
+    private readonly IWorkflowControllerService _workflowControllerService;
+    private readonly IPredictiveRequestedInfoService _requestedInfoService;
+    private readonly IPredictiveWorkflowStepResponderService _responderService;
+    private readonly IPredictiveWorkflowStepOptionService _optionService;
+    private readonly IPredictiveEmailNotificationService _emailService;
+    private readonly IUserContextService _userContextService;
 
-    private readonly PredictiveScenarioService _predictiveScenarioService;
-
-    public ScenarioMethodExecutionTests()
+    public PredictiveScenarioServiceTests()
     {
-        // Initialize mocks
-        _capitalRequestMock = new Mock<ICapitalRequestServices>();
-        _ssmWorkflowMock = new Mock<ISSMWorkflowServices>();
-        _workflowControllerMock = new Mock<IWorkflowControllerService>();
-        _requestedInfoMock = new Mock<IPredictiveRequestedInfoService>();
-        _responderMock = new Mock<IPredictiveWorkflowStepResponderService>();
-        _optionMock = new Mock<IPredictiveWorkflowStepOptionService>();
-        _emailMock = new Mock<IPredictiveEmailNotificationService>();
-        _serviceProviderMock = new Mock<IServiceProvider>();
-
-        
-
-        _predictiveScenarioService = new PredictiveScenarioService(
-            _capitalRequestMock.Object,
-            _ssmWorkflowMock.Object,
-            _workflowControllerMock.Object,
-            _requestedInfoMock.Object,
-            _responderMock.Object,
-            _optionMock.Object,
-            _emailMock.Object,
-            _serviceProviderMock.Object);
+        _service = _provider.GetRequiredService<IPredictiveScenarioService>();
+        _capitalRequestservices = _provider.GetRequiredService<ICapitalRequestServices>();
+        _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
+        _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
+        _workflowControllerService = _provider.GetRequiredService<IWorkflowControllerService>();
+        _requestedInfoService = _provider.GetRequiredService<IPredictiveRequestedInfoService>();
+        _responderService = _provider.GetRequiredService<IPredictiveWorkflowStepResponderService>();
+        _optionService = _provider.GetRequiredService<IPredictiveWorkflowStepOptionService>();
+        _emailService = _provider.GetRequiredService<IPredictiveEmailNotificationService>();
+        _userContextService = _provider.GetRequiredService<IUserContextService>();
     }
 
+
     [Fact]
-    public void Should_Invoke_Methods_Dynamically_And_Return_Valid_Results()
+    public async Task Should_Invoke_RequestMoreInfo_Methods_Dynamically_And_Return_Valid_Results()
     {
-        // Set up mock return values for verification
-        var workflowStepOptionID = Guid.NewGuid();
+        var proposal = await _capitalRequestservices.GetProposal(2884);
+        proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
+        proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
+        proposal.RequestedInfo.RequestingReviewerGroupId = 2;
 
-        var mockRequestedInfo = new dto.RequestedInfo { Id = 1001, RequestedInformation = "Mocked Info" };
-        var mockResponder = new WorkflowStepResponder { WorkflowStepOptionID = workflowStepOptionID, Responder = "Mocked Responder" };
+        var increment = 0;
+        var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
+            .Where(x => !x.IsComplete)
+            .FirstOrDefault();
 
-        _requestedInfoMock.Setup(x => x.CreateRequestedInfoAsync(It.IsAny<vm.Proposal>(), It.IsAny<int>()))
-                          .ReturnsAsync(mockRequestedInfo);
+        var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                       .Where(x => x.IsComplete == false && x.IsTerminate == false)
+                       .ToList();
 
-        _responderMock.Setup(x => x.CreateWorkflowStepResponderAsync(It.IsAny<vm.Proposal>(), It.IsAny<string>()))
-                      .ReturnsAsync(mockResponder);
-        var scenarioDetailViewModel = new ScenarioDetailsViewModel
-        {
-            ScenarioId = "SCN001",
-            ProposalId = 2844
-        };
-
-        var tables = new List<PredictiveTable> { new PredictiveTable { TableName = "RequestedInfo" } };
+        var email = _userContextService.Email;
 
         var methods = new List<PredictiveMethod>
         {
-            new PredictiveMethod { ServiceName = "IPredictiveRequestedInfoService", MethodName = "CreateRequestedInfoAsync" },
-            new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepResponderService", MethodName = "CreateWorkflowStepResponderAsync" }
+            new PredictiveMethod { ServiceName = "IPredictiveRequestedInfoService", MethodName = "CreateRequestedInfoAsync", Parameters = new List<object> { proposal, increment }, Operation = CrudOperationType.Insert},
+            new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepResponderService", MethodName = "CreateWorkflowStepResponderAsync", Parameters = new List<object> { proposal, Constants.RESPONDER_REQUEST}, Operation = CrudOperationType.Insert },
+            new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepOptionService", MethodName = "CloseOptionsAsync", Parameters = new List<object> { proposal, Guid.Empty, Constants.OPTION_TYPE_VERIFY, null, Constants.OPTION_TYPE_REQUEST}, Operation = CrudOperationType.Update },
+            new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepOptionService", MethodName = "CreateWorkflowStepOptionsAsync", Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, proposal.RequestedInfo.Id } , Operation = CrudOperationType.Insert },
+            new PredictiveMethod { ServiceName = "IPredictiveEmailNotificationService", MethodName = "CreateEmailNotificationsAsync", Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION }, Operation = CrudOperationType.Insert }
         };
 
-        var services = new ServiceCollection();
-        services.AddScoped<IPredictiveRequestedInfoService, PredictiveRequestedInfoService>(); // Register correctly
-        var serviceProvider = services.BuildServiceProvider();
 
-        // Try resolving the service again
-        var serviceInstance = serviceProvider.GetService<IPredictiveRequestedInfoService>();
-        Console.WriteLine($"Resolved Service Instance: {serviceInstance}");
-
-        var executor = new PredictiveScenarioService(
-                            _capitalRequestMock.Object,
-                            _ssmWorkflowMock.Object,
-                            _workflowControllerMock.Object,
-                            _requestedInfoMock.Object,
-                            _responderMock.Object,
-                            _optionMock.Object,
-                            _emailMock.Object,
-                            serviceProvider);
+        var scenarioDetailViewModel = new ScenarioDetailsViewModel
+        {
+            ScenarioId = "SCN001",
+            ProposalId = 2884
+        };
 
         // Act
-        var result = _predictiveScenarioService.ExecuteScenarioMethods(tables, methods, scenarioDetailViewModel);
+        var result = await _service.ExecuteScenarioMethodsAsync(methods, scenarioDetailViewModel);
 
         // Assert - Properly compare expected results
-        Assert.NotNull(result.RequestedInfo);
-        Assert.Equal(mockRequestedInfo.Id, result.RequestedInfo.Id);
-        Assert.Equal(mockRequestedInfo.RequestedInformation, result.RequestedInfo.RequestedInformation);
+        Assert.NotNull(result);
+        Assert.Equal(result.Tables.First().Key, "RequestedInfo");
+        Assert.Equal(result.Tables.Skip(1).First().Key, "WorkflowStepResponder");
+        Assert.Equal(result.Tables.Skip(2).First().Key, "WorkflowStepOption");
+        Assert.Equal(result.Tables.Skip(2).First().Value.Records.Count, 2);
+        Assert.Equal(result.Tables.Skip(3).First().Key, "EmailNotification");
 
-        Assert.NotNull(result.WorkflowStepResponder);
-        Assert.Equal(mockResponder.WorkflowStepOptionID, result.WorkflowStepResponder.WorkflowStepOptionID);
-        Assert.Equal(mockResponder.Responder, result.WorkflowStepResponder.Responder);
+        foreach (var tableEntry in result.Tables)
+        {
+            Debug.WriteLine($"Table: {tableEntry.Key}");
+
+            foreach (var record in tableEntry.Value.Records)
+            {
+                Debug.WriteLine($"Action: {record.Operation}, Data: {JsonConvert.SerializeObject(record.Data)}");
+            }
+        }
     }
+
+    public async Task Should_Invoke_ReturnInfo_Methods_Dynamically_And_Return_Valid_Results()
+    {
+
+    }
+
 }
-
-//using Xunit;
-//using Moq;
-//using System;
-//using System.Reflection;
-//using System.Collections.Generic;
-//using CapitalRequestAutomatedTesting.UI.Services;
-//using dto = CapitalRequest.API.DataAccess.Models;
-//using vm = CapitalRequest.API.Models;
-//using SSMWorkflow.API.DataAccess.Models;
-//using CapitalRequestAutomatedTesting.UI.Models;
-//using CapitalRequestAutomatedTesting.Data;
-//using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-//using Microsoft.AspNetCore.Mvc.Rendering;
-//using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
-
-//public class ScenarioMethodExecutionTests
-//{
-//    private readonly Mock<ICapitalRequestServices> _capitalRequestMock;
-//    private readonly Mock<ISSMWorkflowServices> _ssmWorkflowMock;
-//    private readonly Mock<IWorkflowControllerService> _workflowControllerMock;
-//    private readonly Mock<IPredictiveRequestedInfoService> _requestedInfoMock;
-//    private readonly Mock<IPredictiveWorkflowStepResponderService> _responderMock;
-//    private readonly Mock<IPredictiveWorkflowStepOptionService> _optionMock;
-//    private readonly Mock<IPredictiveEmailNotificationService> _emailMock;
-//    private readonly Mock<IServiceProvider> _serviceProviderMock;
-
-//    private readonly PredictiveScenarioService _predictiveScenarioService;
-
-//    public ScenarioMethodExecutionTests()
-//    {
-//        _capitalRequestMock = new Mock<ICapitalRequestServices>();
-//        _ssmWorkflowMock = new Mock<ISSMWorkflowServices>();
-//        _workflowControllerMock = new Mock<IWorkflowControllerService>();
-//        _requestedInfoMock = new Mock<IPredictiveRequestedInfoService>();
-//        _responderMock = new Mock<IPredictiveWorkflowStepResponderService>();
-//        _optionMock = new Mock<IPredictiveWorkflowStepOptionService>();
-//        _emailMock = new Mock<IPredictiveEmailNotificationService>();
-//        _serviceProviderMock = new Mock<IServiceProvider>();
-
-//        // Mock service provider resolution
-//        _serviceProviderMock.Setup(sp => sp.GetService(typeof(IPredictiveRequestedInfoService)))
-//                            .Returns(_requestedInfoMock.Object);
-//        _serviceProviderMock.Setup(sp => sp.GetService(typeof(IPredictiveWorkflowStepResponderService)))
-//                            .Returns(_responderMock.Object);
-//        _serviceProviderMock.Setup(sp => sp.GetService(typeof(IPredictiveWorkflowStepOptionService)))
-//                            .Returns(_optionMock.Object);
-//        _serviceProviderMock.Setup(sp => sp.GetService(typeof(IPredictiveEmailNotificationService)))
-//                            .Returns(_emailMock.Object);
-
-//        // Instantiate service with mocked dependencies
-//        _predictiveScenarioService = new PredictiveScenarioService(
-//            _capitalRequestMock.Object,
-//            _ssmWorkflowMock.Object,
-//            _workflowControllerMock.Object,
-//            _requestedInfoMock.Object,
-//            _responderMock.Object,
-//            _optionMock.Object,
-//            _emailMock.Object,
-//            _serviceProviderMock.Object);
-
-//        // Mocking services
-//        var requestedInfoServiceMock = new Mock<IPredictiveRequestedInfoService>();
-//        var proposal = new vm.Proposal();
-
-//        requestedInfoServiceMock.Setup(x => x.CreateRequestedInfoAsync(It.IsAny<vm.Proposal>(), It.IsAny<int>())).ReturnsAsync(It.IsAny<dto.RequestedInfo>());
-
-//        var workflowServiceMock = new Mock<IPredictiveWorkflowStepResponderService>();
-//        workflowServiceMock.Setup(x => x.CreateWorkflowStepResponderAsync(It.IsAny<vm.Proposal>(), It.IsAny<string>())).ReturnsAsync(It.IsAny<WorkflowStepResponder>());
-
-//        // Inject mocks into the service provider
-//        _serviceProviderMock.Setup(sp => sp.GetService(typeof(IPredictiveRequestedInfoService)))
-//                            .Returns(requestedInfoServiceMock.Object);
-//        _serviceProviderMock.Setup(sp => sp.GetService(typeof(IPredictiveWorkflowStepResponderService)))
-//                            .Returns(workflowServiceMock.Object);
-//    }
-
-//    [Fact]
-//    public void Should_Invoke_Methods_Dynamically()
-//    {
-//        var scenarioDetailViewModel = new ScenarioDetailsViewModel
-//        {
-//            ScenarioId = "SCN001",
-//            PartialViewName = "_RequestMoreInfo",
-//            DisplayText = "Request more info",
-//            ProposalId = 2844,
-//            SequenceNumber = 1,
-//            RequestingGroupId = 2,
-//            TargetGroupId = 3,
-//            ReviewerId = 25
-//        };
-
-//        // Arrange
-//        var tables = new List<PredictiveTable>
-//        {
-//        new PredictiveTable { DatabaseName = "SSMWorkflow", TableName = "EmailNotifications" },
-//        new PredictiveTable { DatabaseName = "SSMWorkflow", TableName = "WorkflowInstanceActionHistory" },
-//        new PredictiveTable { DatabaseName = "SSMWorkflow", TableName = "WorkflowStepOption" },
-//        new PredictiveTable { DatabaseName = "SSMWorkflow", TableName = "WorkflowStepResponder" },
-//        new PredictiveTable { DatabaseName = "CapitalRequest", TableName = "RequestedInfo" }
-//        };
-
-//        var methods = new List<PredictiveMethod>
-//        {
-//            new PredictiveMethod { ServiceName = "IPredictiveRequestedInfoService", MethodName = "CreateRequestedInfoAsync" },
-//            new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepResponderService", MethodName = "CreateWorkflowStepResponderAsync" }
-//        };
-
-//        var executor = new PredictiveScenarioService(
-//                    _capitalRequestMock.Object,
-//                    _ssmWorkflowMock.Object,
-//                    _workflowControllerMock.Object,
-//                    _requestedInfoMock.Object,
-//                    _responderMock.Object,
-//                    _optionMock.Object,
-//                    _emailMock.Object,
-//                    _serviceProviderMock.Object);
-
-//        // Act
-//        var result = executor.ExecuteScenarioMethods(tables, methods, scenarioDetailViewModel);
-
-//        // Assert
-//          Assert.NotNull(result.RequestedInfo);
-//        Assert.Equal(It.IsAny<dto.RequestedInfo>(), result.RequestedInfo);
-//        Assert.Equal(It.IsAny<WorkflowStepResponder>(), result.WorkflowStepResponder);
-//    }
-//}
-
 
