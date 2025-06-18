@@ -13,7 +13,7 @@ public class PredictiveEmailNotificationServiceTests : IntegrationTestBase
 {
     private readonly IPredictiveEmailNotificationService _service;
     private readonly IPredictiveRequestedInfoService _requestedInfoService;
-    private readonly IActualEmailNotificataionService _actualEmailNotificationService;
+    private readonly IActualEmailNotificationService _actualEmailNotificationService;
     private readonly ICapitalRequestServices _capitalRequestservices;
     private readonly ISSMWorkflowServices _ssmWorkflowServices;
     private readonly IMapper _mapper;
@@ -24,10 +24,10 @@ public class PredictiveEmailNotificationServiceTests : IntegrationTestBase
         _capitalRequestservices = _provider.GetRequiredService<ICapitalRequestServices>();
         _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
         _requestedInfoService = _provider.GetRequiredService<IPredictiveRequestedInfoService>();
-        _actualEmailNotificationService = _provider.GetRequiredService<IActualEmailNotificataionService>();
+        _actualEmailNotificationService = _provider.GetRequiredService<IActualEmailNotificationService>();
         _mapper = _provider.GetRequiredService<IMapper>();
     }
-    
+
     [Fact]
     public async Task CreateEmailNotificationsAsync_ShouldReturnExpectedResults()
     {
@@ -67,7 +67,7 @@ public class PredictiveEmailNotificationServiceTests : IntegrationTestBase
 
             Assert.True(pred.WorkflowState == match.WorkflowState,
                 $"WorkflowState mismatch for Recipients {pred.Recipients}. Predicted: {pred.WorkflowState}, Actual: {match.WorkflowState}");
-            
+
             Assert.True(pred.StepName == match.StepName,
                 $"StepName mismatch for Recipients {pred.Recipients}. Predicted: {pred.StepName}, Actual: {match.StepName}");
 
@@ -93,6 +93,18 @@ public class PredictiveEmailNotificationServiceTests : IntegrationTestBase
 
 
         Debug.WriteLine($"EmailNotification: {System.Text.Json.JsonSerializer.Serialize(predicted)}");
+    }
+
+    [Fact]
+    public async Task GetActualEmailNotificationsAsync_ShouldReturnExpectedResults()
+    {
+        var proposal = await _capitalRequestservices.GetProposal(2884);
+        proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
+        proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
+        proposal.RequestedInfo = await _capitalRequestservices.GetRequestedInfo(667);
+
+        var emailType = "Request More Information Email";
+        var result = await _actualEmailNotificationService.GetRequestEmailNotificationsAsync(proposal, emailType);
     }
 }
 

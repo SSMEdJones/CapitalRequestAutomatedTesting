@@ -70,7 +70,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             foreach(var reviewer in reviewers)
             {
                 var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
-                var action = GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_ACTION_REQUEST_MORE_INFORMATION, fullName);
+                var action = GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION, fullName);
                 var emailMessage = await GenerateEmailMessageAsync(emailTemplate, reviewer, requestingGroup, proposal);
                 
                 var emallQueryViewModel = new EmailQueryViewModel
@@ -119,8 +119,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 emailTemplateId = emailQueryViewModel.EmailTemplateId,
                 reviewerGroupId = emailQueryViewModel.ReviewerGroupId,
                 action = emailQueryViewModel.Action,
-                OptionId = emailQueryViewModel.OptionId,
-                RequestedInfoId = emailQueryViewModel.RequestedInfoId
+                optionId = emailQueryViewModel.OptionId,
+                requestedInfoId = emailQueryViewModel.RequestedInfoId
             });
 
             return emailQuery;

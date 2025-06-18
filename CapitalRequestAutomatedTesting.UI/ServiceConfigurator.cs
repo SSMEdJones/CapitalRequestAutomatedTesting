@@ -108,7 +108,7 @@ namespace CapitalRequestAutomatedTesting.UI
             #endregion
 
             #region Actual Services
-            services.AddScoped<IActualEmailNotificataionService, ActualEmailNotificataionService>();
+            services.AddScoped<IActualEmailNotificationService, ActualEmailNotificationService>();
             #endregion
 
             #region Scenario Framework

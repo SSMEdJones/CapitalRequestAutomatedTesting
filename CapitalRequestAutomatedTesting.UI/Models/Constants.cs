@@ -53,6 +53,6 @@
         public const string PURCHASING_GROUP = "Purchasing";
         public const string AUTHOR_GROUP = "Author";
 
-        public const string EMAIL_ACTION_REQUEST_MORE_INFORMATION = "{{ fullName }} from {{ requestingGroupName }} requested more information from {{ requestedGroup }} on {{ requestDate }}.";
+        public const string EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION = "{{ fullName }} from {{ requestingGroupName }} requested more information from {{ requestedGroup }} on {{ requestDate }}.";
     }
 }

@@ -74,7 +74,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
 
         var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
 
-        var action = _predictiveEmailNotificationService.GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_ACTION_REQUEST_MORE_INFORMATION, fullName);
+        var action = _predictiveEmailNotificationService.GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION, fullName);
 
         var requestingReviewer = (await _capitalRequestServices
                 .GetReviewers(proposal.SegmentId))

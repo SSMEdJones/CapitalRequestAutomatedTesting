@@ -7,7 +7,6 @@ using CapitalRequestAutomatedTesting.UI.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Diagnostics;
-using System.Reflection;
 
 public class PredictiveScenarioServiceTests : IntegrationTestBase
 {
@@ -63,7 +62,6 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
             new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepOptionService", MethodName = "CreateWorkflowStepOptionsAsync", Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, proposal.RequestedInfo.Id } , Operation = CrudOperationType.Insert },
             new PredictiveMethod { ServiceName = "IPredictiveEmailNotificationService", MethodName = "CreateEmailNotificationsAsync", Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION }, Operation = CrudOperationType.Insert }
         };
-
 
         var scenarioDetailViewModel = new ScenarioDetailsViewModel
         {

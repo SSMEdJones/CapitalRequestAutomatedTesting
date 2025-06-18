@@ -7,6 +7,7 @@
         public int? EmailTemplateId { get; set; }
         public int? ReviewerGroupId { get; set; }
         public string Message { get; set; } = string.Empty;
+        public Guid? OptionId { get; set; }
         public int? RequestedInfoId { get; set; }
     }
 }
