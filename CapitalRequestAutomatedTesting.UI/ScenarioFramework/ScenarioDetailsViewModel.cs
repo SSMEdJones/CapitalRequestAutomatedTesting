@@ -11,6 +11,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public string PartialViewName { get; set; }
         public string DisplayText { get; set; }
 
+        public Dictionary<string, string> SelectedProperties { get; set; } = new();
         [DisplayName("Requesting Group:")]
         public int RequestingGroupId { get; set; }
 
@@ -35,6 +36,11 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public List<SelectListItem> RequestingGroups { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> TargetGroups { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> Reviewers { get; set; } = new List<SelectListItem>();
+
+        public ScenarioDataViewModel PredictiveData { get; set; } = new ScenarioDataViewModel();
+        public ScenarioDataViewModel ActualData { get; set; } = new ScenarioDataViewModel();
+        public ScenarioComparisonResult ComparisonResult { get; set; } = new ScenarioComparisonResult();
+
     }
 
 }

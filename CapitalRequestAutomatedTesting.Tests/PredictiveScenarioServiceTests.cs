@@ -42,7 +42,9 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
         proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
         proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
         proposal.RequestedInfo.RequestingReviewerGroupId = 2;
+        proposal.ReviewerId = 37798;
 
+        proposal.Reviewer = await _capitalRequestservices.GetReviewer(proposal.ReviewerId);
         var increment = 0;
         var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
             .Where(x => !x.IsComplete)

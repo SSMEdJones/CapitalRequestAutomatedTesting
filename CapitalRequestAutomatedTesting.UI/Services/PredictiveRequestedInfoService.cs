@@ -41,6 +41,8 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
 
     public async Task<dto.RequestedInfo> CreateRequestedInfoAsync(vm.Proposal proposal, int increment)
     {
+        var reviewer = (await _capitalRequestServices.GetReviewer(proposal.ReviewerId));
+
         WorkFlowStepViewModel? workflowStep = await GetWorkflowStepAsync(proposal);
         // Resolve WorkflowStepOptionId
 
@@ -59,7 +61,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
                 workflowStepOption = workflowStepOptions
                     .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
                                 x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                                x.OptionName.ToLower() == _userContextService.Email.ToLower())
+                                x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                     .FirstOrDefault();
             }
         }
@@ -67,25 +69,25 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
         var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(proposal.RequestedInfo.ReviewerGroupId);
         var requestingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.ReviewerGroupId);
 
-        var reviewer = (await _capitalRequestServices.GetReviewers(proposal.SegmentId))
-            .Where(x => x.ReviewerGroupId == proposal.RequestedInfo.ReviewerGroupId &&
-                        x.Email.ToLower() == _userContextService.Email.ToLower())
-            .FirstOrDefault();
+        //var reviewer = (await _capitalRequestServices.GetReviewers(proposal.SegmentId))
+        //    .Where(x => x.ReviewerGroupId == proposal.RequestedInfo.ReviewerGroupId &&
+        //                x.Email.ToLower() == _userContextService.Email.ToLower())
+        //    .FirstOrDefault();
 
-        var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
+        var fullName = reviewer.FullName;
 
         var action = _predictiveEmailNotificationService.GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION, fullName);
 
-        var requestingReviewer = (await _capitalRequestServices
-                .GetReviewers(proposal.SegmentId))
-                .FirstOrDefault(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
-                            x.Email.ToLower() == _userContextService.Email.ToLower());
+        //var requestingReviewer = (await _capitalRequestServices
+        //        .GetReviewers(proposal.SegmentId))
+        //        .FirstOrDefault(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
+        //                    x.Email.ToLower() == _userContextService.Email.ToLower());
 
         var requestingReviewerId = 0;
 
-        if (requestingReviewer != null)
+        if (reviewer != null)
         {
-            requestingReviewerId = requestingReviewer.Id;
+            requestingReviewerId = reviewer.Id;
         }
 
         // Generate RequestedInfo object

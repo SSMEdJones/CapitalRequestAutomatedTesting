@@ -109,7 +109,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     .OrderByDescending(x => x.Created)
                     .Where(x => x.ReviewerGroupId == reviewerGroupId &&
                     x.OptionType == optionType &&
-                    x.OptionName.ToLower() == _userContextService.Email.ToLower())
+                    x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                     .FirstOrDefault();
 
                 optionId = workflowStepOption.OptionID;
@@ -121,7 +121,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 x.IsComplete = false;
                 x.IsTerminate = false;
 
-                if (x.OptionName.ToLower() == _userContextService.Email.ToLower())
+                if (x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                 {
                     if (optionId == Guid.Empty && requestedInfoId == null)
                     {

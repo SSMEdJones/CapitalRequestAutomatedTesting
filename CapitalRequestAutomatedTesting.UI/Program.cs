@@ -14,7 +14,17 @@ AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddDistributedMemoryCache(); // Required for session
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(20); // Set timeout as needed
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+builder.Services.AddControllersWithViews()
+                .AddSessionStateTempDataProvider(); // Ensures TempData uses session instead of cookies
+
 
 builder.Services.AddAuthentication(NegotiateDefaults.AuthenticationScheme)
    .AddNegotiate();
@@ -41,34 +51,6 @@ builder.Configuration.GetConnectionString($"CapitalRequest_{env}");
 
 ConfigurationSettings _configuration = new ConfigurationSettings();
 
-//builder.Services.PostConfigureAll<SSMWorkFlowSettings>(options =>
-//{
-//    options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI").LookupValue.ToString();
-//    options.ProjectReviewLink = _configuration.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink").LookupValue.ToString();
-
-//});
-
-//var baseUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "BaseApiUrl")?.LookupValue?.ToString();
-//var projectReviewLink = _configuration.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink")?.LookupValue?.ToString();
-//Debug.WriteLine($"BaseApiUrl: {baseUrl}");
-//Debug.WriteLine($"ProjectReviewLink: {projectReviewLink}");
-
-//builder.Services.PostConfigureAll<SSMWorkFlowSettings>(options =>
-//{
-//    options.BaseApiUrl = baseUrl;
-//    options.ProjectReviewLink = projectReviewLink;
-
-//});
-
-//builder.Services.PostConfigureAll<CapitalRequestSettings>(options =>
-//{
-//    options.BaseApiUrl = _configuration.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestApiUrl").LookupValue.ToString();
-
-//});
-
-
-//Debug.WriteLine($"BaseApiUrl configured as: {baseUrl}");
-
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
@@ -85,7 +67,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
+app.UseSession();
 app.UseRouting();
 
 app.Use(async (context, next) =>

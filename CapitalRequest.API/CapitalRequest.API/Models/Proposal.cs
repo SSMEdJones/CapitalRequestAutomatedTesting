@@ -1,4 +1,5 @@
-﻿using CapitalRequest.API.Enums;
+﻿using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -313,11 +314,11 @@ namespace CapitalRequest.API.Models
         #endregion
 
 
-        public bool IsEdit { get; set; }
-        public bool IsView { get; set; }
-        public bool IsDisabled { get; set; }
-        public bool IsLocked { get; set; }
-        public bool IsMovingForwardDisabled { get; set; }
+        //public bool IsEdit { get; set; }
+        //public bool IsView { get; set; }
+        //public bool IsDisabled { get; set; }
+        //public bool IsLocked { get; set; }
+        //public bool IsMovingForwardDisabled { get; set; }
 
         //public string ButtonMode { get; set; } = Constants.DISPLAY_MODE_NEW;
         //public ProposalSubmissionPages CurrentPage { get; set; } = ProposalSubmissionPages.BasicInfo;
@@ -333,59 +334,59 @@ namespace CapitalRequest.API.Models
         [DisplayName("What is the project's estimated end date?")]
         public DateTime? EndDate { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> CancellationOptions
-        {
-            get
-            {
-                return new List<SelectListItem> {
-                    new SelectListItem { Value = "1", Text = "Cancelled" },
-                    new SelectListItem { Value = "2", Text = "Not Approved" }
-                };
-            }
-        }
+        //[BindProperty]
+        //public List<SelectListItem> CancellationOptions
+        //{
+        //    get
+        //    {
+        //        return new List<SelectListItem> {
+        //            new SelectListItem { Value = "1", Text = "Cancelled" },
+        //            new SelectListItem { Value = "2", Text = "Not Approved" }
+        //        };
+        //    }
+        //}
 
-        [BindProperty]
-        public List<SelectListItem> ProjectStatusOptions { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> ProjectStatusOptions { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> Regions { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> Regions { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> CompanyCodes { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> CompanyCodes { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> CostCenters { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> CostCenters { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> MinistryNames { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> MinistryNames { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> Segments { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> Segments { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> CapitalFundingYears { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> CapitalFundingYears { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> PurchasingYears { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> PurchasingYears { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> IncludePurchasingGroupList
-        {
-            get
-            {
-                return new List<SelectListItem> {
-                    new() { Value = "1", Text = "Yes" },
-                    new() { Value = "0", Text = "No" }
-                };
-            }
-        }
+        //[BindProperty]
+        //public List<SelectListItem> IncludePurchasingGroupList
+        //{
+        //    get
+        //    {
+        //        return new List<SelectListItem> {
+        //            new() { Value = "1", Text = "Yes" },
+        //            new() { Value = "0", Text = "No" }
+        //        };
+        //    }
+        //}
 
-        [BindProperty]
-        public List<SelectListItem> CapitalPoolIdentifierList { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> CapitalPoolIdentifierList { get; set; }
 
-        [BindProperty]
-        public List<SelectListItem> CapitalPoolList { get; set; }
+        //[BindProperty]
+        //public List<SelectListItem> CapitalPoolList { get; set; }
 
         //public List<WbsTemplate> WbsTemplates { get; set; }
         //public List<AssetTemplate> AssetTemplates { get; set; }
@@ -396,8 +397,10 @@ namespace CapitalRequest.API.Models
 
         public int ReviewerGroupId { get; set; }
         public int RequestingReviewerGroupId { get; set; }
+        public int ReviewerId { get; set; }
         public int RequestedInfoId { get; set; }
         public RequestedInfo RequestedInfo { get; set; } = new RequestedInfo();
+        public Reviewer Reviewer { get; set; } = new Reviewer();
         public ProvidedInfo ProvidedInfo { get; set; } = new ProvidedInfo();
         public List<ReviewerGroup> ReviewerGroups { get; set; } = new List<ReviewerGroup>();
 

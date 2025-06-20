@@ -44,7 +44,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 {
                     ScenarioId = "SCN001",
                     PartialViewName = "_RequestMoreInfo",
-                    DisplayText  = "Request more info",
+                    DisplayText  = "Request More Information",
                     SequenceNumber = 1,
                     RequestingGroups = requestId.HasValue ? await GetRequestingGroupsAsync(requestId.Value) : new List<SelectListItem>(),
                     //TargetGroups = requestId.HasValue ? await GetTargetGroupsByRequestIdAsync(requestId.Value) : new List<SelectListItem>(),

@@ -50,7 +50,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 {
                     workflowStepOption = optionsByGroup
                         .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                                    x.OptionName.ToLower() == _userContextService.Email.ToLower())
+                                    x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                         .FirstOrDefault();
                 }
             }

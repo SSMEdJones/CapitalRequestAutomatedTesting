@@ -1,0 +1,95 @@
+﻿@using CapitalRequestAutomatedTesting.UI.ScenarioFramework
+@using CapitalRequestAutomatedTesting.UI.Services
+@using CapitalRequestAutomatedTesting.UI.Enums
+
+@model ScenarioComparisonResult
+
+<style>
+    .table-warning td {
+        background-color: #ff6961;
+    }
+</style>
+<ul>
+    @foreach (var prop in Model.SelectedProperties)
+    {
+        <li><strong>@prop.Key</strong>: @prop.Value</li>
+    }
+</ul>
+
+@foreach (var table in Model.DifferingTables)
+{
+    <h3>@table.TableName</h3>
+    <p>
+        <strong>Predictive:</strong> @table.OperationPredictive |
+        <strong>Actual:</strong> @table.OperationActual
+    </p>
+
+    @foreach (var group in table.OperationGroups)
+    {
+        <h4>@((CrudOperationType)group.Operation) Rows</h4>
+
+        @foreach (var record in group.Records.OrderBy(r => r.RowKey))
+        {
+            <h5 class="text-secondary">Row Key: @record.RowKey</h5>
+
+            <table class="table table-sm table-bordered mb-4">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Predictive</th>
+                        <th>Actual</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var reference = record.RecordPredictive ?? record.RecordActual;
+                        var props = reference.GetType().GetProperties();
+                    }
+
+                    @foreach (var prop in props)
+                    {
+                        var isDifferent = record.FieldDifferences.Any(f => f.FieldName == prop.Name);
+                        var predictiveValue = record.RecordPredictive != null ? prop.GetValue(record.RecordPredictive) : null;
+                        var actualValue = record.RecordActual != null ? prop.GetValue(record.RecordActual) : null;
+                        var isHtml = prop.Name.Equals("EmailMessage", StringComparison.OrdinalIgnoreCase);
+
+                        <tr class="@(isDifferent ? "table-warning" : "")">
+                            <td>@prop.Name</td>
+                            <td>
+                                @if (isHtml)
+                                {
+                                    @Html.Raw(predictiveValue?.ToString() ?? "<em class='text-muted'>—</em>")
+                                }
+                                else
+                                {
+                                    @(predictiveValue ?? Html.Raw("<em class='text-muted'>—</em>"))
+                                }
+                            </td>
+                            <td>
+                                @if (isHtml)
+                                {
+                                    @Html.Raw(predictiveValue?.ToString() ?? "<em class='text-muted'>—</em>")
+                                }
+                                else
+                                {
+                                    @(predictiveValue ?? Html.Raw("<em class='text-muted'>—</em>"))
+                                }
+                            </td>
+
+
+@*                             <td>@(predictiveValue ?? Html.Raw("<em class='text-muted'>—</em>"))</td>
+                            <td>@(actualValue ?? Html.Raw("<em class='text-muted'>—</em>"))</td>
+ *@
+@*                             <td>@(isHtml ? Html.Raw(predictiveValue?.ToString()) : predictiveValue)</td>
+                            <td>@(isHtml ? Html.Raw(actualValue?.ToString()) : actualValue)</td>
+ *@                            @* <td>@(record.RecordPredictive == null ? Html.Raw("<span class='badge bg-info'>Insert</span>") : predictiveValue)</td> *@
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+}
+
+

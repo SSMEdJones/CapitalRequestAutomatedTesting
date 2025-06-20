@@ -12,7 +12,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 {
     public interface IActualWorkflowStepOptionService
     {
-        Task<List<WorkflowStepOption>> GetRequestTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal, string responderType);
+        Task<List<WorkflowStepOption>> GetRequestTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal);
     }
     public class ActualWorkflowStepOptionService : IActualWorkflowStepOptionService
     {
@@ -27,7 +27,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _mapper = mapper;
         }
 
-        public async Task<List<WorkflowStepOption>> GetRequestTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal, string responderType)
+        public async Task<List<WorkflowStepOption>> GetRequestTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal)
         {
             WorkFlowStepViewModel? workflowStep = await GetActiveWorkflowStepAsync(proposal);
 
@@ -42,7 +42,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                             .ToList();
 
             var workflowStepOptionsActive = allOptions.Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                              x.OptionName.ToLower() == _userContextService.Email.ToLower())
+                              x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                               .First();
 
             var activeOptionId = workflowStepOptionsActive.OptionID;
@@ -50,10 +50,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var workflowStepOptionsTerminated = allOptions
                             .Where(x => x.IsTerminate &&
                                    x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                                   x.UpdatedBy == _userContextService.UserId &&
+                                   x.UpdatedBy == proposal.Reviewer.UserId &&
                                    x.Updated.HasValue &&
-                                   x.OptionID != activeOptionId &&
-                                   x.Updated.Value.IsFuzzyMatch(DateTime.Now, 3))
+                                   x.OptionID != activeOptionId 
+                                   //x.Updated.Value.IsFuzzyMatch(DateTime.Now, 3)
+                                   )
                             .ToList();
 
             var actual = workflowStepOptionsTerminated
@@ -68,10 +69,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             WorkFlowStepViewModel? workflowStep = await GetActiveWorkflowStepAsync(proposal);
 
             var allOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                                .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
+                                .Where(x => x.ReviewerGroupId == proposal.RequestedInfo.ReviewerGroupId &&
                                        x.OptionType == Constants.OPTION_TYPE_ADD_INFO &&
-                                       x.CreatedBy == _userContextService.UserId &&
-                                       x.Created.IsFuzzyMatch(DateTime.Now, 3))
+                                       x.CreatedBy == proposal.Reviewer.UserId &&
+                                       x.RequestedInfoId == proposal.RequestedInfo.Id
+                                       )
                                 .ToList();
             var actual = allOptions
                 .Select(x => _mapper.Map<WorkflowStepOption>(x))

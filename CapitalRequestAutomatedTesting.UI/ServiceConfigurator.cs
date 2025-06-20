@@ -34,17 +34,6 @@ namespace CapitalRequestAutomatedTesting.UI
                 options.ProjectReviewLink = customConfig.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink")?.LookupValue?.ToString();
             });
 
-            //services.PostConfigureAll<SSMWorkFlowSettings>(options =>
-            //{
-            //    var baseApiUrl = customConfig.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI")?.LookupValue?.ToString();
-            //    var projectReviewLink = customConfig.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink")?.LookupValue?.ToString();
-
-            //    Debug.WriteLine($"🔧 PostConfigureAll setting BaseApiUrl to: {baseApiUrl ?? "NULL"}");
-            //    Debug.WriteLine($"🔧 PostConfigureAll setting ProjectReviewLink to: {projectReviewLink ?? "NULL"}");
-
-            //    options.BaseApiUrl = baseApiUrl;
-            //    options.ProjectReviewLink = projectReviewLink;
-            //});
 
             services.PostConfigureAll<CapitalRequestSettings>(options =>
             {
@@ -109,11 +98,16 @@ namespace CapitalRequestAutomatedTesting.UI
 
             #region Actual Services
             services.AddScoped<IActualEmailNotificationService, ActualEmailNotificationService>();
+            services.AddScoped<IActualRequestedInfoService, ActualRequestedInfoService>();
+            services.AddScoped<IActualWorkflowStepOptionService, ActualWorkflowStepOptionService>();
+            services.AddScoped<IActualWorkflowStepResponderService, ActualWorkflowStepResponderService>();
+            services.AddScoped<IActualScenarioService, ActualScenarioService>();
             #endregion
 
             #region Scenario Framework
             services.AddScoped<ITestActionService, WorkflowTestActionService>();
             services.AddScoped<IScenarioControllerService, ScenarioControllerService>();
+            services.AddScoped<IScenarioComparer, ScenarioComparer>();
             #endregion
 
             return services;

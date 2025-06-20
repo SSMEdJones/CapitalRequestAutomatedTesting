@@ -48,8 +48,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
                     x.WorkflowStepOptionID == workflowStepOption.OptionID &&
                     x.ResponderType == responderType &&
-                    x.Responder.ToLower() == _userContextService.Email &&
-                    x.CreatedBy == _userContextService.UserId)
+                    x.Responder.ToLower() == proposal.Reviewer.Email &&
+                    x.CreatedBy == proposal.Reviewer.UserId)
                 .FirstOrDefault();
 
             return _mapper.Map<WorkflowStepResponder>(actual);
@@ -70,7 +70,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 if (optionsByGroup.Any())
                 {
                     workflowStepOption = optionsByGroup.Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                                         x.OptionName.ToLower() == _userContextService.Email.ToLower())
+                                         x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                                          .First();
 
                 }
