@@ -5,8 +5,11 @@ using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using Microsoft.Extensions.Options;
 using Scriban;
+using Scriban.Runtime;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Models;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
@@ -67,9 +70,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 .Select(z => _mapper.Map<vm.Reviewer>(z))
                 .ToList();
 
-            foreach(var reviewer in reviewers)
+          
+            var fullName = (await _capitalRequestServices.GetReviewer(proposal.ReviewerId)).FullName;
+            foreach (var reviewer in reviewers)
             {
-                var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
                 var action = GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION, fullName);
                 var emailMessage = await GenerateEmailMessageAsync(emailTemplate, reviewer, requestingGroup, proposal);
                 
@@ -112,16 +116,52 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         {
 
             var sql = Template.Parse(SqlTemplates.CapitalRequestNotification);
-           
-            var emailQuery = sql.Render(new
+            //"EXECUTE dbo.GetCapitalRequestGroupNotifications NULL,'{{ workflowStepId }}','{{ emailTemplateId }}','{{ reviewerGroupId }}','{{ action }}.',{{ optionId }},'{{ requestedInfoId }}'"
+
+            var workflowStepId = emailQueryViewModel.WorkflowStepId != null
+                ? emailQueryViewModel.WorkflowStepId.ToString()
+                : "";
+
+            var emailTemplateId = Convert.ToInt32(emailQueryViewModel.EmailTemplateId) > 0
+                ? emailQueryViewModel.EmailTemplateId.ToString()
+                : "";
+
+            var reviewerGroupId = Convert.ToInt32(emailQueryViewModel.ReviewerGroupId) > 0
+                ? emailQueryViewModel.ReviewerGroupId.ToString()
+                : "";
+
+            var action = string.IsNullOrWhiteSpace(emailQueryViewModel.Action)
+                ? ""
+                : emailQueryViewModel.Action;
+
+            var optionId = emailQueryViewModel.OptionId != null
+                ? emailQueryViewModel.OptionId.ToString()
+                :null;
+
+            var requestedInfoId = emailQueryViewModel.RequestedInfoId != null
+                ? emailQueryViewModel.RequestedInfoId.ToString()
+                : "";
+
+            Debug.WriteLine($"SqlTemplates.CapitalRequestNotification: {SqlTemplates.CapitalRequestNotification}");
+            Debug.WriteLine($"workflowStepId: {workflowStepId}");
+            Debug.WriteLine($"emailTemplateId: {emailTemplateId}");
+            Debug.WriteLine($"reviewerGroupId: {reviewerGroupId}");
+            Debug.WriteLine($"action: {action}");
+            Debug.WriteLine($"optionId: {optionId}");
+            Debug.WriteLine($"requestedInfoId: {requestedInfoId}");
+
+            var context = new TemplateContext();
+            context.PushGlobal(new ScriptObject
             {
-                workflowStepId = emailQueryViewModel.WorkflowStepId,
-                emailTemplateId = emailQueryViewModel.EmailTemplateId,
-                reviewerGroupId = emailQueryViewModel.ReviewerGroupId,
-                action = emailQueryViewModel.Action,
-                optionId = emailQueryViewModel.OptionId,
-                requestedInfoId = emailQueryViewModel.RequestedInfoId
+                { "workflowStepId", workflowStepId },
+                { "emailTemplateId", emailTemplateId },
+                { "reviewerGroupId", reviewerGroupId },
+                { "action", action },
+                { "optionId", optionId },
+                { "requestedInfoId", requestedInfoId }
             });
+
+            var emailQuery = sql.Render(context);
 
             return emailQuery;
         }

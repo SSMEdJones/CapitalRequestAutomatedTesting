@@ -55,13 +55,32 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 }
             }
             // Generate WorkflowStepResponder object
+            var responder = ProperCaseEmail(proposal.Reviewer.Email);
             var workflowStepResponder = _mapper.Map<WorkflowStepResponder>(workflowStepOption);
             workflowStepResponder.ResponderType = responderType;
-            workflowStepResponder.Responder = _userContextService.Email;
-            workflowStepResponder.CreatedBy = _userContextService.UserId;
+            workflowStepResponder.Responder = responder;
+            workflowStepResponder.CreatedBy = proposal.Reviewer.UserId;
             workflowStepResponder.WorkflowStepOptionID = workflowStepOption.OptionID;
 
             return workflowStepResponder;
+        }
+
+        private string ProperCaseEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+                return email;
+
+            var parts = email.Split('@');
+            var nameParts = parts[0].Split('.');
+
+            var properName = string.Join(".",
+                nameParts.Select(p =>
+                    string.IsNullOrWhiteSpace(p)
+                        ? p
+                        : char.ToUpper(p[0]) + p.Substring(1).ToLower()
+                ));
+
+            return $"{properName}@{parts[1].ToLower()}";
         }
     }
 

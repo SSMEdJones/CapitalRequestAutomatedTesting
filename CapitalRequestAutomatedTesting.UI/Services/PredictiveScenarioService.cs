@@ -1,4 +1,5 @@
-﻿using CapitalRequestAutomatedTesting.Data;
+﻿using CapitalRequest.API.DataAccess.Models;
+using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -215,6 +216,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 //TODO Remove after debugging
                 increment = 0;
+                proposal.RequestedInfo.Id = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id) + increment; ;
 
                 var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
                     .Where(x => !x.IsComplete)

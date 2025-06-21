@@ -99,6 +99,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<List<WorkflowStepOption>> CloseOptionsAsync(vm.Proposal proposal, Guid optionId, string optionType, int? requestedInfoId, string actionType)
         {
+
+            //TODO Make sure to only include proper reviewers and dates
             var reviewerGroupId = proposal.ReviewerGroupId;
 
             var workflowStepOptions = await GetFilteredOptionsAsync(proposal, optionType, requestedInfoId);

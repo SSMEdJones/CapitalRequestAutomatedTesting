@@ -68,11 +68,11 @@
                             <td>
                                 @if (isHtml)
                                 {
-                                    @Html.Raw(predictiveValue?.ToString() ?? "<em class='text-muted'>—</em>")
+                                    @Html.Raw(actualValue?.ToString() ?? "<em class='text-muted'>—</em>")
                                 }
                                 else
                                 {
-                                    @(predictiveValue ?? Html.Raw("<em class='text-muted'>—</em>"))
+                                    @(actualValue ?? Html.Raw("<em class='text-muted'>—</em>"))
                                 }
                             </td>
 

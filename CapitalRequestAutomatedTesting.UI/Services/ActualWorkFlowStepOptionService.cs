@@ -43,8 +43,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             var workflowStepOptionsActive = allOptions.Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
                               x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
-                              .First();
-
+                              .Last();
+            //TODO clean up terminated
+            //LEFT OFF HERE need to exclude previously terminated maybe group by updated date?
             var activeOptionId = workflowStepOptionsActive.OptionID;
             //TODO better value for fuzzyMatch than hardcoded 3 minutes
             var workflowStepOptionsTerminated = allOptions
