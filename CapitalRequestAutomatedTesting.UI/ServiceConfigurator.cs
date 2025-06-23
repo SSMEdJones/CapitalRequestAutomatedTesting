@@ -110,6 +110,11 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IScenarioControllerService, ScenarioControllerService>();
             services.AddScoped<IScenarioComparer, ScenarioComparer>();
             #endregion
+            #region Selenium Services
+            services.AddScoped<IPredictiveSeleniumService, PredictiveSeleniumService>();
+            #endregion
+
+            
 
             return services;
         }

@@ -19,6 +19,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<SelectListItem>> GetRequestSelectListAsync();
         Task<List<SelectListItem>> GetRequestingGroupsAsync(int proposalId);
         Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id);
+        Task<bool> ValidateTargetGroupIdAsync(Proposal proposal, int requestingGroupId, int targetGroupId);
     }
 
     public class ScenarioControllerService : IScenarioControllerService
@@ -172,6 +173,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var reviewers = await _capitalRequestServices.GetAllReviewers(filter);
 
             return reviewers;
+        }
+
+        public async Task<bool> ValidateTargetGroupIdAsync (Proposal proposal,  int requestingGroupId, int targetGroupId)
+        {
+            // Validate that the target group ID is valid for the proposal
+            //left off here
+            return (await GetFilteredReviewerGroups(proposal.Id, requestingGroupId)).Where(X => X.Id == targetGroupId).Any();
         }
 
         public static string ExtractGroupName(string dashboardText)

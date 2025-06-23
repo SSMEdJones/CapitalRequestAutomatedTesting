@@ -9,6 +9,8 @@ using CapitalRequestAutomatedTesting.UI.Models;
 using SSMWorkflow.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
 using System.Linq;
+using SSMWorkflow.API.Models;
+using System.Collections.Generic;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
@@ -260,6 +262,145 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     .ToList();
             }
         }
+
+        public async Task<vm.Proposal> PredictiveMessage(vm.Proposal proposal, string actionType)
+        {
+            var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
+            var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
+
+            var reviewerGroups = (await GetReviewerGroupsAsync(proposal, workflowStep))
+                .Where(x => x.Id == proposal.RequestedInfo.ReviewerGroupId)
+                    .ToList();
+
+            var emailTemplate = (await _capitalRequestServices
+                .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = Constants.EMAIL_REQUEST_MORE_INFORMATION }))
+                .FirstOrDefault();
+
+            var emailType = emailTemplate?.OptionType ?? string.Empty;
+
+            var workflowStepOptionsViewModel = await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID);
+            var workflowStepOptions = workflowStepOptionsViewModel
+                   .Select(x => _mapper.Map<WorkflowStepOption>(x))
+                   .ToList();
+
+            await ValidateProposalAsync(proposal, workflowStep, workflowStepOptions);
+
+            return proposal;
+        }
+
+        public async Task ValidateProposalAsync(vm.Proposal proposal, WorkflowStep workflowStep, List<WorkflowStepOption> workflowStepOptions)
+        {
+
+            if ( !proposal.IsMovingForward)
+            {
+                proposal.ResponseMessage = Constants.RESPONSE_CANCELLED;
+
+                return;
+            }
+
+            var requests = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter
+            {
+                ProposalId = proposal.Id,
+                IsOpen = true
+            }))
+            .ToList();
+
+            var openRequest = requests.Where(x => x.RequestingReviewerGroupId == proposal.RequestingReviewerGroupId);
+
+            if (proposal.ActionType == Constants.ACTION_TYPE_VERIFY)
+            {
+                openRequest = requests.Where(x => x.RequestingReviewerGroupId == proposal.ReviewerGroupId);
+            }
+
+            if (proposal.ActionType == Constants.ACTION_TYPE_VERIFY && openRequest.Any())
+            {
+                proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
+                return;
+            }
+
+            if (workflowStep == null)
+            {
+                proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
+                return;
+
+            }
+            var workflowStepId = workflowStep.WorkflowStepID;
+
+            var reviewerGroupId = proposal.ActionType == Constants.ACTION_TYPE_VERIFY ?
+                proposal.ReviewerGroupId :
+                proposal.RequestingReviewerGroupId;
+
+            workflowStepOptions = workflowStepOptions
+                .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
+                x.ReviewerGroupId == reviewerGroupId &&
+                x.IsComplete)
+                .ToList();
+
+            var openReply = requests.Where(x => x.ReviewerGroupId == proposal.RequestingReviewerGroupId);
+
+            var verified = workflowStepOptions.Any();
+
+            if (verified)
+            {
+                proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
+                return;
+            }
+            else if (!openReply.Any() && proposal.ActionType == Constants.ACTION_TYPE_REPLY)
+            {
+                proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
+                return;
+            }
+            else if (!openRequest.Any() && proposal.ActionType == Constants.ACTION_TYPE_ADD_INFO)
+            {
+                proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
+                return;
+            }
+
+            ValidateReviewer(proposal, workflowStep, workflowStepOptions);
+
+            return;
+        }
+
+        public async Task ValidateReviewer (vm.Proposal proposal, WorkflowStep workflowStep, List<WorkflowStepOption> workflowStepOptions)
+        {
+            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(proposal.ReviewerGroupId);
+
+            
+            if (proposal.Reviewer == null)
+            {
+                proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
+
+                return;
+            }
+
+            WorkflowStepOption? workflowStepOption = null;
+
+
+            var workflowStepId = workflowStep.WorkflowStepID;
+
+
+            if (workflowStepOptions.Any())
+            {
+                var optionsByGroup = workflowStepOptions
+                    .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
+                                proposal.ActionType == x.OptionType);
+
+                if (optionsByGroup.Any())
+                {
+                    workflowStepOption = optionsByGroup
+                        .Where(x => x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
+                        .FirstOrDefault();
+                }
+            }
+
+            if (workflowStepOption == null)
+            {
+                proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
+            }
+
+            return;
+        }
+
     }
 
 }

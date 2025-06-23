@@ -10,9 +10,6 @@
         //Email Types
         public const string EMAIL_TYPE_NOTIFY = "Notify";
 
-        //Response Messages
-        public const string RESPONSE_ACTION_TAKEN = "Thank you for trying to take action. Someone has already taken action on this request.";
-
         //Option Types
         public const string OPTION_TYPE_REQUEST = "Request";
         public const string OPTION_TYPE_ADD_INFO = "AddInfo";
@@ -27,6 +24,25 @@
         public const string RESPONSE_WORFLOW_OVERRIDDEN = "Overrode Workflow";
         public const string RESPONSE_RESENT = "Email sent to all active reviewers.";
         public const string RESPONSE_VERIFY_WBS = "Verified WBS";
+
+        //Response Messages
+        public const string RESPONSE_ACTION_VERIFIED = "Thank you for verifying this project!";
+        public const string RESPONSE_ACTION_TAKEN = "Thank you for trying to take action. Someone has already taken action on this request.";
+        public const string RESPONSE_CANCELLED = "This project is no longer moving forward. No further action is required.";
+        public const string RESPONSE_ACTION_NO_LONGER_AVAILABLE = "This Request is no longer available.";
+        public const string RESPONSE_NOT_AVAILABLE = "This project is not available. No further action can be taken.";
+        public const string RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT = "Your request for more information has been sent.";
+        public const string RESPONSE_ADDED_MORE_INFORMATION_SENT = "Your added information has been successfully submitted.";
+        public const string RESPONSE_ADDED_MORE_INFORMATION_FAILED_TO_SEND = "Your added information failed to send.";
+
+        public const string ACTION_TYPE_REQUEST = "Request";
+        public const string ACTION_TYPE_ADD_INFO = "AddInfo";
+        public const string ACTION_TYPE_REPLY = "Reply";
+        public const string ACTION_TYPE_VERIFY = "Verify";
+        public const string ACTION_TYPE_NOTIFY = "Notify";
+        public const string ACTION_TYPE_VERIFY_WBS = "VerifyWBS";
+        public const string ACTION_TYPE_APPROVE_WBS = "ApproveWBS";
+        public const string ACTION_TYPE_VIEW_WBS = "ViewWBS";
 
         //Responder Types
         public const string RESPONDER_REQUEST = "Request";
