@@ -1,5 +1,6 @@
 ﻿using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.DataAccess.Services.Api;
+using CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.Data
 {
@@ -61,8 +62,11 @@ namespace CapitalRequestAutomatedTesting.Data
         Task<List<CapitalRequest.API.Models.WorkflowAction>> GetAllWorkflowActions(WorkflowActionSearchFilter filter);
 
         //// ApplicationUser
-
         Task<CapitalRequest.API.Models.ApplicationUser> GetApplicationUser(string userId);
+
+        //// DeletedReviewers
+        Task<List<CapitalRequest.API.Models.DeletedReviewer>> GetAllDeletedReviewers(DeletedReviewerSearchFilter filter);
+
 
 
     }
@@ -82,6 +86,7 @@ namespace CapitalRequestAutomatedTesting.Data
         private readonly IEmailTemplates _emailTemplates;
         private readonly IWorkflowActions _workflowActions;
         private readonly IApplicationUsers _applicationUsers;
+        private readonly IDeletedReviewers _deletedReviewers;
 
         public CapitalRequestServices(
             IAssets assets,
@@ -96,8 +101,8 @@ namespace CapitalRequestAutomatedTesting.Data
             IWorkflowTemplates workflowTemplates,
             IEmailTemplates emailTemplates,
             IWorkflowActions workflowActions,
-            IApplicationUsers applicationUsers
-            )
+            IApplicationUsers applicationUsers,
+            IDeletedReviewers deletedReviewers)
         {
             _assets = assets;
             _attachments = attachments;
@@ -112,6 +117,7 @@ namespace CapitalRequestAutomatedTesting.Data
             _emailTemplates = emailTemplates;
             _workflowActions = workflowActions;
             _applicationUsers = applicationUsers;
+            _deletedReviewers = deletedReviewers;
         }
 
         #region Assets
@@ -315,6 +321,10 @@ namespace CapitalRequestAutomatedTesting.Data
             return _applicationUsers.Get(userId);
         }
 
+        public Task<List<CapitalRequest.API.Models.DeletedReviewer>> GetAllDeletedReviewers(DeletedReviewerSearchFilter filter)
+        {
+            return _deletedReviewers.GetAll(filter);
+        }
     }
 
     #endregion

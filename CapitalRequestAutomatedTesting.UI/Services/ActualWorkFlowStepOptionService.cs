@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Extensions;
@@ -41,24 +42,53 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                                    x.OptionType == Constants.OPTION_TYPE_VERIFY)
                                             .ToList();
 
-            var workflowStepOptionsActive = allOptions.Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                              x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
-                              .Last();
-            //TODO clean up terminated
-            //LEFT OFF HERE need to exclude previously terminated maybe group by updated date?
-            var activeOptionId = workflowStepOptionsActive.OptionID;
-            //TODO better value for fuzzyMatch than hardcoded 3 minutes
-            var workflowStepOptionsTerminated = allOptions
-                            .Where(x => x.IsTerminate &&
-                                   x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                                   x.UpdatedBy == proposal.Reviewer.UserId &&
-                                   x.Updated.HasValue &&
-                                   x.OptionID != activeOptionId 
-                                   //x.Updated.Value.IsFuzzyMatch(DateTime.Now, 3)
-                                   )
-                            .ToList();
+            var mostRecent = allOptions.OrderByDescending(x => x.Updated)
+                .FirstOrDefault();
 
-            var actual = workflowStepOptionsTerminated
+            if (mostRecent == null)
+            {
+                throw new Exception("No workflow steps found for the given proposal.");
+
+            }
+
+            //LEFT OFF HERE
+            var relevantOptions = allOptions
+                .Where(x => x.Created.IsFuzzyMatch(mostRecent.Created, 3) &&
+                x.Updated.HasValue && x.Updated.Value.Date == mostRecent.Updated.Value.Date &&
+                x.IsTerminate && !x.IsComplete ||
+                (!x.Updated.HasValue && !x.IsTerminate && !x.IsComplete &&
+                x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower()))
+                .ToList();
+
+            //x.Updated == null && !x.IsTerminate && x.IsComplete
+
+
+            //!x.IsTerminate && !x.IsComplete && x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower() ||
+
+            //.ToList();
+
+
+            //            and(convert(date, updated) = '5/30/2025'
+            // or Updated is null
+            //and IsTerminate = 0 and IsComplete = 0 and OptionName = 'edward.jones@ssmhealth.com')
+            //var workflowStepOptionsActive = allOptions.Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
+            //                  x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
+            //                  .Last();
+            ////TODO clean up terminated
+            ////LEFT OFF HERE need to exclude previously terminated maybe group by updated date?
+            //var activeOptionId = workflowStepOptionsActive.OptionID;
+            ////TODO better value for fuzzyMatch than hardcoded 3 minutes
+            //var workflowStepOptionsTerminated = allOptions
+            //                .Where(x => x.IsTerminate &&
+            //                       x.OptionType == Constants.OPTION_TYPE_VERIFY &&
+            //                       x.UpdatedBy == proposal.Reviewer.UserId &&
+            //                       x.Updated.HasValue &&
+            //                       x.OptionID != activeOptionId 
+            //                       //x.Updated.Value.IsFuzzyMatch(DateTime.Now, 3)
+            //                       )
+            //                .ToList();
+
+            var actual = relevantOptions
                 .Select(x => _mapper.Map<WorkflowStepOption>(x))
                 .ToList();
 

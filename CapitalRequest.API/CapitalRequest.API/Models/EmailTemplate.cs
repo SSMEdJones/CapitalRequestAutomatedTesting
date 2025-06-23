@@ -2,7 +2,7 @@
 #nullable disable
 namespace CapitalRequest.API.Models;
 
-public partial class EmailTemplate
+public class EmailTemplate
 {
     public int Id { get; set; }
 

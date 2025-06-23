@@ -1,10 +1,14 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Enums;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.Models;
 using SSMWorkflow.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
+using System.Linq;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
@@ -22,6 +26,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IPredictiveRequestedInfoService _predictiveRequestedInfoService;
         private readonly IUserContextService _userContextService;
+        private readonly IDeletedReviewers _deletedReviewers;
         private readonly IMapper _mapper;
 
         public PredictiveWorkflowStepOptionService(
@@ -29,12 +34,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             ICapitalRequestServices capitalRequestServices,
             IPredictiveRequestedInfoService predictiveRequestedInfoService,
             IUserContextService userContextService,
+            IDeletedReviewers deletedReviewers,
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
             _predictiveRequestedInfoService = predictiveRequestedInfoService;
             _userContextService = userContextService;
+            _deletedReviewers = deletedReviewers;
             _mapper = mapper;
         }
 
@@ -99,62 +106,84 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<List<WorkflowStepOption>> CloseOptionsAsync(vm.Proposal proposal, Guid optionId, string optionType, int? requestedInfoId, string actionType)
         {
+            var workflowStepOptions = new List<WorkflowStepOption>();
 
-            //TODO Make sure to only include proper reviewers and dates
             var reviewerGroupId = proposal.ReviewerGroupId;
 
-            var workflowStepOptions = await GetFilteredOptionsAsync(proposal, optionType, requestedInfoId);
+            //TODO Make sure to only include proper reviewers and dates
+            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
+                .Where(x => !x.IsComplete)
+                .FirstOrDefault();
 
-            if (actionType == Constants.OPTION_TYPE_REQUEST)
+            var stepCreated = workflowStep.Created;
+
+            var workflowTemplate = (await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep?.StepName }))
+                .FirstOrDefault();
+
+            var deletedReviewers = (await _capitalRequestServices.GetAllDeletedReviewers(new DeletedReviewerSearchFilter
             {
-                var workflowStepOption = workflowStepOptions
-                    .OrderByDescending(x => x.Created)
-                    .Where(x => x.ReviewerGroupId == reviewerGroupId &&
-                    x.OptionType == optionType &&
-                    x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
-                    .FirstOrDefault();
+                SegmentId = proposal.SegmentId,
+                RegionId = proposal.Region,
+                ReviewerGroupId = proposal.ReviewerGroupId
+            }))
+            .Where(x => x.Deleted >= workflowStep.Created &&
+                   x.Created <= workflowStep.Created)
+            .ToList();
 
-                optionId = workflowStepOption.OptionID;
+
+            var stepNumber = workflowTemplate?.StepNumber ?? 0;
+
+            var currentReviewers = await _capitalRequestServices
+                .GetAllReviewers(new ReviewerSearchFilter
+                { 
+                    SegmentId = proposal.SegmentId, 
+                    RegionId = proposal.Region,
+                    ReviewerGroupId = reviewerGroupId,
+                    StepNumber = stepNumber
+                }
+                );
+
+            var restoredReviewers = deletedReviewers
+                .Where(deleted => !currentReviewers.Any(current =>
+                    current.Email.Equals(deleted.Email, StringComparison.OrdinalIgnoreCase) &&
+                    current.RegionId == deleted.RegionId &&
+                    current.SegmentId == deleted.SegmentId &&
+                    current.ReviewerGroupId == deleted.ReviewerGroupId 
+                ))
+                .ToList();
+
+            var deletedReviewerList = deletedReviewers.ToList();
+
+            var reviewers = new List<vm.Reviewer>(currentReviewers);
+
+            foreach (var deleted in deletedReviewerList)
+            {
+                bool exists = currentReviewers.Any(current =>
+                    current.Email.Equals(deleted.Email, StringComparison.OrdinalIgnoreCase) &&
+                    current.RegionId == deleted.RegionId &&
+                    current.SegmentId == deleted.SegmentId &&
+                    current.ReviewerGroupId == deleted.ReviewerGroupId);
+
+                if (!exists)
+                    reviewers.Add(_mapper.Map<vm.Reviewer>(deleted)); // you'll need a cast if types differ
             }
 
 
-            workflowStepOptions.ForEach(x =>
+            reviewers.ForEach(x =>
             {
-                x.IsComplete = false;
-                x.IsTerminate = false;
-
-                if (x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
+                var workflowStepOption = new WorkflowStepOption
                 {
-                    if (optionId == Guid.Empty && requestedInfoId == null)
-                    {
-                        return;
-                    }
-                    if (x.OptionID == optionId && actionType == Constants.OPTION_TYPE_REQUEST)
-                    {
-                        return;
-                    }
-                    if (x.OptionID == optionId)
-                    {
-                        x.IsComplete = true;
-                    }
-                    else if (x.OptionID == Guid.Empty)
-                    {
-                        x.IsTerminate = true;
-                    }
-                    else
-                    {
-                        x.IsTerminate = true;
-                    }
-                }
-                else
-                {
-                    x.IsTerminate = true;
-                }
-                x.Updated = DateTime.Now;
-                x.UpdatedBy = _userContextService.UserId;
-
+                    OptionName = x.Email,
+                    WorkflowStepID = Guid.Empty,
+                    ReviewerGroupId = reviewerGroupId,
+                    OptionType = optionType,
+                    RequestedInfoId = requestedInfoId,
+                    CreatedBy = _userContextService.UserId,
+                    IsComplete = false,
+                    IsTerminate = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? false : true
+                };
             });
-
+           
             return workflowStepOptions;
         }
 

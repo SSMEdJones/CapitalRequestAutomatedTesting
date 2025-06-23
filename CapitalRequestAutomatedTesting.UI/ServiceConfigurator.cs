@@ -61,6 +61,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IWorkflowServices, WorkflowServices>();
             services.AddScoped<ISSMWorkflowServices, SSMWorkflowServices>();
             services.AddScoped<IEmailNotifications, EmailNotifications>();
+            services.AddScoped<IDeletedReviewers, DeletedReviewers>();
 
             #endregion
 

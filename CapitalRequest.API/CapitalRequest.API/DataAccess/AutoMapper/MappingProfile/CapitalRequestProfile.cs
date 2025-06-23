@@ -2,6 +2,7 @@
 using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
 using CapitalRequest.API.DataAccess.Utilities;
+using CapitalRequest.API.DataAccess.Models;
 
 namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
 {
@@ -44,6 +45,8 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
             //Predictive models
             CreateMap<vm.RequestedInfo, dto.RequestedInfo>();
             CreateMap<dto.RequestedInfo, vm.RequestedInfo>();
+            CreateMap<vm.DeletedReviewer, vm.Reviewer>();
+
             //using dto = CapitalRequest.API.DataAccess.Models;
             //using vm = CapitalRequest.API.Models;
 
