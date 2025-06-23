@@ -16,7 +16,7 @@
         public string OptionType { get; set; }
 
         public int? RequestedInfoId { get; set; }
-        [RowKey]
+    
         public DateTime Created { get; set; }
 
         public string CreatedBy { get; set; }

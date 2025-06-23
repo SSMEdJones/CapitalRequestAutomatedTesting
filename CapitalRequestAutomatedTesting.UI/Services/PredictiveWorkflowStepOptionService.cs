@@ -88,7 +88,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         ReviewerGroupId = rg.Id,
                         OptionType = emailType,
                         RequestedInfoId = requestedInfoId,
-                        CreatedBy = _userContextService.UserId,
+                        Created = DateTime.Now,
+                        CreatedBy = proposal.Reviewer.UserId
                     };
 
                     workflowStepOptions.Add(workflowStepOption);
@@ -174,14 +175,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var workflowStepOption = new WorkflowStepOption
                 {
                     OptionName = x.Email,
-                    WorkflowStepID = Guid.Empty,
+                    WorkflowStepID = workflowStep.WorkflowStepID,
                     ReviewerGroupId = reviewerGroupId,
                     OptionType = optionType,
                     RequestedInfoId = requestedInfoId,
-                    CreatedBy = _userContextService.UserId,
+                    Created = workflowStep.Created,
+                    CreatedBy = workflowStep.CreatedBy,
                     IsComplete = false,
-                    IsTerminate = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? false : true
+                    IsTerminate = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? false : true,
+                    Updated = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? null : DateTime.Now,
+                    UpdatedBy = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? null : proposal.Reviewer.UserId
+
                 };
+                workflowStepOptions.Add(workflowStepOption);
+
             });
            
             return workflowStepOptions;

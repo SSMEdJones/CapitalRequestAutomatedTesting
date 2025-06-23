@@ -214,27 +214,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
         private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
         {
-            // Process each scenario
-            var requestingGroupId = scenario.RequestingGroupId;
-            var targetGroupId = scenario.TargetGroupId;
-            var reviewerId = scenario.ReviewerId;
-            var proposalId = scenario.ProposalId;
-            var requestedInformation = "This message brought to you by Workflow Automated Testing.";
-
-
-            requestingGroupId = 2;
-            targetGroupId = 3;
-            reviewerId = 37798;
-            proposalId = 2884;
-
-            scenario.RequestingGroupId = requestingGroupId;
-            scenario.TargetGroupId = targetGroupId;
-            scenario.ReviewerId = reviewerId;
-            scenario.ProposalId = proposalId;
-            scenario.RequestedInformation = requestedInformation;
-
-            var message = scenario.Message;
-
             // Predictive data
             scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 

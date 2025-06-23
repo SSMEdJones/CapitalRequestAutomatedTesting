@@ -43,11 +43,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                             .ToList();
 
             var mostRecent = allOptions.OrderByDescending(x => x.Updated)
+                .Where(x => x.OptionName != proposal.Reviewer.Email)
                 .FirstOrDefault();
 
             if (mostRecent == null)
             {
-                throw new Exception("No workflow steps found for the given proposal.");
+                mostRecent = allOptions.OrderByDescending(x => x.Updated)
+                .FirstOrDefault();
+            }
+            
+            if (mostRecent == null)
+            {
+                throw new Exception("No workflowtepOptions found for the given proposal.");
 
             }
 
