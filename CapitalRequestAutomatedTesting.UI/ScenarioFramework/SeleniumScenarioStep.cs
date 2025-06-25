@@ -1,4 +1,5 @@
-﻿using OpenQA.Selenium;
+﻿using Newtonsoft.Json;
+using OpenQA.Selenium;
 
 namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
@@ -9,7 +10,10 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         public string Description { get; set; }
         public SeleniumStepResult Result { get; set; }
-        public Func<IWebDriver, Task<SeleniumStepResult>> Action { get; set; } // optional for predictive mode
+
+        [JsonIgnore]
+        public Func<IWebDriver, Task<SeleniumStepResult>> Action { get; set; }
+
 
 
         // Optional: for better diagnostics

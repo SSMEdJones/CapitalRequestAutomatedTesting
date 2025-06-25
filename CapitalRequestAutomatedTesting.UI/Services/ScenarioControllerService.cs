@@ -21,7 +21,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<SelectListItem>> GetRequestSelectListAsync();
         Task<List<SelectListItem>> GetRequestingGroupsAsync(int proposalId);
         Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id);
-        Task<bool> ValidateTargetGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
+        Task<SeleniumStepResult> ValidateTargetGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
+        Task<CapitalRequest.API.Models.ReviewerGroup> GetReviewerGroupByIdAsync(int id);
     }
 
     public class ScenarioControllerService : IScenarioControllerService
@@ -177,11 +178,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return reviewers;
         }
 
-        public async Task<bool> ValidateTargetGroupIdAsync (vm.Proposal proposal,  int requestingGroupId, int targetGroupId)
+        public async Task<SeleniumStepResult> ValidateTargetGroupIdAsync (vm.Proposal proposal,  int requestingGroupId, int targetGroupId)
         {
-            // Validate that the target group ID is valid for the proposal
-            //left off here
-            return (await GetFilteredReviewerGroups(proposal.Id, requestingGroupId)).Where(X => X.Id == targetGroupId).Any();
+            bool isValid = (await GetFilteredReviewerGroups(proposal.Id, requestingGroupId)).Where(X => X.Id == targetGroupId).Any();
+
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid
+                    ? "Target Reviewer Group validation passed."
+                    : "Target Reviewer Group not found for this Request."
+            };
         }
 
         public static string ExtractGroupName(string dashboardText)
@@ -275,6 +282,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public async Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id)
         {
             return  await _capitalRequestServices.GetReviewer(id);
+        }
+
+        public async Task<CapitalRequest.API.Models.ReviewerGroup> GetReviewerGroupByIdAsync(int id)
+        {
+            return await _capitalRequestServices.GetReviewerGroup(id);
         }
     }
 }

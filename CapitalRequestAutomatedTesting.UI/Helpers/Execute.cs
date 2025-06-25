@@ -21,6 +21,11 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
         public static Func<IWebDriver, Task<SeleniumStepResult>> SelectDropdown(string dropdownId, string visibleText, string description)
             => SeleniumHelper.SelectDropdownById(dropdownId, visibleText, description);
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> EnterRequestedInformation(string text)
+            => SeleniumHelper.EnterTextById("RequestedInfo_RequestedInformation", text, "Requested Information field");
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> DashboardSearch(string proposalId)
+            => SeleniumHelper.EnterDashboardSearch(proposalId);
 
 
         // You could later add:

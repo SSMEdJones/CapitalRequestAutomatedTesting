@@ -10,13 +10,14 @@ using SSMWorkflow.API.DataAccess.Models;
 using SSMAuthenticationCore.Models;
 using CapitalRequest.API.DataAccess.Services.Api;
 using System.ComponentModel.DataAnnotations;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
     public interface IPredictiveWorkflowActionService
     {
-        Task<bool> ValidateWorkflowButtonAsync(vm.Proposal proposal);
-        Task<bool> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId);
+        Task<SeleniumStepResult> ValidateWorkflowButtonAsync(vm.Proposal proposal);
+        Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId);
     }
     public class PredictiveWorkflowActionService : IPredictiveWorkflowActionService
     {
@@ -50,16 +51,31 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return workflowActions;
         }
 
-        public async Task<bool> ValidateWorkflowButtonAsync(vm.Proposal proposal)
+        public async Task<SeleniumStepResult> ValidateWorkflowButtonAsync(vm.Proposal proposal)
         {
-            return (await GetWorkflowActionAsync(proposal)).Any();
+            bool isValid = (await GetWorkflowActionAsync(proposal)).Any();
+
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid
+                    ? "Workflow button validation passed."
+                    : "Workflow button not found for this Request."
+            };
         }
 
-        public async Task<bool> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId)
+        public async Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId)
         {
-            return (await GetWorkflowActionAsync(proposal))
-                .Where(x => x.ReviewerGroupId == reviewerGroupId)
-                .Any();
+
+            bool isValid = (await GetWorkflowActionAsync(proposal)).Any();
+
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid
+                    ? "Verify button validation passed."
+                    : "Verify button not found for this Request."
+            };
 
         }
 

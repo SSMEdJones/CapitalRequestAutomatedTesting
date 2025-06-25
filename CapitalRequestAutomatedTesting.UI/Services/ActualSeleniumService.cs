@@ -9,6 +9,7 @@ using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 using vm = CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using OpenQA.Selenium.Chrome;
+using CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
@@ -83,8 +84,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 driver.Manage().Window.Maximize();
                 try
                 {
-                    var seleniumOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail, driver);
-                    // Do something with seleniumOutcome
+                    seleniumScenarioOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail, driver);
                 }
                 finally
                 {
@@ -127,8 +127,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var workflowButtonText = "Workflow";
             var requestButtonId = "btnRequestMoreInfo";
             var requestButtonText = "Request More Information button";
+            var dashboardOrder = reviewerGroup.DashboardOrder ?? 0;
 
-	
+
+
             if (scenarioId == "SCN001")
             {
                 var WorkflowDashboardButtonText = Constants.ACTION_TYPE_VERIFY;
@@ -137,7 +139,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = 1,
-                    Description = "Full navigation and interaction chain to Workflow DashBoard page",
+                    Description = "Validate Workflow DashBoard button click and validate Requesting Reviewer Group Verify button",
                     Action = new SeleniumDsl()
                         .BeginWith(Execute.NavigateTo($"{baseUrl}/Proposal/ViewProposal/{proposalId}"))
                         .Then(Validate.ElementById(workflowButtonId, $"{workflowButtonText} button"))
@@ -151,7 +153,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = 2,
-                    Description = $"Click '{WorkflowDashboardButtonText}' in row with WorkflowPortion '{workflowPortion}'",
+                    Description = $"Click '{WorkflowDashboardButtonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
                     Action = new SeleniumDsl()
                         .BeginWith(Execute.ClickButtonInRow(workflowPortion, WorkflowDashboardButtonText))
                         .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
@@ -163,13 +165,37 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = 3,
-                    Description = $"Click '{RequestMoreInformationButton}'",
+                    Description = $"Click '{RequestMoreInformationButton}' and validate Targeted Reviewer Group avaiable in drop down selector",
                     Action = new SeleniumDsl()
                     .BeginWith(Execute.ClickWhenVisibleById(requestButtonId, requestButtonText))
                     .Then(Validate.ElementById("RequestedInfo_ReviewerGroupId", "Target Reviewer dropdown"))
                     .Then(Execute.SelectDropdown("RequestedInfo_ReviewerGroupId", targetGroup.Name, "Reviewer Group"))
-                    .Build("Clicked Request and confirmed dropdown selection")
+                    .Build("Clicked Request More Information button and confirmed dropdown selection")
 
+
+                });
+
+                ActualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = 4,
+                    Description = $"Enter requested information press submit and verify success message",
+                    Action = new SeleniumDsl()
+                    .BeginWith(Execute.EnterRequestedInformation(scenarioDetail.RequestedInformation))
+                    .Then(Execute.ClickButtonById("btnSubmitMoreInfo", "Submit button"))
+                    .Then(Validate.ElementTextById("responseMessage",Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT, "Submission success message"))
+                    .Build("Entered requested information and clicked Submit button")
+
+                });
+
+                ActualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = 5,
+                    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
+                    Action = new SeleniumDsl()
+                    .BeginWith(Execute.NavigateTo($"{baseUrl}"))
+                    .Then(Execute.DashboardSearch(proposalId.ToString()))
+                    .Then(Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now))
+                    .Build("Navigate to Home Dashboard enter Request verify group status")
 
                 });
             }

@@ -239,6 +239,51 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> AssertElementTextById(string id, string expectedText, string description)
+        {
+            return async driver =>
+            {
+                try
+                {
+                    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                    var element = wait.Until(drv => drv.FindElement(By.Id(id)));
+
+                    var actualText = element.Text.Trim();
+
+                    if (actualText == expectedText.Trim())
+                    {
+                        return new SeleniumStepResult
+                        {
+                            Success = true,
+                            Message = $"{description} is present and matches expected text."
+                        };
+                    }
+
+                    return new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = $"{description} is present but text differs.\nExpected: '{expectedText}'\nActual: '{actualText}'"
+                    };
+                }
+                catch (NoSuchElementException)
+                {
+                    return new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = $"{description} not found on the page."
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = $"Error validating {description}: {ex.Message}"
+                    };
+                }
+            };
+        }
+
         public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateElementTextIsEmpty(string elementId, string description)
         {
             return async driver =>
@@ -400,6 +445,219 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
-        
+        public static Func<IWebDriver, Task<SeleniumStepResult>> EnterTextById(string elementId, string text, string description)
+        {
+            return async driver =>
+            {
+                try
+                {
+                    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(8));
+                    var textarea = wait.Until(drv => drv.FindElement(By.Id(elementId)));
+
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", textarea);
+                    await Task.Delay(250);
+
+                    textarea.Clear();
+                    textarea.SendKeys(text);
+
+                    return new SeleniumStepResult
+                    {
+                        Success = true,
+                        Message = $"Entered text into '{description}'."
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = $"Failed to enter text in '{description}': {ex.Message}"
+                    };
+                }
+            };
+        }
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> EnterDashboardSearch(string proposalId)
+        {
+            return async driver =>
+            {
+                try
+                {
+                    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                    var filterContainer = wait.Until(d => d.FindElement(By.Id("dashboard_filter")));
+                    var input = filterContainer.FindElement(By.CssSelector("input[type='search']"));
+
+                    input.Clear();
+                    input.SendKeys(proposalId);
+                    await Task.Delay(1000); // Allow table to re-render/filter
+
+                    return new SeleniumStepResult
+                    {
+                        Success = true,
+                        Message = $"Entered proposal ID '{proposalId}' into dashboard search field."
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = $"Failed to enter dashboard search value: {ex.Message}"
+                    };
+                }
+            };
+        }
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateReviewerDashboardCell(int dashboardOrder, string expectedName, DateTime expectedDate)
+        {
+            return async driver =>
+            {
+                try
+                {
+                    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                    var row = wait.Until(d =>
+                        d.FindElement(By.CssSelector("#dashboard tbody tr"))); // Assume only one filtered row
+
+                    var cells = row.FindElements(By.CssSelector("td")).ToList();
+                    int anchorIndex = -1;
+
+                    // Find the last fa-check-circle cell
+                    for (int i = 0; i < cells.Count; i++)
+                    {
+                        if (cells[i].FindElements(By.CssSelector("i.fa-check-circle")).Any())
+                        {
+                            anchorIndex = i;
+                        }
+                    }
+
+                    if (anchorIndex == -1)
+                    {
+                        return new SeleniumStepResult
+                        {
+                            Success = false,
+                            Message = "No check-mark columns (Pending/Submit) found to anchor reviewer columns."
+                        };
+                    }
+
+                    int reviewerIndex = anchorIndex + dashboardOrder;
+                    if (reviewerIndex >= cells.Count)
+                    {
+                        return new SeleniumStepResult
+                        {
+                            Success = false,
+                            Message = $"Reviewer index {reviewerIndex} is out of bounds for table row with {cells.Count} cells."
+                        };
+                    }
+
+                    var reviewCell = cells[reviewerIndex];
+                    var textParts = reviewCell.Text
+                        .Split('\n')
+                        .Select(t => t.Trim())
+                        .Where(t => !string.IsNullOrWhiteSpace(t))
+                        .ToList();
+
+                    var expectedDateStr = expectedDate.ToString("MM/dd/yy");
+                    var issues = new List<string>();
+
+                    if (!textParts.Contains(expectedName))
+                        issues.Add($"Expected reviewer name '{expectedName}' not found in cell.");
+
+                    if (!textParts.Contains(expectedDateStr))
+                        issues.Add($"Expected date '{expectedDateStr}' not found in cell.");
+
+                    var hasInfoIcon = reviewCell.FindElements(By.CssSelector("i.fa-info-circle")).Any();
+                    if (!hasInfoIcon)
+                        issues.Add("Expected info icon not found in reviewer cell.");
+
+                    if (issues.Any())
+                    {
+                        return new SeleniumStepResult
+                        {
+                            Success = false,
+                            Message = "Reviewer cell mismatch:\n" + string.Join("\n", issues)
+                        };
+                    }
+
+                    return new SeleniumStepResult
+                    {
+                        Success = true,
+                        Message = "Reviewer cell matches expected name, date, and icon."
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = $"Error during reviewer dashboard cell validation: {ex.Message}"
+                    };
+                }
+            };
+        }
+
+        //public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateDashboardStatusCell(string expectedGroup, DateTime expectedDate)
+        //{
+        //    return async driver =>
+        //    {
+        //        try
+        //        {
+        //            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+        //            var table = wait.Until(d => d.FindElement(By.Id("dashboard"))); // Assuming the table ID is 'dashboard'
+        //            var row = table.FindElement(By.CssSelector("tbody tr")); // First (filtered) row
+
+        //            // Look for <td> that contains fa-info-circle
+        //            var reviewCells = row.FindElements(By.CssSelector("td"))
+        //                .Where(td => td.FindElements(By.CssSelector("i.fa-info-circle")).Any());
+
+        //            var reviewCell = reviewCells.FirstOrDefault();
+        //            if (reviewCell == null)
+        //            {
+        //                return new SeleniumStepResult
+        //                {
+        //                    Success = false,
+        //                    Message = $"Could not locate any dashboard status cell with 'fa-info-circle'."
+        //                };
+        //            }
+
+        //            var textParts = reviewCell.Text.Split('\n').Select(t => t.Trim()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+        //            var expectedDateString = expectedDate.ToString("MM/dd/yy");
+
+        //            var issues = new List<string>();
+        //            if (!textParts.Contains(expectedGroup))
+        //                issues.Add($"Expected group '{expectedGroup}' not found.");
+
+        //            if (!textParts.Contains(expectedDateString))
+        //                issues.Add($"Expected date '{expectedDateString}' not found.");
+
+        //            if (issues.Any())
+        //            {
+        //                return new SeleniumStepResult
+        //                {
+        //                    Success = false,
+        //                    Message = $"Dashboard review cell did not match expected contents:\n" + string.Join("\n", issues)
+        //                };
+        //            }
+
+        //            return new SeleniumStepResult
+        //            {
+        //                Success = true,
+        //                Message = $"Dashboard review cell matched expected group and date."
+        //            };
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            return new SeleniumStepResult
+        //            {
+        //                Success = false,
+        //                Message = $"Error validating dashboard review cell: {ex.Message}"
+        //            };
+        //        }
+        //    };
+        //}
+
+
+
+
+
     }
 }

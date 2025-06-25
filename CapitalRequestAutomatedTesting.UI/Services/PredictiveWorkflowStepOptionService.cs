@@ -11,6 +11,7 @@ using vm = CapitalRequest.API.Models;
 using System.Linq;
 using SSMWorkflow.API.Models;
 using System.Collections.Generic;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
@@ -20,6 +21,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<WorkflowStepOption>> CloseOptionsAsync(vm.Proposal proposal, Guid optionId, string OptionType, int? requestedInfoId, string actionType);
         Task<List<WorkflowStepOption>> GetFilteredOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId);
         Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string OptionType, int? requestedInfoId);
+        Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage);
     }
 
     public class PredictiveWorkflowStepOptionService : IPredictiveWorkflowStepOptionService
@@ -286,6 +288,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             await ValidateProposalAsync(proposal, workflowStep, workflowStepOptions);
 
             return proposal;
+        }
+
+        public async Task <SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage)
+        {
+            proposal = await PredictiveMessage(proposal, actionType);
+
+            bool isValid = proposal.ResponseMessage == expectedMessage;
+
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid
+                    ? "Response Message validation passed."
+                    : "Response Message not valid for this Request."
+            };
         }
 
         public async Task ValidateProposalAsync(vm.Proposal proposal, WorkflowStep workflowStep, List<WorkflowStepOption> workflowStepOptions)

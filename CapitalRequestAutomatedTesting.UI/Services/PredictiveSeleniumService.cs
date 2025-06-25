@@ -126,6 +126,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 serviceType = typeof(IPredictiveWorkflowActionService);
             else if (serviceName == $"{nameSpace}IScenarioControllerService")
                 serviceType = typeof(IScenarioControllerService);
+            else if (serviceName == $"{nameSpace}IPredictiveDashboardService")
+                serviceType = typeof(IPredictiveDashboardService);
+            else if (serviceName == $"{nameSpace}IPredictiveWorkflowStepOptionService")
+                serviceType = typeof(IPredictiveWorkflowStepOptionService);
 
 
             // Get service instance
@@ -157,8 +161,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 result = innerResultProperty?.GetValue(innerTaskResult);
             }
 
-            return result as SeleniumStepResult
-                   ?? new SeleniumStepResult { Success = false, Message = "Unexpected result type." };
+            if (result is SeleniumStepResult stepResult)
+            {
+                return stepResult;
+            }
+
+            if (result is bool boolResult)
+            {
+                return new SeleniumStepResult
+                {
+                    Success = boolResult,
+                    Message = $"Boolean result: {boolResult}"
+                };
+            }
+            return new SeleniumStepResult { Success = false, Message = "Unexpected result type." };
+
         }
 
 
@@ -198,6 +215,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var requestingGroupId = scenarioDetail.RequestingGroupId;
                 var targetGroupId = scenarioDetail.TargetGroupId;
 
+                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
+                var targetGroup = await _capitalRequestServices.GetReviewerGroup(targetGroupId);
+
+                var actionType = Constants.ACTION_TYPE_VERIFY;
+                var expectedMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
                 var increment = 1;
 
                 proposal.RequestedInfo.Id = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id) + increment; ;
@@ -239,86 +261,28 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     }
                 );
 
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStepOptionService",
+                        MethodName = "ValidateResponseMessageAsync",
+                        Parameters = new List<object> { proposal, actionType, expectedMessage }
+                    }
+                );
+
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       ServiceName = "IPredictiveDashboardService",
+                       MethodName = "ValidateDashboardStatusAsync",
+                       Parameters = new List<object> { proposal, requestingGroup.Name, targetGroup.Name, Constants.DASHBOARD_STATUS_INFORMATION_REQUESTED }
+                   }
+               );
 
             }
 
             return predictiveMethods;
         }
-
-        public async Task GenerateSeleniumSteps(ScenarioDetailsViewModel scenarioDetail)
-        {
-            var predictiveSteps = new List<SeleniumScenarioStep>();
-
-            var scenarioId = scenarioDetail.ScenarioId;
-            var baseUrl = _workflowControllerService.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
-            var proposalId = scenarioDetail.ProposalId;
-            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(scenarioDetail.RequestingGroupId);
-            var workflowPortion = $"{reviewerGroup.StepNumber} -{reviewerGroup.Name}";
-            var workflowButtonId = "btnWorkflowActions";
-            var workflowButtonText = "Workflow";
-            var requestButtonId = "btnRequestMoreInfo";
-            var requestButtonText = "Request More Information button";
-
-
-            /*
-	1. Navigate to View Request
-a. http://caps-dev.ssmhc.com/CapitalRequest/Proposal/ViewProposal/2884
-	2. Test 1 validate  Workflow button
-	3. Click Workflow button
-	4. Test 2 Validate Verify button for selected Reviewer Group
-
-
-	5. Click Reviewer Group Verify button 
-	6. Test 3 Validate no rejection message 
-	7. Select Target Reviewer Group from dropdown by target Id
-	8. Test 4 Validate Target Reviewer Group available
-	9. Enter previously captured Request for information text into Text Area
-	10. Validate Submit button
-	11. Click Submit button
-	12. Test 5 Validate success message
-	13. Navigate to Home Dashboard
-	14. Validate search box appears
-	15. Enter Request Id into text box
-	16. Validate Request 
-	17. Test 6 Validate Request from Targeted Reviewer Group has Requesting Group and date
-		a. <tbody>
-			i. <tr class = "odd">
-			ii. <td> will be 11th + dashboardorder column
-              
-             */
-            if (scenarioId == "SCN001")
-            {
-                var WorkflowDashboardButtonText = Constants.ACTION_TYPE_VERIFY;
-
-                predictiveSteps.Add(new SeleniumScenarioStep
-                {
-                    StepNumber = 1,
-                    Description = "Full navigation and interaction chain to Workflow DashBoard page",
-                    Action = new SeleniumDsl()
-                        .BeginWith(Execute.NavigateTo($"{baseUrl}/ViewProposal/{proposalId}"))
-                        .Then(Validate.ElementById(workflowButtonId, $"{workflowButtonText} button"))
-                        .Then(Execute.ClickButtonById(workflowButtonId, workflowButtonText))
-                        .Then(Validate.Text(workflowPortion))
-                        .Then(Validate.ButtonInRowWithText(workflowPortion, WorkflowDashboardButtonText))
-                        .Build("Reached Workflow DashBoard page")
-
-                });
-
-                predictiveSteps.Add(new SeleniumScenarioStep
-                {
-                    StepNumber = 2,
-                    Description = $"Click '{WorkflowDashboardButtonText}' in row with WorkflowPortion '{workflowPortion}'",
-                    Action = new SeleniumDsl()
-                        .BeginWith(Execute.ClickButtonInRow(workflowPortion, WorkflowDashboardButtonText))
-                        .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
-                        .Then(Validate.ButtonById(requestButtonId, requestButtonText))
-                        .Build("Clicked Request and confirmed page transition")
-
-                });
-
-
-            }
-
-        }
+       
     }
 }

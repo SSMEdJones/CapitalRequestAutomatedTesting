@@ -4,6 +4,7 @@ using SSMWorkflow.API.DataAccess.Services.Api;
 using SSMWorkflow.API.Models;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 
 namespace CapitalRequestAutomatedTesting.Data
@@ -38,7 +39,7 @@ namespace CapitalRequestAutomatedTesting.Data
         Task<SSMWorkflow.API.Models.EmailNotification> GeEmailNotification(int id);
 
         Task<List<SSMWorkflow.API.Models.EmailNotification>> GetAllEmailNotifications(EmailNotificationSearchFilter filter);
-
+        Task<List<SSMWorkflow.API.Models.Dashboard>> GetAllDashboards(DashboardSearchFilter filter);
     }
     public class SSMWorkflowServices : ISSMWorkflowServices
     {
@@ -157,6 +158,11 @@ namespace CapitalRequestAutomatedTesting.Data
         public Task<List<SSMWorkflow.API.Models.EmailNotification>> GetAllEmailNotifications(EmailNotificationSearchFilter filter)
         {
             return _emailNotification.GetAll(filter);
+        }
+
+        public Task<List<SSMWorkflow.API.Models.Dashboard>> GetAllDashboards(DashboardSearchFilter filter)
+        {
+            return _dashboards.GetDashboardData(filter);
         }
 
     }

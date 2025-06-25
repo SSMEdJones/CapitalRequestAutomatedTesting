@@ -10,6 +10,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
     public interface IScenarioComparer
     {
         ScenarioComparisonResult CompareData(ScenarioDataViewModel predictiveData, ScenarioDataViewModel actualData);
+        List<SeleniumStepComparison> CompareOutcomes(SeleniumScenarioResult expected, SeleniumScenarioResult actual);
     }
     public class ScenarioComparer : IScenarioComparer
     {
@@ -75,11 +76,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                     Debug.WriteLine($"[{tableName}] Operation: {opType} — RowKey: {key}");
 
                                     return key;
-                                    //return itemType
-                                    //    .GetProperties()
-                                    //    .Where(p => Attribute.IsDefined(p, typeof(RowKeyAttribute)))
-                                    //    .Select(p => p.GetValue(obj)?.ToString())
-                                    //    .Aggregate((a, b) => $"{a}|{b}");
                                 }
 
                                 var dictA = predictiveList.Cast<object>().ToDictionary(GetRowKey);
@@ -116,19 +112,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                         RowKey = $"{opType}|{i}"
                                     });
                                 }
-                                //var predictiveTyped = JsonConvert.DeserializeObject(predictiveJson, type);
-                                //var actualTyped = JsonConvert.DeserializeObject(actualJson, type);
-
-                                //var fieldDiffs = CompareFields(predictiveTyped, actualTyped);
-                                //if (fieldDiffs.Any())
-                                //{
-                                //    tableDiff.FieldLevelDifferences.Add(new RecordDifference
-                                //    {
-                                //        RecordPredictive = predictiveTyped,
-                                //        RecordActual = actualTyped,
-                                //        FieldDifferences = fieldDiffs
-                                //    });
-                                //}
                             }
 
                             if (operationDiffs.Any())
@@ -217,16 +200,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return differences;
         }
 
-        private string GetRowKey(object obj)
-        {
-            var type = obj.GetType();
-            var keys = type.GetProperties()
-                .Where(p => Attribute.IsDefined(p, typeof(RowKeyAttribute)))
-                .Select(p => p.GetValue(obj)?.ToString());
-
-            return string.Join("|", keys);
-        }
-
         public static void LogStructure(object obj, string label = "Object")
         {
             var formatted = JsonConvert.SerializeObject(obj, Formatting.Indented);
@@ -234,6 +207,61 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             Debug.WriteLine(formatted);
         }
 
+        public List<SeleniumStepComparison> CompareOutcomes(SeleniumScenarioResult expected, SeleniumScenarioResult actual)
+        {
+            var stepComparisons = new List<SeleniumStepComparison>();
+            var expectedMap = expected.Steps.ToDictionary(x => x.StepNumber);
+
+            foreach (var actualStep in actual.Steps)
+            {
+                var comparison = new SeleniumStepComparison
+                {
+                    StepNumber = actualStep.StepNumber,
+                    Description = actualStep.Description,
+                    ActualMessage = actualStep.Result?.Message,
+                    ActualSuccess = actualStep.Result?.Success
+                };
+
+                if (expectedMap.TryGetValue(actualStep.StepNumber, out var expectedStep))
+                {
+                    comparison.ExpectedMessage = expectedStep.Result?.Message;
+                    comparison.ExpectedSuccess = expectedStep.Result?.Success;
+                }
+
+                stepComparisons.Add(comparison);
+            }
+
+            return stepComparisons;
+        }
+
+
+        //public List<SeleniumStepComparison> CompareOutcomes(SeleniumScenarioResult expected, SeleniumScenarioResult actual)
+        //{
+        //    var stepComparisons = new List<SeleniumStepComparison>();
+
+        //    var stepMap = actual.Steps.ToDictionary(x => x.StepNumber);
+
+        //    foreach (var expectedStep in expected.Steps)
+        //    {
+        //        var comparison = new SeleniumStepComparison
+        //        {
+        //            StepNumber = expectedStep.StepNumber,
+        //            Description = expectedStep.Description,
+        //            ExpectedMessage = expectedStep.Result?.Message,
+        //            ExpectedSuccess = expectedStep.Result?.Success
+        //        };
+
+        //        if (stepMap.TryGetValue(expectedStep.StepNumber, out var actualStep))
+        //        {
+        //            comparison.ActualMessage = actualStep.Result?.Message;
+        //            comparison.ActualSuccess = actualStep.Result?.Success;
+        //        }
+
+        //        stepComparisons.Add(comparison);
+        //    }
+
+        //    return stepComparisons;
+        //}
 
     }
 

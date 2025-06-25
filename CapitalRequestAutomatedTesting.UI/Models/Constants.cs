@@ -70,5 +70,12 @@
         public const string AUTHOR_GROUP = "Author";
 
         public const string EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION = "{{ fullName }} from {{ requestingGroupName }} requested more information from {{ requestedGroup }} on {{ requestDate }}.";
+
+        //Dashboard
+        public const string DASHBOARD_STATUS_INFORMATION_REQUESTED = "I";
+        public const string DASHBOARD_STATUS_VERIFIED = "V";
+        public const string DASHBOARD_STATUS_CANCELLED = "X";
+        public const string DASHBOARD_STATUS_SKIPPED = "-";
+
     }
 }

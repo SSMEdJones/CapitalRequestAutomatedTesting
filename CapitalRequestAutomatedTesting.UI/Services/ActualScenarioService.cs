@@ -195,6 +195,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     
                 proposal.ReviewerGroupId = scenarioDetail.RequestingGroupId;
                 proposal.RequestedInfo = requestedInfo ?? new vm.RequestedInfo();
+                proposal.RequestedInfo.RequestingReviewerGroupId = scenarioDetail.RequestingGroupId;
+                proposal.RequestedInfo.ReviewerGroupId = scenarioDetail.TargetGroupId;
                 proposal.ReviewerId = scenarioDetail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 

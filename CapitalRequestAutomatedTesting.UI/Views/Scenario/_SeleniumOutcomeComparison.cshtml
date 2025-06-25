@@ -1,0 +1,38 @@
+﻿@using CapitalRequestAutomatedTesting.UI.ScenarioFramework
+@using CapitalRequestAutomatedTesting.UI.Services
+@using CapitalRequestAutomatedTesting.UI.Enums
+@model ScenarioComparisonResult
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Step #</th>
+            <th>Description</th>
+            <th>Expected</th>
+            <th>Actual</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var step in Model.SeleniumComparisons)
+        {
+            var statusClass = step.IsMatch ? "" : "table-warning";
+            <tr class="@statusClass">
+                <td>@step.StepNumber</td>
+                <td>@step.Description</td>
+                <td>@(step.ExpectedSuccess.HasValue ? step.ExpectedSuccess.ToString() : "—")</td>
+                <td>@(step.ActualSuccess.HasValue ? step.ActualSuccess.ToString() : "—")</td>
+                <td>
+                    @if (step.IsMatch)
+                    {
+                        <span class="text-success">✔</span>
+                    }
+                    else
+                    {
+                        <span class="text-danger">✘</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

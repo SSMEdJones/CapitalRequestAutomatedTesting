@@ -114,6 +114,7 @@ namespace CapitalRequestAutomatedTesting.UI
             #endregion
             #region Selenium Services
             services.AddScoped<IPredictiveSeleniumService, PredictiveSeleniumService>();
+            services.AddScoped<IPredictiveDashboardService, PredictiveDashboardService>();
             #endregion
 
             

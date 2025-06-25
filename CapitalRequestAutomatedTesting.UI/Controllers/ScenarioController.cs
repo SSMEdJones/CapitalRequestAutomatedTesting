@@ -123,6 +123,14 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                     detail.RequestingGroups.ForEach(x => x.Selected = x.Value == detail.RequestingGroupId.ToString());
                     detail.TargetGroups.ForEach(x => x.Selected = x.Value == detail.TargetGroupId.ToString());
                     detail.Reviewers.ForEach(x => x.Selected = x.Value == detail.ReviewerId.ToString());
+
+                    //var requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(detail.RequestingGroupId);
+                    //var targetGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(detail.TargetGroupId);
+                    //var debug = detail.DisplayText;
+                    //detail.RequestedInformation = $"{requestingGroup.Name} requesting more information from {targetGroup.Name} via Workflow Automated Testing -  {detail.DisplayText} Scenario.";
+                    //detail.RequestedInformation = "IT requesting more information  from Facilities via Workflow Automated Testing -  Request More Information Scenario."
+
+
                 }
 
 
@@ -208,13 +216,14 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             var predictive = scenario.PredictiveData;
             var actual = scenario.ActualData;
 
-            var result = _scenarioComparer.CompareData(predictive, actual);
+            var scenarioComparisonResult = _scenarioComparer.CompareData(predictive, actual);
 
-            result.ScenarioId = scenario.ScenarioId;
-            result.ScenarioName = scenario.DisplayText;
-            result.SelectedProperties = new Dictionary<string, string>(scenario.SelectedProperties);
+            scenarioComparisonResult.ScenarioId = scenario.ScenarioId;
+            scenarioComparisonResult.ScenarioName = scenario.DisplayText;
+            scenarioComparisonResult.SelectedProperties = new Dictionary<string, string>(scenario.SelectedProperties);
+            scenarioComparisonResult.SeleniumComparisons = _scenarioComparer.CompareOutcomes(scenario.PredictedSeleniumOutcome.Expected, scenario.ActualSeleniumOutcome.Expected);
 
-            return View(result);
+            return View(scenarioComparisonResult);
         
         }
 
@@ -235,8 +244,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
 
             //Compare Data
-            scenario.ComparisonResult = _scenarioComparer.CompareData(scenario.PredictiveData, scenario.ActualData);
-           
+            //scenario.ComparisonResult = _scenarioComparer.CompareData(scenario.PredictiveData, scenario.ActualData);
+            //scenario.SeleniumComparisons = _scenarioComparer.CompareOutcomes(scenario.PredictedSeleniumOutcome.Expected, scenario.ActualSeleniumOutcome.Expected);
 
             return scenario;
         }

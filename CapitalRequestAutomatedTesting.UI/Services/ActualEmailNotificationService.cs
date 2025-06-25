@@ -56,7 +56,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var workflowStepId = workflowStep.WorkflowStepID;
 
             var reviewerGroupdId = proposal.RequestedInfo.ReviewerGroupId;
-            var requestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId.Value;
+            var requestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId ?? 0;
 
             var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
             var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);

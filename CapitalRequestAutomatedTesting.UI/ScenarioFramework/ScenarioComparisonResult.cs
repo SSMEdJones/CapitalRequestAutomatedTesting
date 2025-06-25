@@ -10,5 +10,6 @@
         public List<string> TablesOnlyInPredictive { get; set; } = new();
         public List<string> TablesOnlyInActual { get; set; } = new();
         public List<TableDifference> DifferingTables { get; set; } = new();
+        public List<SeleniumStepComparison> SeleniumComparisons { get; set; } = new();
     }
 }

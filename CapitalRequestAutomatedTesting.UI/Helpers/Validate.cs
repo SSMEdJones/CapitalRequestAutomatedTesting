@@ -22,10 +22,15 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
            => SeleniumHelper.ValidateButtonInRowWithText(rowText, buttonText);
 
         public static Func<IWebDriver, Task<SeleniumStepResult>> ElementNotPresentById(string id, string description)
-       => SeleniumHelper.AssertElementNotPresentById(id, description);
+           => SeleniumHelper.AssertElementNotPresentById(id, description);
+        public static Func<IWebDriver, Task<SeleniumStepResult>> ElementTextById(string id, string expectedText, string description)
+           => SeleniumHelper.AssertElementTextById(id, expectedText, description);
 
         public static Func<IWebDriver, Task<SeleniumStepResult>> TextIsEmpty(string id, string description)
             => SeleniumHelper.ValidateElementTextIsEmpty(id, description);
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> DashboardStatus(int dashboardOrder, string expectedName, DateTime expectedDate)
+            => SeleniumHelper.ValidateReviewerDashboardCell(dashboardOrder, expectedName, expectedDate);
 
     }
 
