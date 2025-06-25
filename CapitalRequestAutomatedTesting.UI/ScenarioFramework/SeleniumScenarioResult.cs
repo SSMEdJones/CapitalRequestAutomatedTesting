@@ -1,9 +1,13 @@
-﻿namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
+﻿using Microsoft.AspNetCore.Http;
+
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class SeleniumScenarioResult
     {
         public string ScenarioName { get; set; }
-        public List<SeleniumStepResultDetail> Steps { get; set; } = new();
-        public bool Passed => Steps.All(s => s.Success);
+        public List<SeleniumScenarioStep> Steps { get; set; } = new();
+        public bool Passed => Steps.All(s => s.Result?.Success == true);
+        public List<string> Messages { get; set; } = new();
+        public bool Success { get; set; }
     }
 }

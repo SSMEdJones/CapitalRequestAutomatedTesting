@@ -1,0 +1,32 @@
+﻿using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using OpenQA.Selenium;
+
+namespace CapitalRequestAutomatedTesting.UI.Helpers
+{
+    public static class Validate
+    {
+        public static Func<IWebDriver, Task<SeleniumStepResult>> ButtonById(string buttonId, string buttonText)
+            => SeleniumHelper.ValidateElementById(buttonId, buttonText);
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> ElementById(string id, string description)
+            => SeleniumHelper.ValidateElementById(id, description);
+
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> TextInTag(string tag, string text)
+            => SeleniumHelper.ValidateElementWithText(tag, text);
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> Text(string text)
+            => SeleniumHelper.ValidateElementWithText(text);
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> ButtonInRowWithText(string rowText, string buttonText)
+           => SeleniumHelper.ValidateButtonInRowWithText(rowText, buttonText);
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> ElementNotPresentById(string id, string description)
+       => SeleniumHelper.AssertElementNotPresentById(id, description);
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> TextIsEmpty(string id, string description)
+            => SeleniumHelper.ValidateElementTextIsEmpty(id, description);
+
+    }
+
+}

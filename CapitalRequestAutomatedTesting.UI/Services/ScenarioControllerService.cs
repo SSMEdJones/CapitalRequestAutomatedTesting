@@ -4,6 +4,8 @@ using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using vm = CapitalRequest.API.Models;
+
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
@@ -19,7 +21,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<SelectListItem>> GetRequestSelectListAsync();
         Task<List<SelectListItem>> GetRequestingGroupsAsync(int proposalId);
         Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id);
-        Task<bool> ValidateTargetGroupIdAsync(Proposal proposal, int requestingGroupId, int targetGroupId);
+        Task<bool> ValidateTargetGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
     }
 
     public class ScenarioControllerService : IScenarioControllerService
@@ -175,7 +177,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return reviewers;
         }
 
-        public async Task<bool> ValidateTargetGroupIdAsync (Proposal proposal,  int requestingGroupId, int targetGroupId)
+        public async Task<bool> ValidateTargetGroupIdAsync (vm.Proposal proposal,  int requestingGroupId, int targetGroupId)
         {
             // Validate that the target group ID is valid for the proposal
             //left off here

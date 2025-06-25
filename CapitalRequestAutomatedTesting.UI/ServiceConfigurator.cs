@@ -91,6 +91,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveWorkflowStepService, PredictiveWorkflowStepService>();
             services.AddScoped<IPredictiveEmailNotificationService, PredictiveEmailNotificationService>();
             services.AddScoped<IPredictiveScenarioService, PredictiveScenarioService>();
+            services.AddScoped<IPredictiveWorkflowActionService, PredictiveWorkflowActionService>();
 
             //services.AddScoped<IPredictiveProposalControllerService, PredictiveProposalControllerService>();
 
@@ -103,6 +104,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualWorkflowStepOptionService, ActualWorkflowStepOptionService>();
             services.AddScoped<IActualWorkflowStepResponderService, ActualWorkflowStepResponderService>();
             services.AddScoped<IActualScenarioService, ActualScenarioService>();
+            services.AddScoped<IActualSeleniumService, ActualSeleniumService>();
             #endregion
 
             #region Scenario Framework

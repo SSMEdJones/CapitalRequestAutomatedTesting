@@ -22,6 +22,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IPredictiveScenarioService _predictiveScenarioService;
         private readonly IActualScenarioService _actualScenarioService;
+        private readonly IPredictiveSeleniumService _predictiveSeleniumService;
+        private readonly IActualSeleniumService _actualSeleniumService;
         private readonly IScenarioComparer _scenarioComparer;
 
         public ScenarioController(
@@ -30,6 +32,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             ICapitalRequestServices capitalRequestServices,
             IPredictiveScenarioService predictiveScenarioService,
             IActualScenarioService actualScenarioService,
+            IPredictiveSeleniumService predictiveSeleniumService,
+            IActualSeleniumService actualSeleniumService,
             IScenarioComparer scenarioComparer)
         {
             _scenarioControllerService = scenarioControllerService;
@@ -37,6 +41,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             _capitalRequestServices = capitalRequestServices;
             _predictiveScenarioService = predictiveScenarioService;
             _actualScenarioService = actualScenarioService;
+            _predictiveSeleniumService = predictiveSeleniumService;
+            _actualSeleniumService = actualSeleniumService;
             _scenarioComparer = scenarioComparer;
         }
 
@@ -214,16 +220,23 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
         private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
         {
+            //var runner = new ScenarioSeleniumRunner(_actualSeleniumService);
+            //var outcome = await runner.RunScenarioAsync(scenario);
+
+            
             // Predictive data
             scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
             // Run Selenium Scenario
+            scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+            scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
             // Retrieve data
             scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
 
             //Compare Data
             scenario.ComparisonResult = _scenarioComparer.CompareData(scenario.PredictiveData, scenario.ActualData);
+           
 
             return scenario;
         }
