@@ -214,8 +214,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 var increment = 1;
 
-                //TODO Remove after debugging
-                increment = 0;
                 proposal.RequestedInfo.Id = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id) + increment; ;
 
                 var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
