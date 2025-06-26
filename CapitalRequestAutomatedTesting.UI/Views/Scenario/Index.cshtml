@@ -41,7 +41,6 @@
 
                 <div class="scenario-wrapper">
                     <label>
-                        @* <input type="checkbox" name="SelectedScenarioIds" value="@detail.ScenarioId" data-target="@partialId" /> *@
                         <input type="checkbox"
                                name="SelectedScenarioIds"
                                value="@detail.ScenarioId"
@@ -50,7 +49,6 @@
                         @detail.DisplayText
                     </label>
 
-                    @* <div id="@partialId" class="scenario-partial" style="display: none;"> *@
                     <div id="@partialId" class="scenario-partial"
                          style="display: @(Model.SelectedScenarioIds?.Contains(detail.ScenarioId) == true ? "block" : "none")">
                         @{

@@ -2,16 +2,11 @@
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Enums;
-using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
-using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.Models;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using SSMWorkflow.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
-using System.Linq;
-using SSMWorkflow.API.Models;
-using System.Collections.Generic;
-using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {

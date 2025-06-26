@@ -3,15 +3,12 @@ using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Services;
-using CapitalRequestAutomatedTesting.UI.Services.Interfaces;
 using ScenarioFramework;
 using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Services;
 using SSMWorkflow.API.DataAccess.Services.Api;
-using System.Diagnostics;
-using System.Security.Claims;
 
 namespace CapitalRequestAutomatedTesting.UI
 {

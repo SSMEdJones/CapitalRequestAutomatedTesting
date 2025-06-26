@@ -1,15 +1,9 @@
-﻿using CapitalRequest.API.DataAccess.Models;
-using CapitalRequestAutomatedTesting.Data;
-using CapitalRequestAutomatedTesting.UI.Models;
-using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using OpenQA.Selenium.Support.UI;
-using OpenQA.Selenium;
-using System.Reflection;
-using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
-using vm = CapitalRequest.API.Models;
+﻿using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Helpers;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using CapitalRequest.API.Models;
+using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
@@ -90,7 +84,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 {
                     driver.Quit(); // Always clean up
                 }
-                //seleniumScenarioOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail);
             }
 
             seleniumScenarioOutcome.ScenarioId = scenarioId;

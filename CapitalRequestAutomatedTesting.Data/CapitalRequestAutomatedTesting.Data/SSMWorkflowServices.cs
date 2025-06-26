@@ -1,10 +1,9 @@
-﻿using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+﻿using Microsoft.Extensions.Options;
+using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.DataAccess.Services.Api;
 using SSMWorkflow.API.Models;
-using Microsoft.Extensions.Options;
 using System.Diagnostics;
-using System.Threading.Tasks;
 
 
 namespace CapitalRequestAutomatedTesting.Data

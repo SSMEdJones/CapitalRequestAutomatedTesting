@@ -1,18 +1,8 @@
-﻿using SSMWorkflow.API.Models;
-using CapitalRequest.API.Models;
+﻿using AutoMapper;
 using CapitalRequestAutomatedTesting.Data;
-using AutoMapper;
-using CapitalRequestAutomatedTesting.UI.Models;
-using CapitalRequest.API.DataAccess.Models;
-using dto = CapitalRequest.API.DataAccess.Models;
-using vm = CapitalRequest.API.Models;
-using SSMWorkflow.API.DataAccess.Models;
-using SSMAuthenticationCore.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
-using System.ComponentModel.DataAnnotations;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using CapitalRequestAutomatedTesting.UI.Services;
-using System.Net.WebSockets;
+using SSMWorkflow.API.DataAccess.Models;
+using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {

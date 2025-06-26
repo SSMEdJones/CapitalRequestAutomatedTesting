@@ -2,12 +2,9 @@
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using OpenQA.Selenium.Support.UI;
-using OpenQA.Selenium;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 using vm = CapitalRequest.API.Models;
-using CapitalRequestAutomatedTesting.UI.Helpers;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {

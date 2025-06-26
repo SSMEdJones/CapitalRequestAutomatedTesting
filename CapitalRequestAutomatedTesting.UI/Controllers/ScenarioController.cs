@@ -1,17 +1,9 @@
-
-using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
-using CapitalRequestAutomatedTesting.UI.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
-using ScenarioFramework;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace CapitalRequestAutomatedTesting.UI.Controllers
 {
@@ -124,6 +116,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                     detail.TargetGroups.ForEach(x => x.Selected = x.Value == detail.TargetGroupId.ToString());
                     detail.Reviewers.ForEach(x => x.Selected = x.Value == detail.ReviewerId.ToString());
 
+                    //TODO Why is DisplayText null
                     //var requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(detail.RequestingGroupId);
                     //var targetGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(detail.TargetGroupId);
                     //var debug = detail.DisplayText;
@@ -204,12 +197,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         public IActionResult ViewComparison()
         {
             
-            //var predictiveJson = TempData["Predictive"] as string;
-            //var actualJson = TempData["Actual"] as string;
-            
-            //var predictive = JsonConvert.DeserializeObject<ScenarioDataViewModel>(predictiveJson);
-            //var actual = JsonConvert.DeserializeObject<ScenarioDataViewModel>(actualJson);
-
             var scenarioJson = TempData["Scenario"] as string;
             var scenario = JsonConvert.DeserializeObject<ScenarioDetailsViewModel>(scenarioJson);
 
@@ -249,24 +236,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
             return scenario;
         }
-
-  
-
-        //[HttpPost]
-        //public async Task<IActionResult> Index(ScenarioFormViewModel model)
-        //{
-        //    if (model.RequestId.HasValue)
-        //    {
-        //        // Rebuild the full model with scenarios for the selected RequestId
-        //        model = await _scenarioControllerService.GenerateScenarioFormViewModel(model.RequestId.Value);
-        //    }
-        //    else
-        //    {
-        //        model.RequestIds = await _scenarioControllerService.GetRequestSelectListAsync();
-        //    }
-
-        //    return View(model);
-        //}
 
 
         [HttpGet]

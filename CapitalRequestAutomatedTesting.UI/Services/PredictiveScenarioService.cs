@@ -3,11 +3,8 @@ using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using Microsoft.VisualBasic;
-using SSMWorkflow.API.DataAccess.Models;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
-using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
