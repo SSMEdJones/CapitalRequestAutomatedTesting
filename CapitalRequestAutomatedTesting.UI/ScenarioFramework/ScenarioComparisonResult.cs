@@ -2,6 +2,7 @@
 {
     public class ScenarioComparisonResult
     {
+       public int Id { get; set; }
         public string ScenarioId { get; set; }              // 👈 Unique ID
         public string ScenarioName { get; set; }
         public Dictionary<string, string> SelectedProperties { get; set; } = new();

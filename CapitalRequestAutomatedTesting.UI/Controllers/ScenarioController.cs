@@ -1,6 +1,8 @@
+﻿using AutoMapper;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
+using DinkToPdf;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -16,7 +18,11 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly IActualScenarioService _actualScenarioService;
         private readonly IPredictiveSeleniumService _predictiveSeleniumService;
         private readonly IActualSeleniumService _actualSeleniumService;
+        private readonly IViewRenderService _viewRenderService;
+        private readonly IScenarioMemoryCache _scenarioMemoryCache;
         private readonly IScenarioComparer _scenarioComparer;
+        private readonly IMapper _mapper;
+        private readonly ScenarioViewModelBuilder _viewModelBuilder;
 
         public ScenarioController(
             IScenarioControllerService scenarioControllerService,
@@ -26,7 +32,11 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             IActualScenarioService actualScenarioService,
             IPredictiveSeleniumService predictiveSeleniumService,
             IActualSeleniumService actualSeleniumService,
-            IScenarioComparer scenarioComparer)
+            IViewRenderService viewRenderService,
+            IScenarioMemoryCache scenarioMemoryCache,
+            ScenarioViewModelBuilder viewModelBuilder,
+            IScenarioComparer scenarioComparer,
+            IMapper mapper)
         {
             _scenarioControllerService = scenarioControllerService;
             _workflowControllerService = workflowControllerService;
@@ -35,7 +45,11 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             _actualScenarioService = actualScenarioService;
             _predictiveSeleniumService = predictiveSeleniumService;
             _actualSeleniumService = actualSeleniumService;
+            _viewRenderService = viewRenderService;
+            _scenarioMemoryCache = scenarioMemoryCache;
+            _viewModelBuilder = viewModelBuilder;
             _scenarioComparer = scenarioComparer;
+            _mapper = mapper;
         }
 
         public async Task<IActionResult> Index()
@@ -45,89 +59,16 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             return View(formModel);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetRequestIds()
+        {
+            var requestList = await _scenarioControllerService.GetRequestSelectListAsync();
+            return Json(requestList);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Index([FromForm] ScenarioFormViewModel model, string actionType)
         {
-            if (actionType == "SelectRequest" && model.RequestId.HasValue)
-            {
-                model = await _scenarioControllerService.GenerateScenarioFormViewModel(model.RequestId.Value);
-            }
-            else if (actionType == "SelectRequest")
-            {
-                model.RequestIds = await _scenarioControllerService.GetRequestSelectListAsync();
-            }
-
-            if (actionType == "RequestingGroupChanged")
-            {
-                var proposalId = model.RequestId.Value;
-
-
-                var detail = model.ScenarioDetails.FirstOrDefault(d => d.ScenarioId == "SCN001");
-
-                if (detail != null)
-                {
-                    detail.TargetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(proposalId, detail.RequestingGroupId);
-                    detail.Reviewers = await _scenarioControllerService.GetReviewersByRequestingGroupAsync(proposalId, detail.RequestingGroupId);
-
-                    var requestingGroups = await _scenarioControllerService.GetRequestingGroupsAsync(proposalId);
-
-                    requestingGroups.ForEach(x =>
-                    {
-                        x.Selected = x.Value == detail.RequestingGroupId.ToString();
-                    });
-
-                    detail.RequestingGroups = requestingGroups;
-
-                }
-
-                var requestList = await _scenarioControllerService.GetRequestSelectListAsync();
-                requestList.ForEach(x =>
-                {
-                    x.Selected = x.Value == model.RequestId?.ToString();
-                });
-
-                model.RequestIds = requestList;
-
-
-            }
-
-            if (actionType == "ReviewerSelected")
-            {
-                var proposalId = model.RequestId.Value;
-
-                var detail = model.ScenarioDetails.FirstOrDefault(d => d.ScenarioId == "SCN001");
-                if (detail != null)
-                {
-                    var reviewer = await _scenarioControllerService.GetReviewerByIdAsync(detail.ReviewerId);
-
-                    detail.ProposalId = proposalId;
-                    detail.ReviewerUserId = reviewer.UserId;
-                    detail.ReviewerEmail = reviewer.Email;
-
-                    // Rebuild dropdowns
-                    model.RequestIds = await _scenarioControllerService.GetRequestSelectListAsync();
-                    model.RequestIds.ForEach(x => x.Selected = x.Value == proposalId.ToString());
-                    detail.RequestingGroups = await _scenarioControllerService.GetRequestingGroupsAsync(model.RequestId.Value);
-                    detail.TargetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(model.RequestId.Value, detail.RequestingGroupId);
-                    detail.Reviewers = await _scenarioControllerService.GetReviewersByRequestingGroupAsync(model.RequestId.Value, detail.RequestingGroupId);
-
-                    // Set selected items
-                    detail.RequestingGroups.ForEach(x => x.Selected = x.Value == detail.RequestingGroupId.ToString());
-                    detail.TargetGroups.ForEach(x => x.Selected = x.Value == detail.TargetGroupId.ToString());
-                    detail.Reviewers.ForEach(x => x.Selected = x.Value == detail.ReviewerId.ToString());
-
-                    //TODO Why is DisplayText null
-                    //var requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(detail.RequestingGroupId);
-                    //var targetGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(detail.TargetGroupId);
-                    //var debug = detail.DisplayText;
-                    //detail.RequestedInformation = $"{requestingGroup.Name} requesting more information from {targetGroup.Name} via Workflow Automated Testing -  {detail.DisplayText} Scenario.";
-                    //detail.RequestedInformation = "IT requesting more information  from Facilities via Workflow Automated Testing -  Request More Information Scenario."
-
-
-                }
-
-
-            }
 
             if (actionType == "RunSelected")
             {
@@ -144,11 +85,32 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 return RedirectToAction("RunSelected", new { ids = selectedIds });
             }
 
-
-
             return View(model);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetScenariosForRequest(int requestId)
+        {
+            var model = await _scenarioControllerService.GenerateScenarioFormViewModel(requestId);
+            return PartialView("_ScenarioFormPartial", model); // or whatever your partial is called
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetReviewerDetails(int reviewerId, int proposalId, int requestingGroupId, int targetGroupId, string displayText)
+        {
+            var reviewer = await _scenarioControllerService.GetReviewerByIdAsync(reviewerId);
+            var requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId);
+            var targetGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(targetGroupId);
+
+            var requestedInfo = $"{requestingGroup.Name} requesting more information from {targetGroup.Name} via Workflow Automated Testing - {displayText} Scenario.";
+
+            return Json(new
+            {
+                reviewerEmail = reviewer.Email,
+                reviewerUserId = reviewer.UserId,
+                requestedInformation = requestedInfo
+            });
+        }
 
         public async Task<IActionResult> RunSelected()
         {
@@ -175,7 +137,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             // Now you have full access to each selected scenario's form data
             foreach (var scenario in selectedScenarios)
             {
-                scenarioDetail =  await ProcessScenario(scenario);
+                scenarioDetail = await ProcessScenario(scenario);
                 scenarioDetails.Add(scenarioDetail);
 
                 // etc.
@@ -185,9 +147,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             foreach (var detail in scenarioDetails)
             {
                 TempData["Scenario"] = JsonConvert.SerializeObject(detail);
-                //TempData[$"Scenario_{detail.ScenarioId}"] = JsonConvert.SerializeObject(detail);
-                //TempData["Predictive"] = JsonConvert.SerializeObject(detail.PredictiveData);
-                //TempData["Actual"] = JsonConvert.SerializeObject(detail.ActualData);
 
             }
 
@@ -196,7 +155,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
         public IActionResult ViewComparison()
         {
-            
+
             var scenarioJson = TempData["Scenario"] as string;
             var scenario = JsonConvert.DeserializeObject<ScenarioDetailsViewModel>(scenarioJson);
 
@@ -209,9 +168,13 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             scenarioComparisonResult.ScenarioName = scenario.DisplayText;
             scenarioComparisonResult.SelectedProperties = new Dictionary<string, string>(scenario.SelectedProperties);
             scenarioComparisonResult.SeleniumComparisons = _scenarioComparer.CompareOutcomes(scenario.PredictedSeleniumOutcome.Expected, scenario.ActualSeleniumOutcome.Expected);
+            //TODO develope schema for actual retult saving
+            scenarioComparisonResult.Id = 1;
+
+            _scenarioMemoryCache.Save(scenarioComparisonResult.Id, scenarioComparisonResult);
 
             return View(scenarioComparisonResult);
-        
+
         }
 
         private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
@@ -219,7 +182,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             //var runner = new ScenarioSeleniumRunner(_actualSeleniumService);
             //var outcome = await runner.RunScenarioAsync(scenario);
 
-            
+
             // Predictive data
             scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
@@ -258,16 +221,16 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             return PartialView(viewName);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetRequestIds()
-        {
-            await _workflowControllerService.InitializeDashboardItemsAsync();
-            var dashboardItems = await _workflowControllerService.GetDashboardItemsFromApiAsync();
-            var ids = dashboardItems.Select(item => item.ReqId).Distinct().ToList();
-            var result = ids.Select(id => new { id, name = $"{id}" });
+        //[HttpGet]
+        //public async Task<IActionResult> GetRequestIds()
+        //{
+        //    await _workflowControllerService.InitializeDashboardItemsAsync();
+        //    var dashboardItems = await _workflowControllerService.GetDashboardItemsFromApiAsync();
+        //    var ids = dashboardItems.Select(item => item.ReqId).Distinct().ToList();
+        //    var result = ids.Select(id => new { id, name = $"{id}" });
 
-            return Json(result);
-        }
+        //    return Json(result);
+        //}
 
         [HttpGet]
         public async Task<JsonResult> Scenarios()
@@ -297,6 +260,59 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             });
         }
 
+        //public async Task<IActionResult> PrintScenarioPdf(int scenarioId)
+        public async Task<IActionResult> PrintScenarioPdf(int id)
+        {
+            var scenario = _scenarioMemoryCache.Get(id);
+            //var scenario = await _scenarioControllerService.GetScenarioByIdAsync(scenarioId);
+            string htmlContent = await _viewRenderService.RenderToStringAsync("Scenario/ViewComparison", scenario);
+
+            var doc = new HtmlToPdfDocument
+            {
+                GlobalSettings = new GlobalSettings
+                {
+                    PaperSize = PaperKind.A4,
+                    Orientation = Orientation.Portrait,
+                    DocumentTitle = "Scenario Report",
+                    Margins = new MarginSettings
+                    {
+                        Top = 20,
+                        Bottom = 20,
+                        Left = 15,
+                        Right = 15
+                    }
+                }
+            };
+
+            doc.Objects.Add(new ObjectSettings
+            {
+                HtmlContent = htmlContent,
+                WebSettings = new WebSettings
+                {
+                    DefaultEncoding = "utf-8",
+                    EnableIntelligentShrinking = false
+                },
+            });
+
+            var pdf = new SynchronizedConverter(new PdfTools()).Convert(doc);
+            return File(pdf, "application/pdf", "ScenarioReport.pdf");
+        }
+
+        private void LogModelErrors(string contextLabel)
+        {
+            foreach (var key in ModelState.Keys)
+            {
+                var state = ModelState[key];
+                if (state.Errors.Any())
+                {
+                    Debug.WriteLine($"❌ ModelState error for '{key}':");
+                    foreach (var error in state.Errors)
+                    {
+                        Debug.WriteLine($"In {contextLabel} → {error.ErrorMessage}");
+                    }
+                }
+            }
+        }
         //[HttpGet]
         //public IActionResult LoadScenarioView(string scenarioId)
         //{

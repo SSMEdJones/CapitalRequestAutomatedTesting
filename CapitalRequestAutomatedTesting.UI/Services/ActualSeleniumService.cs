@@ -1,4 +1,5 @@
-﻿using CapitalRequestAutomatedTesting.Data;
+﻿using AutoMapper;
+using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using OpenQA.Selenium;
@@ -25,7 +26,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private IActualEmailNotificationService _ActualEmailNotificationService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
-
+        private readonly IMapper _mapper;
 
         public ActualSeleniumService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
@@ -35,7 +36,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             IActualWorkflowStepOptionService ActualWorkflowStepOptionService,
             IActualEmailNotificationService ActualEmailNotificationService,
             IUserContextService userContextService,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory scopeFactory,
+            IMapper mapper)
+
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
@@ -46,31 +49,35 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _ActualEmailNotificationService = ActualEmailNotificationService;
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
+            _mapper = mapper;
+
         }
 
         public async Task<SeleniumScenarioOutcome> GenerateSeleniumOutcomeAsync(ScenarioDetailsViewModel scenarioDetail)
         {
             var seleniumScenarioOutcome = new SeleniumScenarioOutcome();
             var scenarioId = scenarioDetail.ScenarioId;
+            var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
+
             if (scenarioId == "SCN001")
             {
-                var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-                proposal.ReviewerGroupId = scenarioDetail.RequestingGroupId;
-                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(scenarioDetail.RequestingGroupId);
-                var targetGroup = await _capitalRequestServices.GetReviewerGroup(scenarioDetail.TargetGroupId);
-                var reviewer = await _capitalRequestServices.GetReviewer(scenarioDetail.ReviewerId);
-                proposal.RequestedInfo.ReviewerGroupId = scenarioDetail.TargetGroupId;
-                proposal.RequestedInfo.RequestingReviewerGroupId = scenarioDetail.RequestingGroupId;
-                proposal.RequestedInfo.RequestedInformation = scenarioDetail.RequestedInformation;
-                proposal.ReviewerId = scenarioDetail.ReviewerId;
+                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                var targetGroup = await _capitalRequestServices.GetReviewerGroup(detail.TargetGroupId);
+                var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 
                 scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
-                scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
+                scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();
                 scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
                 scenarioDetail.SelectedProperties["Target Group"] = targetGroup.Name;
                 scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
-                scenarioDetail.SelectedProperties["Requested Information"] = scenarioDetail.RequestedInformation;
+                scenarioDetail.SelectedProperties["Requested Information"] = detail.RequestedInformation;
 
                 var steps = await GenerateSeleniumSteps(scenarioDetail);
                 var options = GetChromeOptions();
@@ -108,21 +115,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<List<SeleniumScenarioStep>> GenerateSeleniumSteps(ScenarioDetailsViewModel scenarioDetail)
         {
+            var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
+
             var ActualSteps = new List<SeleniumScenarioStep>();
 
             var scenarioId = scenarioDetail.ScenarioId;
             var baseUrl = _workflowControllerService.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
             var proposalId = scenarioDetail.ProposalId;
-            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(scenarioDetail.RequestingGroupId);
-            var targetGroup = await _capitalRequestServices.GetReviewerGroup(scenarioDetail.TargetGroupId);
+            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+            var targetGroup = await _capitalRequestServices.GetReviewerGroup(detail.TargetGroupId);
             var workflowPortion = $"{reviewerGroup.StepNumber} -{reviewerGroup.Name}";
             var workflowButtonId = "btnWorkflowActions";
             var workflowButtonText = "Workflow";
             var requestButtonId = "btnRequestMoreInfo";
             var requestButtonText = "Request More Information button";
             var dashboardOrder = reviewerGroup.DashboardOrder ?? 0;
-
-
 
             if (scenarioId == "SCN001")
             {

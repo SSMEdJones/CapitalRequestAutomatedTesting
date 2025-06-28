@@ -1,4 +1,5 @@
-﻿using CapitalRequest.API.DataAccess.Models;
+﻿using AutoMapper;
+using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -25,7 +26,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private IPredictiveEmailNotificationService _predictiveEmailNotificationService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
-
+        private readonly IMapper _mapper;
 
         public PredictiveSeleniumService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
@@ -35,7 +36,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             IPredictiveWorkflowStepOptionService predictiveWorkflowStepOptionService,
             IPredictiveEmailNotificationService predictiveEmailNotificationService,
             IUserContextService userContextService,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory scopeFactory,
+            IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
@@ -46,23 +48,26 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _predictiveEmailNotificationService = predictiveEmailNotificationService;
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
+            _mapper = mapper;
         }
 
         public async Task<SeleniumScenarioOutcome> GenerateSeleniumOutcomeAsync(ScenarioDetailsViewModel scenarioDetail)
         {
             var seleniumScenarioOutcome = new SeleniumScenarioOutcome();
             var scenarioId = scenarioDetail.ScenarioId;
+            var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
+
             if (scenarioId == "SCN001")
             {
-                var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-                proposal.ReviewerGroupId = scenarioDetail.RequestingGroupId;
-                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(scenarioDetail.RequestingGroupId);
-                var targetGroup = await _capitalRequestServices.GetReviewerGroup(scenarioDetail.TargetGroupId);
-                var reviewer = await _capitalRequestServices.GetReviewer(scenarioDetail.ReviewerId);
-                proposal.RequestedInfo.ReviewerGroupId = scenarioDetail.TargetGroupId;
-                proposal.RequestedInfo.RequestingReviewerGroupId = scenarioDetail.RequestingGroupId;
-                proposal.RequestedInfo.RequestedInformation = scenarioDetail.RequestedInformation;
-                proposal.ReviewerId = scenarioDetail.ReviewerId;
+                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                var targetGroup = await _capitalRequestServices.GetReviewerGroup(detail.TargetGroupId);
+                var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 
                 scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
@@ -199,18 +204,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         {
             var predictiveMethods = new List<PredictiveMethod>();
             var scenarioId = scenarioDetail.ScenarioId;
+            var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
 
             if (scenarioId == "SCN001")
             {
-                var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-                proposal.ReviewerGroupId = scenarioDetail.RequestingGroupId;
-                proposal.RequestedInfo.ReviewerGroupId = scenarioDetail.TargetGroupId;
-                proposal.RequestedInfo.RequestingReviewerGroupId = scenarioDetail.RequestingGroupId;
-                proposal.RequestedInfo.RequestedInformation = scenarioDetail.RequestedInformation;
-                proposal.ReviewerId = scenarioDetail.ReviewerId;
+                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
-                var requestingGroupId = scenarioDetail.RequestingGroupId;
-                var targetGroupId = scenarioDetail.TargetGroupId;
+                var requestingGroupId = detail.RequestingGroupId;
+                var targetGroupId = detail.TargetGroupId;
 
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
                 var targetGroup = await _capitalRequestServices.GetReviewerGroup(targetGroupId);

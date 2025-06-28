@@ -1,0 +1,8 @@
+﻿@model Dictionary<string, string>
+
+<ul>
+    @foreach (var prop in Model)
+    {
+        <li><strong>@prop.Key</strong>: @prop.Value</li>
+    }
+</ul>

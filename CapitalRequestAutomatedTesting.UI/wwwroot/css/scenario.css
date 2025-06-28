@@ -1,0 +1,47 @@
+﻿@media print {
+    #scenario-action-bar {
+        display: none;
+    }
+}
+
+#scenario-action-bar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+    #scenario-action-bar a,
+    #scenario-action-bar button {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        text-decoration: none;
+        color: #333;
+    }
+
+        #scenario-action-bar button[disabled] {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+.modal-overlay {
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+    .modal-overlay[style*="display: flex"] {
+        opacity: 1;
+        pointer-events: auto;
+    }
+

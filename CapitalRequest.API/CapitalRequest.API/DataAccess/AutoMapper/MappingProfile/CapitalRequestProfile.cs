@@ -1,8 +1,7 @@
 ﻿using AutoMapper;
+using CapitalRequest.API.DataAccess.Utilities;
 using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
-using CapitalRequest.API.DataAccess.Utilities;
-using CapitalRequest.API.DataAccess.Models;
 
 namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
 {

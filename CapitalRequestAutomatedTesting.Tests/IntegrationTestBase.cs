@@ -1,5 +1,6 @@
 ﻿using CapitalRequestAutomatedTesting.Tests.Models;
 using CapitalRequestAutomatedTesting.UI;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,7 +23,10 @@ namespace CapitalRequestAutomatedTesting.Tests
                 .Build();
 
             var services = new ServiceCollection();
-            services.AddApplicationServices(configuration);
+
+            var builder = WebApplication.CreateBuilder();
+
+            services.AddApplicationServices(configuration, builder.Environment);
 
             // Use default test user if none provided
             testUser ??= new TestUser

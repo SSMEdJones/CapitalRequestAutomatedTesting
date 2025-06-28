@@ -97,7 +97,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
             RequestingReviewerGroupId = proposal.ReviewerGroupId,
             RequestingReviewerId = requestingReviewerId,
             ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
-            RequestedInformation = "This message brought to you by Workflow Automated Testing.",
+            RequestedInformation = proposal.RequestedInfo.RequestedInformation,
             Action = action,
             WorkflowStepOptionId = workflowStepOption?.OptionID ?? Guid.Empty,
             IsOpen = true,

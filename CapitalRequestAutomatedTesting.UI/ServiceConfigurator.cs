@@ -3,21 +3,23 @@ using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Services;
+using DinkToPdf.Contracts;
+using DinkToPdf;
 using ScenarioFramework;
 using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Services;
 using SSMWorkflow.API.DataAccess.Services.Api;
+using CapitalRequestAutomatedTesting.UI.Helpers;
+using CapitalRequestAutomatedTesting.UI.AutoMapper.MappingProfile;
 
 namespace CapitalRequestAutomatedTesting.UI
 {
     public static class ServiceConfigurator
     {
 
-        public static IServiceCollection AddApplicationServices(
-         this IServiceCollection services,
-         IConfiguration configuration)
+        public static IServiceCollection AddApplicationServices(this IServiceCollection services,IConfiguration configuration, IWebHostEnvironment env)
         {
 
             services.Configure<SSMWorkFlowSettings>(configuration.GetSection("ssmWorkFlowAPISettings"));
@@ -37,7 +39,7 @@ namespace CapitalRequestAutomatedTesting.UI
                 options.BaseApiUrl = customConfig.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestApiUrl")?.LookupValue?.ToString();
             });
 
-            services.AddAutoMapper(typeof(WorkflowProfile), typeof(CapitalRequestProfile));
+            services.AddAutoMapper(typeof(WorkflowProfile), typeof(CapitalRequestProfile),typeof(AutomatedTestingProfile) );
 
 
             #region UI
@@ -108,13 +110,23 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<ITestActionService, WorkflowTestActionService>();
             services.AddScoped<IScenarioControllerService, ScenarioControllerService>();
             services.AddScoped<IScenarioComparer, ScenarioComparer>();
+            services.AddScoped<ScenarioViewModelBuilder>();
             #endregion
             #region Selenium Services
             services.AddScoped<IPredictiveSeleniumService, PredictiveSeleniumService>();
             services.AddScoped<IPredictiveDashboardService, PredictiveDashboardService>();
             #endregion
 
-            
+            #region pdf/save services
+            // Load native library for wkhtmltox
+            var nativePath = Path.Combine(env.ContentRootPath, "NativeBinaries", "libwkhtmltox.dll");
+            new CustomAssemblyLoadContext().LoadUnmanagedLibrary(nativePath);
+
+            services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
+            services.AddScoped<IViewRenderService, ViewRenderService>();
+            services.AddSingleton<IScenarioMemoryCache, ScenarioMemoryCache>();
+
+            #endregion
 
             return services;
         }

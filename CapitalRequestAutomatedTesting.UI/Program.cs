@@ -41,13 +41,13 @@ var configuration = new ConfigurationBuilder()
  .AddJsonFile("appsettings.json")
  .Build();
 
-builder.Services.AddApplicationServices(configuration);
+builder.Services.AddApplicationServices(configuration, builder.Environment);
 
-var env = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEB_SQL_ENV", EnvironmentVariableTarget.Machine))
+var sqlEnv = string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEB_SQL_ENV", EnvironmentVariableTarget.Machine))
     ? "DEV"
     : Environment.GetEnvironmentVariable("WEB_SQL_ENV", EnvironmentVariableTarget.Machine);
 
-builder.Configuration.GetConnectionString($"CapitalRequest_{env}");
+builder.Configuration.GetConnectionString($"CapitalRequest_{sqlEnv}");
 
 ConfigurationSettings _configuration = new ConfigurationSettings();
 

@@ -1,4 +1,5 @@
-﻿using CapitalRequest.API.DataAccess.Models;
+﻿using AutoMapper;
+using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Models;
@@ -11,7 +12,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
     public interface IPredictiveScenarioService
     {
         Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail);
-        Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(List<PredictiveMethod> methods,ScenarioDetailsViewModel scenarioDetail);
+        Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(List<PredictiveMethod> methods, ScenarioDetailsViewModel scenarioDetail);
     }
     public class PredictiveScenarioService : IPredictiveScenarioService
     {
@@ -24,8 +25,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private IPredictiveEmailNotificationService _predictiveEmailNotificationService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IMapper _mapper;
 
-        
         public PredictiveScenarioService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
             IWorkflowControllerService workflowControllerService,
@@ -34,7 +35,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             IPredictiveWorkflowStepOptionService predictiveWorkflowStepOptionService,
             IPredictiveEmailNotificationService predictiveEmailNotificationService,
             IUserContextService userContextService,
-            IServiceScopeFactory scopeFactory)
+            IServiceScopeFactory scopeFactory,
+            IMapper mapper)
+
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
@@ -44,44 +47,48 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _predictiveWorkflowStepOptionService = predictiveWorkflowStepOptionService;
             _predictiveEmailNotificationService = predictiveEmailNotificationService;
             _userContextService = userContextService;
-            _scopeFactory = scopeFactory; 
+            _scopeFactory = scopeFactory;
+            _mapper = mapper;
         }
 
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
+            var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
+
             if (scenarioId == "SCN001")
             {
-                var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-                proposal.ReviewerGroupId = scenarioDetail.RequestingGroupId;
-                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(scenarioDetail.RequestingGroupId);
-                var targetGroup = await _capitalRequestServices.GetReviewerGroup(scenarioDetail.TargetGroupId);
-                var reviewer = await _capitalRequestServices.GetReviewer(scenarioDetail.ReviewerId);
-                proposal.RequestedInfo.ReviewerGroupId = scenarioDetail.TargetGroupId;
-                proposal.RequestedInfo.RequestingReviewerGroupId = scenarioDetail.RequestingGroupId;
-                proposal.RequestedInfo.RequestedInformation = scenarioDetail.RequestedInformation;
-                proposal.ReviewerId = scenarioDetail.ReviewerId;
+                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                var targetGroup = await _capitalRequestServices.GetReviewerGroup(detail.TargetGroupId);
+                var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 
-                scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
-                scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
+                scenarioDetail.SelectedProperties["Scenario Name"] = detail.DisplayText;
+                scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();
                 scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
                 scenarioDetail.SelectedProperties["Target Group"] = targetGroup.Name;
                 scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
-                scenarioDetail.SelectedProperties["Requested Information"] = scenarioDetail.RequestedInformation;
+                scenarioDetail.SelectedProperties["Requested Information"] = detail.RequestedInformation;
 
 
                 var methods = await GetScenarioMethodsAsync(scenarioDetail);
-                scenarioDataViewModel = await ExecuteScenarioMethodsAsync( methods, scenarioDetail);
+                scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
             }
+
 
             scenarioDataViewModel.ScenarioId = scenarioId;
 
             return scenarioDataViewModel;
         }
 
-        public async Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(List<PredictiveMethod> methods,ScenarioDetailsViewModel scenarioDetail)
+        public async Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(List<PredictiveMethod> methods, ScenarioDetailsViewModel scenarioDetail)
         {
             var scenarioData = new ScenarioDataViewModel();
 
@@ -151,7 +158,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var innerResultProperty = innerTaskResult.GetType().GetProperty("Result");
                 result = innerResultProperty?.GetValue(innerTaskResult);
             }
-            
+
             // Map results dynamically to ViewModel
             MapResultsToTables(scenarioDataViewModel, method.ServiceName, result, method.Operation);
 
@@ -198,15 +205,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         {
             var predictiveMethods = new List<PredictiveMethod>();
             var scenarioId = scenarioDetail.ScenarioId;
+            var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
 
             if (scenarioId == "SCN001")
             {
-                var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-                proposal.ReviewerGroupId = scenarioDetail.RequestingGroupId;
-                proposal.RequestedInfo.ReviewerGroupId = scenarioDetail.TargetGroupId;
-                proposal.RequestedInfo.RequestingReviewerGroupId = scenarioDetail.RequestingGroupId;
-                proposal.RequestedInfo.RequestedInformation = scenarioDetail.RequestedInformation;
-                proposal.ReviewerId = scenarioDetail.ReviewerId;
+                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 
                 var increment = 1;
@@ -224,47 +232,52 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var email = _userContextService.Email;
 
                 predictiveMethods.Add(
-                    new PredictiveMethod { 
-                        ServiceName = "IPredictiveRequestedInfoService", 
-                        MethodName = "CreateRequestedInfoAsync", 
-                        Parameters = new List<object> { proposal, increment }, 
-                        Operation = CrudOperationType.Insert 
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveRequestedInfoService",
+                        MethodName = "CreateRequestedInfoAsync",
+                        Parameters = new List<object> { proposal, increment },
+                        Operation = CrudOperationType.Insert
                     }
                 );
 
                 predictiveMethods.Add(
-                    new PredictiveMethod { 
-                        ServiceName = "IPredictiveWorkflowStepResponderService", 
-                        MethodName = "CreateWorkflowStepResponderAsync", 
-                        Parameters = new List<object> { proposal, Constants.RESPONDER_REQUEST }, 
-                        Operation = CrudOperationType.Insert 
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStepResponderService",
+                        MethodName = "CreateWorkflowStepResponderAsync",
+                        Parameters = new List<object> { proposal, Constants.RESPONDER_REQUEST },
+                        Operation = CrudOperationType.Insert
                     }
                 );
 
                 predictiveMethods.Add(
-                    new PredictiveMethod { 
-                        ServiceName = "IPredictiveWorkflowStepOptionService", 
-                        MethodName = "CloseOptionsAsync", 
-                        Parameters = new List<object> { proposal, Guid.Empty, Constants.OPTION_TYPE_VERIFY, null, Constants.OPTION_TYPE_REQUEST }, 
-                        Operation = CrudOperationType.Update 
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStepOptionService",
+                        MethodName = "CloseOptionsAsync",
+                        Parameters = new List<object> { proposal, Guid.Empty, Constants.OPTION_TYPE_VERIFY, null, Constants.OPTION_TYPE_REQUEST },
+                        Operation = CrudOperationType.Update
                     }
                 );
 
                 predictiveMethods.Add(
-                    new PredictiveMethod { 
-                        ServiceName = "IPredictiveWorkflowStepOptionService", 
-                        MethodName = "CreateWorkflowStepOptionsAsync", 
-                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, proposal.RequestedInfo.Id }, 
-                        Operation = CrudOperationType.Insert 
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStepOptionService",
+                        MethodName = "CreateWorkflowStepOptionsAsync",
+                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, proposal.RequestedInfo.Id },
+                        Operation = CrudOperationType.Insert
                     }
                 );
 
                 predictiveMethods.Add(
-                    new PredictiveMethod { 
-                        ServiceName = "IPredictiveEmailNotificationService", 
-                        MethodName = "CreateEmailNotificationsAsync", 
-                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION }, 
-                        Operation = CrudOperationType.Insert 
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveEmailNotificationService",
+                        MethodName = "CreateEmailNotificationsAsync",
+                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION },
+                        Operation = CrudOperationType.Insert
                     }
                 );
 
@@ -272,6 +285,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return predictiveMethods;
         }
-        
+
     }
 }

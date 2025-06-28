@@ -4,6 +4,29 @@
 
 @model ScenarioComparisonResult
 
+<style media="print">
+    .no-print {
+        display: none;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+
+    .section {
+        page-break-after: always;
+    }
+
+    .table-warning td {
+        background-color: #ff6961;
+    }
+
+    .table-warning td {
+        background-color: #ff6961;
+    }
+</style>
+
+
 <style>
     .table-warning td {
         background-color: #ff6961;
@@ -13,6 +36,14 @@
 @Html.Partial("_SeleniumOutcomeComparison", Model)
 @Html.Partial("_DataComparison", Model)
 
+<div id="scenario-action-bar">
+    <a href="/Scenario/PrintScenarioPdf?id=@Model.Id"
+       target="_blank"
+       title="Print PDF Report">
+        🖨️
+    </a>
+    <button disabled title="Save (Coming Soon)">💾</button>
+</div>
 
 
 

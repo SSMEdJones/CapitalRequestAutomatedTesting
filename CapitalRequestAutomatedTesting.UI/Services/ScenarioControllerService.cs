@@ -23,6 +23,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id);
         Task<SeleniumStepResult> ValidateTargetGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
         Task<CapitalRequest.API.Models.ReviewerGroup> GetReviewerGroupByIdAsync(int id);
+        Task<(List<SelectListItem> RequestingGroups, List<SelectListItem> TargetGroups)> BuildRequestingAndTargetGroupsAsync(int proposalId, int? requestingGroupId);
+
     }
 
     public class ScenarioControllerService : IScenarioControllerService
@@ -68,7 +70,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return new ScenarioFormViewModel
             {
-                RequestIds = await GetRequestSelectListAsync(),
+                RequestIds = new List<SelectListItem>(),
                 RequestId = requestId ?? 0,
                 ScenarioDetails = scenarioDetails
             };
@@ -99,6 +101,57 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                  };
              });
            
+        }
+
+        public async Task<(List<SelectListItem> RequestingGroups, List<SelectListItem> TargetGroups)> BuildRequestingAndTargetGroupsAsync(int proposalId, int? requestingGroupId)
+        {
+            var baseGroups = await GetFilteredReviewerGroups(proposalId, null);
+            var authorGroup = await _capitalRequestServices
+                .GetAllReviewerGroups(new ReviewerGroupSearchFilter { Name = Constants.REVIEWER_GROUP_AUTHOR })
+                .ContinueWith(t => t.Result.FirstOrDefault());
+
+            var requestingList = baseGroups
+                .Select(g => new SelectListItem
+                {
+                    Text = g.Name,
+                    Value = g.Id.ToString()
+                })
+                .ToList();
+
+            var targetList = baseGroups
+                .Select(g =>
+                {
+                    var group = CloneGroup(g);
+
+                    if (group.Id == requestingGroupId && authorGroup != null)
+                    {
+                        group.Id = authorGroup.Id;
+                        group.Name = authorGroup.Name;
+                        group.EmailTemplateId = authorGroup.EmailTemplateId;
+                        group.StepNumber = authorGroup.StepNumber;
+                    }
+
+                    return new SelectListItem
+                    {
+                        Text = group.Name,
+                        Value = group.Id.ToString()
+                    };
+                })
+                .ToList();
+
+            return (requestingList, targetList);
+        }
+
+        private vm.ReviewerGroup CloneGroup(vm.ReviewerGroup group)
+        {
+            return new vm.ReviewerGroup
+            {
+                Id = group.Id,
+                Name = group.Name,
+                StepNumber = group.StepNumber,
+                EmailTemplateId = group.EmailTemplateId,
+                // add other fields as needed
+            };
         }
 
         public async Task<List<SelectListItem>> GetTargetGroupsByRequestIdAsync(int proposalId, int requestingGroupId)

@@ -42,21 +42,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                                    x.OptionType == Constants.OPTION_TYPE_VERIFY)
                                             .ToList();
 
-            var mostRecent = allOptions.OrderByDescending(x => x.Updated)
-                .Where(x => x.OptionName != proposal.Reviewer.Email)
-                .FirstOrDefault();
+            //var mostRecent = allOptions.OrderByDescending(x => x.Updated)
+            //    .Where(x => x.OptionName != proposal.Reviewer.Email)
+            //    .FirstOrDefault();
 
-            if (mostRecent == null)
-            {
-                mostRecent = allOptions.OrderByDescending(x => x.Updated)
-                .FirstOrDefault();
-            }
+            //if (mostRecent == null)
+            //{
+            //    mostRecent = allOptions.OrderByDescending(x => x.Updated)
+            //    .FirstOrDefault();
+            //}
 
-            if (mostRecent == null)
-            {
-                throw new Exception("No workflowtepOptions found for the given proposal.");
+            //if (mostRecent == null)
+            //{
+            //    throw new Exception("No workflowtepOptions found for the given proposal.");
 
-            }
+            //}
 
             var deduplicated = allOptions
                 .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
@@ -69,24 +69,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 )
                 .ToList();
 
-            var relevantOptions = allOptions
-                .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                            x.ReviewerGroupId == proposal.ReviewerGroupId)
-                .GroupBy(x => new { x.OptionName, x.ReviewerGroupId, x.WorkflowStepID })
-                .Select(g =>
-                    g.OrderBy(x => x.IsTerminate)  // active over terminated
-                     .ThenByDescending(x => x.Updated ?? x.Created)
-                     .First()
-                )
+            var relevantOptions = deduplicated
+                .Where(x => x.Updated.HasValue && x.Updated.Value.ToShortDateString() == DateTime.Now.ToShortDateString() &&
+                x.IsTerminate && !x.IsComplete ||
+                (!x.Updated.HasValue && !x.IsTerminate && !x.IsComplete &&
+                x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower()))
                 .ToList();
-
-            //var relevantOptions = allOptions
-            //    .Where(x => x.Created.IsFuzzyMatch(mostRecent.Created, 3) &&
-            //    x.Updated.HasValue && x.Updated.Value.Date == mostRecent.Updated.Value.Date &&
-            //    x.IsTerminate && !x.IsComplete ||
-            //    (!x.Updated.HasValue && !x.IsTerminate && !x.IsComplete &&
-            //    x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower()))
-            //    .ToList();
 
             var actual = relevantOptions
                 .Select(x => _mapper.Map<WorkflowStepOption>(x))

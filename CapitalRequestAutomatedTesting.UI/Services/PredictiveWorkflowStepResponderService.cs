@@ -60,6 +60,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             workflowStepResponder.ResponderType = responderType;
             workflowStepResponder.Responder = responder;
             workflowStepResponder.CreatedBy = proposal.Reviewer.UserId;
+            workflowStepResponder.Created = DateTime.Now;
             workflowStepResponder.WorkflowStepOptionID = workflowStepOption.OptionID;
 
             return workflowStepResponder;
