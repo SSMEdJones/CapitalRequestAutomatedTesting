@@ -102,7 +102,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             var requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId);
             var targetGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(targetGroupId);
 
-            var requestedInfo = $"{requestingGroup.Name} requesting more information from {targetGroup.Name} via Workflow Automated Testing - {displayText} Scenario.";
+            var requestedInfo = $"{requestingGroup.Name} requesting more information from {targetGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
 
             return Json(new
             {
@@ -168,7 +168,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             scenarioComparisonResult.ScenarioName = scenario.DisplayText;
             scenarioComparisonResult.SelectedProperties = new Dictionary<string, string>(scenario.SelectedProperties);
             scenarioComparisonResult.SeleniumComparisons = _scenarioComparer.CompareOutcomes(scenario.PredictedSeleniumOutcome.Expected, scenario.ActualSeleniumOutcome.Expected);
-            //TODO develope schema for actual retult saving
+            //TODO develop schema for saving
             scenarioComparisonResult.Id = 1;
 
             _scenarioMemoryCache.Save(scenarioComparisonResult.Id, scenarioComparisonResult);
@@ -182,7 +182,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             //var runner = new ScenarioSeleniumRunner(_actualSeleniumService);
             //var outcome = await runner.RunScenarioAsync(scenario);
 
-
             // Predictive data
             scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
@@ -192,10 +191,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
             // Retrieve data
             scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
-
-            //Compare Data
-            //scenario.ComparisonResult = _scenarioComparer.CompareData(scenario.PredictiveData, scenario.ActualData);
-            //scenario.SeleniumComparisons = _scenarioComparer.CompareOutcomes(scenario.PredictedSeleniumOutcome.Expected, scenario.ActualSeleniumOutcome.Expected);
 
             return scenario;
         }
@@ -221,16 +216,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             return PartialView(viewName);
         }
 
-        //[HttpGet]
-        //public async Task<IActionResult> GetRequestIds()
-        //{
-        //    await _workflowControllerService.InitializeDashboardItemsAsync();
-        //    var dashboardItems = await _workflowControllerService.GetDashboardItemsFromApiAsync();
-        //    var ids = dashboardItems.Select(item => item.ReqId).Distinct().ToList();
-        //    var result = ids.Select(id => new { id, name = $"{id}" });
-
-        //    return Json(result);
-        //}
 
         [HttpGet]
         public async Task<JsonResult> Scenarios()

@@ -102,7 +102,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
             WorkflowStepOptionId = workflowStepOption?.OptionID ?? Guid.Empty,
             IsOpen = true,
             Created = DateTime.Now,
-            CreatedBy = _userContextService.UserId
+            CreatedBy = reviewer.UserId
         };
 
         var requestedinfoId = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id) + increment;

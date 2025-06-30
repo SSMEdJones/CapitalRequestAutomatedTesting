@@ -35,13 +35,13 @@
     <div class="form-group">
         <label asp-for="ReviewerEmail" class="control-label"></label>
         <input asp-for="ReviewerEmail" class="form-control" readonly />
-        @* <p class="form-control-plaintext">@Model.ReviewerEmail</p> *@
+        <input type="hidden" asp-for="ReviewerEmail" />
     </div>
 
     <div class="form-group">
         <label asp-for="ReviewerUserId" class="control-label"></label>
         <input asp-for="ReviewerUserId" class="form-control" readonly />
-        @* <p class="form-control-plaintext">@Model.ReviewerUserId</p> *@
+        <input type="hidden" asp-for="ReviewerUserId" />
     </div>
 
 

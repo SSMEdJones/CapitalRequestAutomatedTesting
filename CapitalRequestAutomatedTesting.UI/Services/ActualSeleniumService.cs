@@ -4,6 +4,7 @@ using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using System.Diagnostics;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
@@ -130,6 +131,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var requestButtonId = "btnRequestMoreInfo";
             var requestButtonText = "Request More Information button";
             var dashboardOrder = reviewerGroup.DashboardOrder ?? 0;
+            var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+
+            Debug.WriteLine($"ReviewerUserId: {reviewer.UserId ?? "null"}");
+
+            var homeDashboardUrl = BuildTestModeUrl($"", reviewer.UserId);
+            var viewProposalUrl = BuildTestModeUrl($"/Proposal/ViewProposal/{proposalId}", reviewer.UserId);
+            
 
             if (scenarioId == "SCN001")
             {
@@ -141,7 +149,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     StepNumber = 1,
                     Description = "Validate Workflow DashBoard button click and validate Requesting Reviewer Group Verify button",
                     Action = new SeleniumDsl()
-                        .BeginWith(Execute.NavigateTo($"{baseUrl}/Proposal/ViewProposal/{proposalId}"))
+                        .BeginWith(Execute.NavigateTo(viewProposalUrl))
                         .Then(Validate.ElementById(workflowButtonId, $"{workflowButtonText} button"))
                         .Then(Execute.ClickWhenVisibleById(workflowButtonId, workflowButtonText))
                         .Then(Validate.Text(workflowPortion))
@@ -192,7 +200,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     StepNumber = 5,
                     Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
                     Action = new SeleniumDsl()
-                    .BeginWith(Execute.NavigateTo($"{baseUrl}"))
+                    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
                     .Then(Execute.DashboardSearch(proposalId.ToString()))
                     .Then(Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now))
                     .Build("Navigate to Home Dashboard enter Request verify group status")
@@ -238,6 +246,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return outcome;
         }
+
+        public string BuildTestModeUrl(string route, string testUserId)
+        {
+            var baseUrl = _workflowControllerService
+                .GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL")
+                .LookupValue;
+
+            var suffix = $"testmode=true&testuser={Uri.EscapeDataString(testUserId)}";
+            var separator = route.Contains("?") ? "&" : "?";
+
+            return $"{baseUrl.TrimEnd('/')}/{route.TrimStart('/')}{separator}{suffix}";
+        }
+
 
     }
 }
