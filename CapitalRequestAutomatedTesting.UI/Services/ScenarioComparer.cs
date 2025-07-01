@@ -1,4 +1,5 @@
-﻿using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+﻿using CapitalRequestAutomatedTesting.UI.Extensions;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Newtonsoft.Json;
 using OpenQA.Selenium.BiDi.Modules.Input;
 using System.Collections;
@@ -17,7 +18,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public ScenarioComparisonResult CompareData(ScenarioDataViewModel predictiveData, ScenarioDataViewModel actualData)
         {
             var result = new ScenarioComparisonResult();
-
+            var actualExecutionDurationMinutes = actualData.ActualExecutionDurationMinutes ?? 3; // Default to 3 minutes if not set
             var predictiveTableNames = predictiveData.Tables.Keys.ToHashSet();
             var actualTableNames = actualData.Tables.Keys.ToHashSet();
 
@@ -90,7 +91,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                     {
                                         RecordPredictive = a,
                                         RecordActual = b,
-                                        FieldDifferences = a != null && b != null ? CompareFields(a, b) : new List<FieldDifference>(),
+                                        FieldDifferences = a != null && b != null ? CompareFields(a, b, actualExecutionDurationMinutes) : new List<FieldDifference>(),
                                         RowKey = key
                                     });
                                 }
@@ -101,7 +102,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                 var predictiveTyped = JsonConvert.DeserializeObject(predictiveJson, type);
                                 var actualTyped = JsonConvert.DeserializeObject(actualJson, type);
 
-                                var fieldDiffs = CompareFields(predictiveTyped, actualTyped);
+                                var fieldDiffs = CompareFields(predictiveTyped, actualTyped, actualExecutionDurationMinutes);
+
                                 if (fieldDiffs.Any())
                                 {
                                     operationDiffs.Add(new RecordDifference
@@ -156,49 +158,96 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return result;
         }
 
-        public static List<FieldDifference> CompareFields(object predictiveRecord, object actualRecord)
+        public static List<FieldDifference> CompareFields(
+    object predictive,
+    object actual,
+    int fuzzyMinutes,
+    bool updatePredictive = true)
         {
             var differences = new List<FieldDifference>();
-            if (predictiveRecord == null || actualRecord == null) return differences;
-
-            var type = predictiveRecord.GetType();
-            if (type != actualRecord.GetType()) return differences;
+            var type = predictive.GetType();
 
             foreach (var prop in type.GetProperties())
             {
-                // 🚫 Skip indexers (like object[index])
-                if (prop.GetIndexParameters().Length > 0)
-                    Debug.WriteLine($"Skipping indexed property: {prop.Name}");
-                if (prop.GetIndexParameters().Length > 0)
+                var valA = prop.GetValue(predictive);
+                var valB = prop.GetValue(actual);
+
+                if (valA == null && valB == null)
                     continue;
 
-                object predictiveValue;
-                object actualValue;
-
-                try
+                if (valA is DateTime dtA && valB is DateTime dtB)
                 {
-                    predictiveValue = prop.GetValue(predictiveRecord);
-                    actualValue = prop.GetValue(actualRecord);
+                    if (!dtA.IsFuzzyMatch(dtB, fuzzyMinutes))
+                    {
+                        differences.Add(new FieldDifference
+                        {
+                            FieldName = prop.Name,
+                            PredictiveValue = dtA,
+                            ActualValue = dtB
+                        });
+                    }
+                    else if (updatePredictive)
+                    {
+                        prop.SetValue(predictive, dtB);
+                    }
                 }
-                catch (TargetParameterCountException)
-                {
-                    // 🛡️ Skip any property that still blows up
-                    continue;
-                }
-
-                if (!Equals(predictiveValue, actualValue))
+                else if (!Equals(valA, valB))
                 {
                     differences.Add(new FieldDifference
                     {
                         FieldName = prop.Name,
-                        ValuePredictive = predictiveValue,
-                        ValueActual = actualValue
+                        PredictiveValue = valA,
+                        ActualValue = valB
                     });
                 }
             }
 
             return differences;
         }
+
+        //public static List<FieldDifference> CompareFields(object predictiveRecord, object actualRecord)
+        //{
+        //    var differences = new List<FieldDifference>();
+        //    if (predictiveRecord == null || actualRecord == null) return differences;
+
+        //    var type = predictiveRecord.GetType();
+        //    if (type != actualRecord.GetType()) return differences;
+
+        //    foreach (var prop in type.GetProperties())
+        //    {
+        //        // 🚫 Skip indexers (like object[index])
+        //        if (prop.GetIndexParameters().Length > 0)
+        //            Debug.WriteLine($"Skipping indexed property: {prop.Name}");
+        //        if (prop.GetIndexParameters().Length > 0)
+        //            continue;
+
+        //        object predictiveValue;
+        //        object actualValue;
+
+        //        try
+        //        {
+        //            predictiveValue = prop.GetValue(predictiveRecord);
+        //            actualValue = prop.GetValue(actualRecord);
+        //        }
+        //        catch (TargetParameterCountException)
+        //        {
+        //            // 🛡️ Skip any property that still blows up
+        //            continue;
+        //        }
+
+        //        if (!Equals(predictiveValue, actualValue))
+        //        {
+        //            differences.Add(new FieldDifference
+        //            {
+        //                FieldName = prop.Name,
+        //                ValuePredictive = predictiveValue,
+        //                ValueActual = actualValue
+        //            });
+        //        }
+        //    }
+
+        //    return differences;
+        //}
 
         public static void LogStructure(object obj, string label = "Object")
         {

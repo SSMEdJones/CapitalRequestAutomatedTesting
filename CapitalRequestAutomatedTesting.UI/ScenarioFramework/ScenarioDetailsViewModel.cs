@@ -51,7 +51,6 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         public string Message { get; set; } = string.Empty;
 
-
         public List<SelectListItem> RequestingGroups { get; set; } = new();
         public List<SelectListItem> TargetGroups { get; set; } = new();
         public List<SelectListItem> Reviewers { get; set; } = new();

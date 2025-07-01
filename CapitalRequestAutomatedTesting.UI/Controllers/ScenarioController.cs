@@ -179,21 +179,46 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
         private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
         {
-            //var runner = new ScenarioSeleniumRunner(_actualSeleniumService);
-            //var outcome = await runner.RunScenarioAsync(scenario);
-
             // Predictive data
             scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
-            // Run Selenium Scenario
+            // Predictive Selenium outcome
             scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
-            scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
-            // Retrieve data
+            // ⏱ Measure actual Selenium execution time
+            var stopwatch = Stopwatch.StartNew();
+            scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+            stopwatch.Stop();
+
+
+            // Retrieve actual data
             scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+
+            scenario.ActualData.ActualExecutionDuration = stopwatch.Elapsed;
+            // Store rounded-up duration in minutes
+
+            scenario.ActualData.ActualExecutionDurationMinutes = (int)Math.Ceiling(stopwatch.Elapsed.TotalMinutes);
 
             return scenario;
         }
+
+        //private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
+        //{
+        //    //var runner = new ScenarioSeleniumRunner(_actualSeleniumService);
+        //    //var outcome = await runner.RunScenarioAsync(scenario);
+
+        //    // Predictive data
+        //    scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
+
+        //    // Run Selenium Scenario
+        //    scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+        //    scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+
+        //    // Retrieve data
+        //    scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+
+        //    return scenario;
+        //}
 
 
         [HttpGet]
