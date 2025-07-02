@@ -16,46 +16,34 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IUserContextService _userContextService;
+        private readonly IPredictiveWorkflowStepOptionService _predictiveWorkflowStepOptionService;
         private readonly IMapper _mapper;
 
         public PredictiveWorkflowStepResponderService(
             ISSMWorkflowServices ssmWorkflowServices,
             ICapitalRequestServices capitalRequestServices,
             IUserContextService userContextService,
+            IPredictiveWorkflowStepOptionService predictiveWorkflowStepOptionService,
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
             _userContextService = userContextService;
+            _predictiveWorkflowStepOptionService = predictiveWorkflowStepOptionService;
             _mapper = mapper;
         }
 
         public async Task<WorkflowStepResponder> CreateWorkflowStepResponderAsync(vm.Proposal proposal, string responderType)
         {
             // Resolve WorkflowStepOptionId
-            var reviewerGroupdId = proposal.ReviewerGroupId;
-            var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
-            var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
-            var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                .Where(x => !x.IsComplete && !x.IsTerminate)
-                .ToList();
+            var reviewerGroupId = proposal.ReviewerGroupId;
+            var reviewerId = proposal.ReviewerId;
+            var actionType = responderType == Constants.RESPONDER_REQUEST ? Constants.OPTION_TYPE_VERIFY : Constants.ACTION_TYPE_ADD_INFO;
+            var workflowStepOption = await _predictiveWorkflowStepOptionService.FindOrCreateWorkflowStepOptionAsync(proposal, reviewerGroupId, reviewerId, actionType);
 
-            WorkFlowStepOptionViewModel workflowStepOption = null;
-            if (workflowStepOptions.Any())
-            {
-                var optionsByGroup = workflowStepOptions
-                    .Where(x => x.ReviewerGroupId == reviewerGroupdId);
-
-                if (optionsByGroup.Any())
-                {
-                    workflowStepOption = optionsByGroup
-                        .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                                    x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
-                        .FirstOrDefault();
-                }
-            }
             // Generate WorkflowStepResponder object
             var responder = ProperCaseEmail(proposal.Reviewer.Email);
+
             var workflowStepResponder = _mapper.Map<WorkflowStepResponder>(workflowStepOption);
             workflowStepResponder.ResponderType = responderType;
             workflowStepResponder.Responder = responder;

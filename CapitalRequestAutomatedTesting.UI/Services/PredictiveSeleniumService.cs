@@ -208,13 +208,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             if (scenarioId == "SCN001")
             {
-                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
-                proposal.ReviewerGroupId = detail.RequestingGroupId;
-                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
-                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-                proposal.ReviewerId = detail.ReviewerId;
-                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
                 var requestingGroupId = detail.RequestingGroupId;
                 var targetGroupId = detail.TargetGroupId;
 
@@ -224,6 +217,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var actionType = Constants.ACTION_TYPE_VERIFY;
                 var expectedMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
                 var increment = 1;
+
+                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
+                proposal.RequestingGroupId = detail.RequestingGroupId;
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+                proposal.ActionType = actionType;
 
                 proposal.RequestedInfo.Id = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id) + increment; ;
 

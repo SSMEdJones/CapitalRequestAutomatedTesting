@@ -69,7 +69,7 @@
         public const string PURCHASING_GROUP = "Purchasing";
         public const string AUTHOR_GROUP = "Author";
 
-        public const string EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION = "{{ fullName }} from {{ requestingGroupName }} requested more information from {{ requestedGroup }} on {{ requestDate }}.";
+        public const string EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION = "{{ fullName }} from {{ requestingGroupName }} requested more information from {{ requestedGroup }} on {{ requestDate }}";
 
         //Dashboard
         public const string DASHBOARD_STATUS_INFORMATION_REQUESTED = "I";
@@ -77,5 +77,12 @@
         public const string DASHBOARD_STATUS_CANCELLED = "X";
         public const string DASHBOARD_STATUS_SKIPPED = "-";
 
+        //Access Maintenance
+        public const string APPLICATION_ROLE_NAME_ADMIN = "Admin";
+        public const string APPLICATION_ROLE_NAME_SYSTEM = "System";
+        public const string APPLICATION_ROLE_NAME_AUTHOR = "Author";
+        public const string APPLICATION_ROLE_NAME_REGIONAL = "Regional";
+        public const string APPLICATION_ROLE_NAME_REVIEWER = "Reviewer";
+        public const string APPLICATION_ROLE_NAME_REPORT = "Report";
     }
 }

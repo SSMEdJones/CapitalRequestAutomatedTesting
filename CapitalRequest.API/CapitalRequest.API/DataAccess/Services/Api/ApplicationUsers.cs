@@ -39,7 +39,6 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                     .AppendPathSegment("ApplicationUser")
                     .AppendPathSegment($"{userId}");
 
-                    //https://localhost:44310/v1/CapitalRequest/ApplicationUser/ejones08
                 var response = await _capitalRequestSettings.BaseApiUrl
                     .AppendPathSegment("ApplicationUser")
                     .AppendPathSegment($"{userId}")

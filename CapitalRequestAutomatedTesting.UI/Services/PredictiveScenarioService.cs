@@ -65,10 +65,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var targetGroup = await _capitalRequestServices.GetReviewerGroup(detail.TargetGroupId);
                 var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
                 proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestingGroupId = detail.RequestingGroupId;
                 proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
                 proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
                 proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+                proposal.ReviewerGroupName = targetGroup.Name;
 
                 scenarioDetail.SelectedProperties["Scenario Name"] = detail.DisplayText;
                 scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();
@@ -174,7 +176,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 "IPredictiveWorkflowStepResponderService" => "WorkflowStepResponder",
                 "IPredictiveWorkflowStepOptionService" => "WorkflowStepOption",
                 "IPredictiveEmailNotificationService" => "EmailNotification",
-                _ => "UnknownTable"
+                _ => "UnknownService"
             };
         }
 

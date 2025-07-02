@@ -55,6 +55,8 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public List<SelectListItem> TargetGroups { get; set; } = new();
         public List<SelectListItem> Reviewers { get; set; } = new();
 
+        public int RequestCount { get; set; }
+
         [ValidateNever]
         public SeleniumScenarioOutcome PredictedSeleniumOutcome { get; set; }
 
@@ -68,6 +70,8 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [ValidateNever]
 
         public ScenarioDataViewModel ActualData { get; set; } = new();
+
+
     }
 
 }

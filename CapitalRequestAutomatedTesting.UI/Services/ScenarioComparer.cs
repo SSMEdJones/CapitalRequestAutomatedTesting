@@ -104,16 +104,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                                 var fieldDiffs = CompareFields(predictiveTyped, actualTyped, actualExecutionDurationMinutes);
 
-                                if (fieldDiffs.Any())
+                                operationDiffs.Add(new RecordDifference
                                 {
-                                    operationDiffs.Add(new RecordDifference
-                                    {
-                                        RecordPredictive = predictiveTyped,
-                                        RecordActual = actualTyped,
-                                        FieldDifferences = fieldDiffs,
-                                        RowKey = $"{opType}|{i}"
-                                    });
-                                }
+                                    RecordPredictive = predictiveTyped,
+                                    RecordActual = actualTyped,
+                                    FieldDifferences = fieldDiffs,
+                                    RowKey = $"{opType}|{i}"
+                                });
+                                //if (fieldDiffs.Any())
+                                //{
+                                //    operationDiffs.Add(new RecordDifference
+                                //    {
+                                //        RecordPredictive = predictiveTyped,
+                                //        RecordActual = actualTyped,
+                                //        FieldDifferences = fieldDiffs,
+                                //        RowKey = $"{opType}|{i}"
+                                //    });
+                                //}
                             }
 
                             if (operationDiffs.Any())
@@ -159,12 +166,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         }
 
         public static List<FieldDifference> CompareFields(
-    object predictive,
-    object actual,
-    int fuzzyMinutes,
-    bool updatePredictive = true)
+            object predictive,
+            object actual,
+            int fuzzyMinutes,
+            bool updatePredictive = true)
         {
             var differences = new List<FieldDifference>();
+
+            if (predictive == null && actual == null)
+                return differences;
+
+            if (predictive == null || actual == null)
+            {
+                differences.Add(new FieldDifference
+                {
+                    FieldName = "[Entire Object]",
+                    PredictiveValue = predictive,
+                    ActualValue = actual
+                });
+                return differences;
+            }
+
             var type = predictive.GetType();
 
             foreach (var prop in type.GetProperties())
@@ -204,6 +226,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return differences;
         }
+
 
         //public static List<FieldDifference> CompareFields(object predictiveRecord, object actualRecord)
         //{

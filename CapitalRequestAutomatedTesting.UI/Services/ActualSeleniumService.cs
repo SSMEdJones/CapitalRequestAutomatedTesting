@@ -4,6 +4,7 @@ using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using SSMWorkflow.API.DataAccess.Models;
 using System.Diagnostics;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 
@@ -21,10 +22,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly IWorkflowControllerService _workflowControllerService;
-        private readonly IActualRequestedInfoService _ActualRequestedInfoService;
-        private IActualWorkflowStepResponderService _ActualWorkflowStepResponderService;
-        private IActualWorkflowStepOptionService _ActualWorkflowStepOptionService;
-        private IActualEmailNotificationService _ActualEmailNotificationService;
+        private readonly IActualRequestedInfoService _actualRequestedInfoService;
+        private readonly IActualWorkflowStepResponderService _actualWorkflowStepResponderService;
+        private readonly IActualWorkflowStepOptionService _actualWorkflowStepOptionService;
+        private readonly IActualEmailNotificationService _actualEmailNotificationService;
+        private readonly IActualDashboardService _actualDashboardService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IMapper _mapper;
@@ -32,10 +34,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public ActualSeleniumService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
             IWorkflowControllerService workflowControllerService,
-            IActualRequestedInfoService ActualRequestedInfoService,
-            IActualWorkflowStepResponderService ActualWorkflowStepResponderService,
-            IActualWorkflowStepOptionService ActualWorkflowStepOptionService,
-            IActualEmailNotificationService ActualEmailNotificationService,
+            IActualRequestedInfoService actualRequestedInfoService,
+            IActualWorkflowStepResponderService actualWorkflowStepResponderService,
+            IActualWorkflowStepOptionService actualWorkflowStepOptionService,
+            IActualEmailNotificationService actualEmailNotificationService,
+            IActualDashboardService actualDashboardService,
             IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
             IMapper mapper)
@@ -44,10 +47,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
             _workflowControllerService = workflowControllerService;
-            _ActualRequestedInfoService = ActualRequestedInfoService;
-            _ActualWorkflowStepResponderService = ActualWorkflowStepResponderService;
-            _ActualWorkflowStepOptionService = ActualWorkflowStepOptionService;
-            _ActualEmailNotificationService = ActualEmailNotificationService;
+            _actualRequestedInfoService = actualRequestedInfoService;
+            _actualWorkflowStepResponderService = actualWorkflowStepResponderService;
+            _actualWorkflowStepOptionService = actualWorkflowStepOptionService;
+            _actualEmailNotificationService = actualEmailNotificationService;
+            _actualDashboardService = actualDashboardService;
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
             _mapper = mapper;
@@ -132,12 +136,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var requestButtonText = "Request More Information button";
             var dashboardOrder = reviewerGroup.DashboardOrder ?? 0;
             var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+            
+
+            var filter = new DashboardSearchFilter { CapitalFundingYear = DateTime.Now.Year};
+
+            scenarioDetail.RequestCount = (await _actualDashboardService.GetDashboardDataByUserId(filter, reviewer)).Count();
 
             Debug.WriteLine($"ReviewerUserId: {reviewer.UserId ?? "null"}");
 
             var homeDashboardUrl = BuildTestModeUrl($"", reviewer.UserId);
             var viewProposalUrl = BuildTestModeUrl($"/Proposal/ViewProposal/{proposalId}", reviewer.UserId);
-            
+            bool reviewerHasNoRequests = scenarioDetail.RequestCount == 0;
 
             if (scenarioId == "SCN001")
             {
@@ -195,6 +204,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 });
 
+                //ActualSteps.Add(new SeleniumScenarioStep
+                //{
+                //    StepNumber = 5,
+                //    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
+                //    Action = new SeleniumDsl()
+                //     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
+                //     .Then(Execute.DashboardSearch(proposalId.ToString()))
+                //     .Then(Conditional.If(
+                //         reviewerHasNoRequests,
+                //         Validate.NoRequestsMessage(),
+                //         Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now)
+                //     ))
+                //     .Build("Navigate to Home Dashboard enter Request verify group status"),
+                //    Retryable = true
+                //});
+
+
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = 5,
@@ -203,7 +229,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
                     .Then(Execute.DashboardSearch(proposalId.ToString()))
                     .Then(Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now))
-                    .Build("Navigate to Home Dashboard enter Request verify group status")
+                    .Build("Navigate to Home Dashboard enter Request verify group status"),
+                    Retryable = true
 
                 });
             }
@@ -225,9 +252,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             foreach (var step in steps)
             {
                 SeleniumStepResult result = null;
+
                 try
                 {
-                    result = await step.Action.Invoke(driver); 
+                    if (step.Retryable)
+                    {
+                        result = await SeleniumRetryHelper.RetryAsync(
+                            () => step.Action.Invoke(driver),
+                            maxRetries: 3,
+                            delayBetweenRetries: TimeSpan.FromSeconds(2));
+                    }
+                    else
+                    {
+                        result = await step.Action.Invoke(driver);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -236,13 +274,32 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         Success = false,
                         Message = $"Exception during step execution: {ex.Message}"
                     };
+
+                    Debug.WriteLine($"Error in step {step.StepNumber}: {ex.Message}");
+
+                    try
+                    {
+                        if (driver is ITakesScreenshot screenshotDriver)
+                        {
+                            var screenshot = screenshotDriver.GetScreenshot();
+                            var fileName = $"failure_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+                            var filePath = Path.Combine("Screenshots", fileName);
+
+                            Directory.CreateDirectory("Screenshots");
+                            screenshot.SaveAsFile(filePath);
+
+
+                        }
+                    }
+                    catch (Exception screenshotEx)
+                    {
+                        Debug.WriteLine($"Failed to capture screenshot: {screenshotEx.Message}");
+                    }
                 }
 
                 step.Result = result;
-
                 outcome.Expected.Steps.Add(step);
             }
-            outcome.Expected.Success = outcome.Expected.Passed;
 
             return outcome;
         }

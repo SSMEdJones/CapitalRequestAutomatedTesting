@@ -232,8 +232,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var requestingGroupName = requestingGroup.Name;
             var requestedGroup = reviewerGroup.Name;
 
-            //TODO Fix date formatting to match what is generated in CapitalRequest App..   The month is 1 character and maybe the day as well
-            var requestDate = DateTime.Now.ToString("MM/dd/yyyy");
+            var requestDate = DateTime.Now.ToShortDateString();
 
             var model = new Dictionary<string, object>
             {

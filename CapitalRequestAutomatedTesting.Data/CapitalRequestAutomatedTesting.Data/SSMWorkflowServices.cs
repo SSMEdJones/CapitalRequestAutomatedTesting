@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Options;
+﻿using CapitalRequest.API.DataAccess.Models;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+using Microsoft.VisualBasic;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.DataAccess.Services.Api;
@@ -84,34 +87,34 @@ namespace CapitalRequestAutomatedTesting.Data
             Debug.WriteLine($"✅ Loaded ProjectReviewLink from config: {_settings.ProjectReviewLink}");
         }
 
-        public Task<List<WorkFlowStepViewModel>> GetAllWorkFlowSteps(Guid workflowID)
+        public async Task<List<WorkFlowStepViewModel>> GetAllWorkFlowSteps(Guid workflowID)
         {
-            return _ssmMWorkFlowStep.GetAll(workflowID);
+            return await _ssmMWorkFlowStep.GetAll(workflowID);
         }
 
-        public Task<WorkFlowStepViewModel> GetWorkflowStep(Guid workFlowStepId)
+        public async Task<WorkFlowStepViewModel> GetWorkflowStep(Guid workFlowStepId)
         {
-            return _ssmMWorkFlowStep.Get(workFlowStepId);
+            return await _ssmMWorkFlowStep.Get(workFlowStepId);
         }
 
-        public Task<List<WorkFlowStakeholderViewModel>> GetAllWorkFlowStakeholders(Guid workflowID)
+        public async Task<List<WorkFlowStakeholderViewModel>> GetAllWorkFlowStakeholders(Guid workflowID)
         {
-            return _ssmMWorkFlowStakeholder.GetAll(workflowID);
+            return await _ssmMWorkFlowStakeholder.GetAll(workflowID);
         }
 
-        public Task<List<WorkFlowStepOptionViewModel>> GetAllWorkFlowStepOptions(Guid workFlowStepId)
+        public async Task<List<WorkFlowStepOptionViewModel>> GetAllWorkFlowStepOptions(Guid workFlowStepId)
         {
-            return _ssmMWorkFlowStepOption.GetAll(workFlowStepId);
+            return await _ssmMWorkFlowStepOption.GetAll(workFlowStepId);
         }
 
-        public Task<WorkFlowStepOptionViewModel> GetWorkFlowStepOption(Guid optionId)
+        public async Task<WorkFlowStepOptionViewModel> GetWorkFlowStepOption(Guid optionId)
         {
-            return _ssmMWorkFlowStepOption.Get(optionId);
+            return await _ssmMWorkFlowStepOption.Get(optionId);
         }
 
-        public Task<List<WorkFlowStepResponderViewModel>> GetAllAddWorkFlowStepResponder(Guid workFlowStepId)
+        public async Task<List<WorkFlowStepResponderViewModel>> GetAllAddWorkFlowStepResponder(Guid workFlowStepId)
         {
-            return _ssmMWorkFlowStepResponder.GetAll(workFlowStepId);
+            return await _ssmMWorkFlowStepResponder.GetAll(workFlowStepId);
         }
 
         public async Task SendCapitalRequestGroupNotificationsAsync(NotificationSearchFilter notificationSearchFilter)
@@ -119,51 +122,51 @@ namespace CapitalRequestAutomatedTesting.Data
             await _ssmMNotification.SendCapitalRequestGroupNotificationsAsync(notificationSearchFilter);
         }
 
-        public Task SendCapitalRequestGroupNotifications(NotificationSearchFilter notificationSearchFilter)
+        public async Task SendCapitalRequestGroupNotifications(NotificationSearchFilter notificationSearchFilter)
         {
-            return _ssmMNotification.SendCapitalRequestGroupNotifications(notificationSearchFilter);
+            await _ssmMNotification.SendCapitalRequestGroupNotifications(notificationSearchFilter);
         }
 
-        public Task<List<Notification>> GetCapitalRequestGroupNotifications(NotificationSearchFilter notificationSearchFilter)
+        public async Task<List<Notification>> GetCapitalRequestGroupNotifications(NotificationSearchFilter notificationSearchFilter)
         {
-            return _ssmMNotification.GetCapitalRequestGroupNotifications(notificationSearchFilter);
+            return await _ssmMNotification.GetCapitalRequestGroupNotifications(notificationSearchFilter);
         }
 
-        public Task<List<WorkFlowInstanceViewModel>> GetAllWorkflowInstances(Guid workflowID)
+        public async Task<List<WorkFlowInstanceViewModel>> GetAllWorkflowInstances(Guid workflowID)
         {
-            return _ssmMWorkFlowInstance.GetAll(workflowID);
+            return await _ssmMWorkFlowInstance.GetAll(workflowID);
         }
 
-        public Task<List<SSMWorkflow.API.Models.Dashboard>> GetCapitalRequestDashboard(DashboardSearchFilter dashboardSearchFilter)
+        public async Task<List<SSMWorkflow.API.Models.Dashboard>> GetCapitalRequestDashboard(DashboardSearchFilter dashboardSearchFilter)
         {
-            return _dashboards.GetDashboardData(dashboardSearchFilter);
+            return await _dashboards.GetDashboardData(dashboardSearchFilter);
         }
 
-        public Task<WorkFlowInstanceActionHistoryViewModel> GetWorkflowInstanceActionHistory(Guid Optionid)
+        public async Task<WorkFlowInstanceActionHistoryViewModel> GetWorkflowInstanceActionHistory(Guid Optionid)
         {
-            return _ssmMWorkFlowInstanceActionHistory.Get(Optionid);
+            return await _ssmMWorkFlowInstanceActionHistory.Get(Optionid);
         }
 
-        public Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAllWorkflowInstanceActionHistory(WorkFlowInstanceActionHistorySearchFilter filter)
+        public async Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAllWorkflowInstanceActionHistory(WorkFlowInstanceActionHistorySearchFilter filter)
         {
-            return _ssmMWorkFlowInstanceActionHistory.GetAll(filter);
+            return await _ssmMWorkFlowInstanceActionHistory.GetAll(filter);
         }
 
-        public Task<SSMWorkflow.API.Models.EmailNotification> GeEmailNotification(int id)
+        public async Task<SSMWorkflow.API.Models.EmailNotification> GeEmailNotification(int id)
         {
-            return _emailNotification.Get(id);
+            return await _emailNotification.Get(id);
         }
 
-        public Task<List<SSMWorkflow.API.Models.EmailNotification>> GetAllEmailNotifications(EmailNotificationSearchFilter filter)
+        public async Task<List<SSMWorkflow.API.Models.EmailNotification>> GetAllEmailNotifications(EmailNotificationSearchFilter filter)
         {
-            return _emailNotification.GetAll(filter);
+            return await _emailNotification.GetAll(filter);
         }
 
-        public Task<List<SSMWorkflow.API.Models.Dashboard>> GetAllDashboards(DashboardSearchFilter filter)
+        public async Task<List<SSMWorkflow.API.Models.Dashboard>> GetAllDashboards(DashboardSearchFilter filter)
         {
-            return _dashboards.GetDashboardData(filter);
+            return await _dashboards.GetDashboardData(filter);
         }
-
+        
     }
 
 }

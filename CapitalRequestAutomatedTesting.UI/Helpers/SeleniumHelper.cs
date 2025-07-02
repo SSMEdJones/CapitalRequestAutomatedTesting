@@ -595,5 +595,40 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> NoRequestsMessage()
+        {
+            return driver =>
+            {
+                var message = "We couldn't find any Requests for you.";
+                var elements = driver.FindElements(By.CssSelector(".noResults h3"));
+                bool found = elements.Any(el => el.Text.Trim().Equals(message, StringComparison.OrdinalIgnoreCase));
+
+                var result = new SeleniumStepResult
+                {
+                    Success = found,
+                    Message = found ? "No requests message found." : "Expected no-requests message not found."
+                };
+
+                return Task.FromResult(result);
+            };
+        }
+
+
+        //public static Func<IWebDriver, SeleniumStepResult> NoRequestsMessage()
+        //{
+        //    return driver =>
+        //    {
+        //        var message = "We couldn't find any Requests for you.";
+        //        var elements = driver.FindElements(By.CssSelector(".noResults h3"));
+        //        bool found = elements.Any(el => el.Text.Trim().Equals(message, StringComparison.OrdinalIgnoreCase));
+
+        //        return new SeleniumStepResult
+        //        {
+        //            Success = found,
+        //            Message = found ? "No requests message found." : "Expected no-requests message not found."
+        //        };
+        //    };
+        //}
+
     }
 }

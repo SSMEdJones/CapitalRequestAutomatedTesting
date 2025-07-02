@@ -1,4 +1,11 @@
-﻿
+﻿$(document).ready(function () {
+    $('#RequestId').select2({
+        tags: true,
+        placeholder: "Select or enter a Request ID",
+        allowClear: true
+    });
+});
+
 document.addEventListener("DOMContentLoaded", () => {
     bindRequestIdEvents(); // bind immediately if already present
 
@@ -12,24 +19,25 @@ document.addEventListener("DOMContentLoaded", () => {
 function bindRequestIdEvents() {
     console.log("Binding RequestId event...");
 
-    const requestSelect = document.getElementById("RequestId");
+    const $requestSelect = $('#RequestId');
     const scenarioContainer = document.getElementById("scenarioContainer");
 
-    if (!requestSelect || !scenarioContainer) {
+    if (!$requestSelect.length || !scenarioContainer) {
         console.warn("RequestId or scenarioContainer not found");
         return;
     }
 
-    if (requestSelect.dataset.bound === "true") {
+    if ($requestSelect.data('bound') === true) {
         console.log("RequestId already bound");
         return;
     }
 
-    requestSelect.dataset.bound = "true";
+    $requestSelect.data('bound', true);
 
-    requestSelect.addEventListener("change", function () {
-        console.log("RequestId changed:", this.value);
-        const requestId = this.value;
+    $requestSelect.on("change", function () {
+        const requestId = $(this).val();
+        console.log("RequestId changed:", requestId);
+
         if (!requestId) {
             scenarioContainer.innerHTML = "";
             return;
@@ -42,15 +50,57 @@ function bindRequestIdEvents() {
             })
             .then(html => {
                 scenarioContainer.innerHTML = html;
-                cancelDelayedLoading()
+                cancelDelayedLoading();
             })
             .catch(error => {
                 console.error("Error loading scenarios:", error);
                 cancelDelayedLoading();
             });
-
     });
 }
+
+//function bindRequestIdEvents() {
+//    console.log("Binding RequestId event...");
+
+//    const requestSelect = document.getElementById("RequestId");
+//    const scenarioContainer = document.getElementById("scenarioContainer");
+
+//    if (!requestSelect || !scenarioContainer) {
+//        console.warn("RequestId or scenarioContainer not found");
+//        return;
+//    }
+
+//    if (requestSelect.dataset.bound === "true") {
+//        console.log("RequestId already bound");
+//        return;
+//    }
+
+//    requestSelect.dataset.bound = "true";
+
+//    requestSelect.addEventListener("change", function () {
+//        console.log("RequestId changed:", this.value);
+//        const requestId = this.value;
+//        if (!requestId) {
+//            scenarioContainer.innerHTML = "";
+//            return;
+//        }
+
+//        fetch(`/Scenario/GetScenariosForRequest?requestId=${requestId}`)
+//            .then(response => {
+//                showLoadingDelayed("Loading Requests...", 200);
+//                return response.text();
+//            })
+//            .then(html => {
+//                scenarioContainer.innerHTML = html;
+//                cancelDelayedLoading()
+//            })
+//            .catch(error => {
+//                console.error("Error loading scenarios:", error);
+//                cancelDelayedLoading();
+//            });
+
+//    });
+//}
 
 function bindRequestingGroupEvents() {
     const requestingGroupSelect = document.getElementById("RequestingGroupId");
@@ -272,19 +322,30 @@ function loadRequestIds() {
     fetch("/Scenario/GetRequestIds")
         .then(response => response.json())
         .then(data => {
-            const requestSelect = document.getElementById("RequestId");
-            if (!requestSelect) {
+            const $requestSelect = $('#RequestId');
+
+            if (!$requestSelect.length) {
                 console.warn("RequestId dropdown not found");
                 cancelDelayedLoading();
                 return;
             }
 
-            requestSelect.innerHTML = '<option value="">-- Select One --</option>';
+            // Destroy existing Select2 instance if present
+            if ($.fn.select2 && $requestSelect.hasClass('select2-hidden-accessible')) {
+                $requestSelect.select2('destroy');
+            }
+
+            // Clear and repopulate options
+            $requestSelect.empty().append('<option value="">-- Select One --</option>');
             data.forEach(item => {
-                const option = document.createElement("option");
-                option.value = item.value;
-                option.text = item.text;
-                requestSelect.appendChild(option);
+                $requestSelect.append(new Option(item.text, item.value));
+            });
+
+            // Re-initialize Select2
+            $requestSelect.select2({
+                tags: true,
+                placeholder: "Select or enter a Request ID",
+                allowClear: true
             });
 
             bindRequestIdEvents(); // rebind after populating
@@ -295,6 +356,7 @@ function loadRequestIds() {
             cancelDelayedLoading();
         });
 }
+
 
 let spinnerTimeout;
 

@@ -98,7 +98,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
             RequestingReviewerId = requestingReviewerId,
             ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
             RequestedInformation = proposal.RequestedInfo.RequestedInformation,
-            Action = action,
+            Action = $"{action}.",
             WorkflowStepOptionId = workflowStepOption?.OptionID ?? Guid.Empty,
             IsOpen = true,
             Created = DateTime.Now,

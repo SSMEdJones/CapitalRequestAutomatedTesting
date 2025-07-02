@@ -1,14 +1,6 @@
 ﻿@using CapitalRequestAutomatedTesting.UI.ScenarioFramework
 @model ScenarioDetailsViewModel
 
-@* TODO Remove after debugging *@
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="text-danger">There was a validation error in this section.</div>
-}
-
-<p><strong>Debug: </strong>@Model.RequestedInformation</p>
-
 <div>
     <div class="form-group">
         <label asp-for="RequestingGroupId" class="control-label"></label>

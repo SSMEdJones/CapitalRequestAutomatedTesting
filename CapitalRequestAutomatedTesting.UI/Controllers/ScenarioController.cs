@@ -179,17 +179,17 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
         private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
         {
+            // ⏱ Measure actual execution time
+            var stopwatch = Stopwatch.StartNew();
+
             // Predictive data
             scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
             // Predictive Selenium outcome
             scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
-            // ⏱ Measure actual Selenium execution time
-            var stopwatch = Stopwatch.StartNew();
             scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
             stopwatch.Stop();
-
 
             // Retrieve actual data
             scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);

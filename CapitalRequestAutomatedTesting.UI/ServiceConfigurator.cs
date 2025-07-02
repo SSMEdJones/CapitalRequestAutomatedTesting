@@ -102,6 +102,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualRequestedInfoService, ActualRequestedInfoService>();
             services.AddScoped<IActualWorkflowStepOptionService, ActualWorkflowStepOptionService>();
             services.AddScoped<IActualWorkflowStepResponderService, ActualWorkflowStepResponderService>();
+            services.AddScoped<IActualDashboardService, ActualDashboardService>();
             services.AddScoped<IActualScenarioService, ActualScenarioService>();
             services.AddScoped<IActualSeleniumService, ActualSeleniumService>();
             #endregion

@@ -16,13 +16,19 @@
 <form id="scenarioForm" method="post" asp-action="Index">
     <input type="hidden" name="ActionType" id="actionType" value="SelectRequest" />
 
-
     <div class="form-group">
+        <label asp-for="RequestId" class="control-label"></label>
+        <select asp-for="RequestId" asp-items="Model.RequestIds" class="form-control select2" id="RequestId">
+            <option value="">-- Select or enter Request ID --</option>
+        </select>
+    </div>
+
+    @* <div class="form-group">
         <label asp-for="RequestId" class="control-label"></label>
         <select asp-for="RequestId" asp-items="Model.RequestIds" class="form-control" >
             <option value="">-- Loading Requests... --</option>
         </select>
-    </div>
+    </div> *@
 
     <div id="scenarioContainer"></div>
 
@@ -41,13 +47,4 @@
 </div>
 
 <link rel="stylesheet" href="~/css/workflow.css" asp-append-version="true" />
-<script src="~/js/scenario.js" asp-append-version="true"></script>
-
-
-
-
-
-
-
-
 

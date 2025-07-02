@@ -1,7 +1,10 @@
 ﻿using AutoMapper;
 using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using SSMWorkflow.API.DataAccess.Models;
+using System.Buffers.Text;
+using System.Numerics;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
@@ -69,13 +72,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     };
                 }
 
-                var groupPrefix = $"{requestingGroup}Review"; // e.g., "ITReview"
+                var groupPrefix = $"{requestingGroup.Replace(" ",string.Empty)}Review"; // e.g., "ITReview"
                 var expectedDate = DateTime.Now.Date.ToShortDateString(); // Adjust to your desired format if needed
 
                 var dateProp = dashboardData.GetType().GetProperty($"{groupPrefix}Date");
                 var nameProp = dashboardData.GetType().GetProperty($"{groupPrefix}Name");
                 var statusProp = dashboardData.GetType().GetProperty($"{groupPrefix}Status");
 
+                
                 if (dateProp == null || nameProp == null || statusProp == null)
                 {
                     return new SeleniumStepResult
@@ -88,6 +92,24 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var reviewDate = dateProp.GetValue(dashboardData)?.ToString();
                 var reviewName = nameProp.GetValue(dashboardData)?.ToString();
                 var reviewStatus = statusProp.GetValue(dashboardData)?.ToString();
+
+                //TODO Need to test for any available proposals by reviewer or Author
+                //If none need to check for message
+                //TODO condtional based on predictive Response Message
+                //<div class="noResults">
+                //<div class="noResults">
+                //    <h2><i class="far fa-comment-dots" aria-hidden="true"></i>&nbsp;Hmmm...</h2>
+                //    <h3>We couldn't find any Requests for you.</h3>
+                //    No current projects are available for you to view.If you feel, based on your access, you should see projects listed here, please contact Christine Domagalski or Patrick Herndon.
+                //</div>
+
+                if (proposal.ResponseMessage == Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT)
+                {
+                    reviewDate = DateTime.Now.ToShortDateString();
+                    reviewName = targetGroup;
+                    reviewStatus = Constants.DASHBOARD_STATUS_INFORMATION_REQUESTED;
+
+                }
 
                 var todayStr = DateTime.Now.ToShortDateString();
                 var errors = new List<string>();

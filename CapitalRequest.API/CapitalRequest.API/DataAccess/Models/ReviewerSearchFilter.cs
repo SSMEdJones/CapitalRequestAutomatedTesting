@@ -2,6 +2,7 @@
 {
     public class ReviewerSearchFilter
     {
+        public string? UserId { get; set; }
         public string? Email { get; set; }
         public int? RegionId { get; set; }
         public int? SegmentId { get; set; }

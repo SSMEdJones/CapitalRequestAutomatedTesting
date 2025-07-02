@@ -13,8 +13,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         [JsonIgnore]
         public Func<IWebDriver, Task<SeleniumStepResult>> Action { get; set; }
-
-
+        public bool Retryable { get; set; } = false;
 
         // Optional: for better diagnostics
         public string StepName { get; set; }

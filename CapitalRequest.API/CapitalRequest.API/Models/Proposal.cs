@@ -396,7 +396,8 @@ namespace CapitalRequest.API.Models
         public List<string> FileNames { get; set; } = new List<string>();
 
         public int ReviewerGroupId { get; set; }
-        public int RequestingReviewerGroupId { get; set; }
+        public string ReviewerGroupName { get; set; }
+        public int RequestingGroupId { get; set; }
         public int ReviewerId { get; set; }
         public int RequestedInfoId { get; set; }
         public RequestedInfo RequestedInfo { get; set; } = new RequestedInfo();

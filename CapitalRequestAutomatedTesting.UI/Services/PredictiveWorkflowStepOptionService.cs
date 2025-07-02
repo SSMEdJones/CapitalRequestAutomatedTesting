@@ -6,6 +6,8 @@ using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using SSMWorkflow.API.DataAccess.Models;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
@@ -17,6 +19,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<WorkflowStepOption>> GetFilteredOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId);
         Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string OptionType, int? requestedInfoId);
         Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage);
+        Task<WorkflowStepOption> FindOrCreateWorkflowStepOptionAsync(vm.Proposal proposal, int reviewerGroupId, int reviewerId, string actionType);
     }
 
     public class PredictiveWorkflowStepOptionService : IPredictiveWorkflowStepOptionService
@@ -58,7 +61,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 .FirstOrDefault();
 
             var emailType = emailTemplate?.OptionType ?? string.Empty;
-                
+
             var workflowStepOptions = new List<WorkflowStepOption>();
 
             foreach (var rg in reviewerGroups)
@@ -135,8 +138,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             var currentReviewers = await _capitalRequestServices
                 .GetAllReviewers(new ReviewerSearchFilter
-                { 
-                    SegmentId = proposal.SegmentId, 
+                {
+                    SegmentId = proposal.SegmentId,
                     RegionId = proposal.Region,
                     ReviewerGroupId = reviewerGroupId,
                     StepNumber = stepNumber
@@ -148,7 +151,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     current.Email.Equals(deleted.Email, StringComparison.OrdinalIgnoreCase) &&
                     current.RegionId == deleted.RegionId &&
                     current.SegmentId == deleted.SegmentId &&
-                    current.ReviewerGroupId == deleted.ReviewerGroupId 
+                    current.ReviewerGroupId == deleted.ReviewerGroupId
                 ))
                 .ToList();
 
@@ -189,11 +192,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 workflowStepOptions.Add(workflowStepOption);
 
             });
-           
+
             return workflowStepOptions;
         }
 
-        public async Task <List<WorkflowStepOption>> GetFilteredOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId)
+        public async Task<List<WorkflowStepOption>> GetFilteredOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId)
         {
             // Logic to close options based on the provided parameters
             var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
@@ -223,7 +226,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             var filteredReviewerGroups = allReviewerGroups
                 .Where(x => (x.StepNumber <= workflowTemplate.StepNumber && x.ReviewerType == Constants.REVIEW_TYPE_REVIEW) ||
-                            (x.Name == Constants.REVIEWER_GROUP_AUTHOR && x.StepNumber == 0))
+                            (x.Name == Constants.REVIEWER_GROUP_AUTHOR && x.StepNumber == null))
                 .ToList();
 
             filteredReviewerGroups = FilterReviewerGroups(filteredReviewerGroups, proposal, workflowTemplate.StepNumber);
@@ -285,7 +288,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return proposal;
         }
 
-        public async Task <SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage)
+        public async Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage)
         {
             proposal = await PredictiveMessage(proposal, actionType);
 
@@ -303,7 +306,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public async Task ValidateProposalAsync(vm.Proposal proposal, WorkflowStep workflowStep, List<WorkflowStepOption> workflowStepOptions)
         {
 
-            if ( !proposal.IsMovingForward)
+            if (!proposal.IsMovingForward)
             {
                 proposal.ResponseMessage = Constants.RESPONSE_CANCELLED;
 
@@ -317,7 +320,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             }))
             .ToList();
 
-            var openRequest = requests.Where(x => x.RequestingReviewerGroupId == proposal.RequestingReviewerGroupId);
+            var openRequest = requests.Where(x => x.RequestingReviewerGroupId == proposal.RequestingGroupId);
 
             if (proposal.ActionType == Constants.ACTION_TYPE_VERIFY)
             {
@@ -339,8 +342,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var workflowStepId = workflowStep.WorkflowStepID;
 
             var reviewerGroupId = proposal.ActionType == Constants.ACTION_TYPE_VERIFY ?
-                proposal.ReviewerGroupId :
-                proposal.RequestingReviewerGroupId;
+                proposal.RequestedInfo.ReviewerGroupId :
+                proposal.RequestedInfo.RequestingReviewerGroupId;
 
             workflowStepOptions = workflowStepOptions
                 .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
@@ -348,7 +351,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 x.IsComplete)
                 .ToList();
 
-            var openReply = requests.Where(x => x.ReviewerGroupId == proposal.RequestingReviewerGroupId);
+            var openReply = requests.Where(x => x.ReviewerGroupId == proposal.RequestingGroupId);
 
             var verified = workflowStepOptions.Any();
 
@@ -368,16 +371,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 return;
             }
 
-            ValidateReviewer(proposal, workflowStep, workflowStepOptions);
+            ValidateReviewer(proposal, workflowStep);
 
             return;
         }
 
-        public async Task ValidateReviewer (vm.Proposal proposal, WorkflowStep workflowStep, List<WorkflowStepOption> workflowStepOptions)
+        public async Task ValidateReviewer(vm.Proposal proposal, WorkflowStep workflowStep)
         {
+
             var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(proposal.ReviewerGroupId);
 
-            
+
             if (proposal.Reviewer == null)
             {
                 proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
@@ -389,6 +393,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
 
             var workflowStepId = workflowStep.WorkflowStepID;
+
+            var workflowStepOptionsViewModel = await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID);
+
+            var workflowStepOptions = workflowStepOptionsViewModel
+                   .Select(x => _mapper.Map<WorkflowStepOption>(x))
+                   .ToList();
 
 
             if (workflowStepOptions.Any())
@@ -409,8 +419,70 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
             }
-
+            else
+            {
+                //TODO conditional based on scenario actionType                
+                proposal.ResponseMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
+            }
             return;
+        }
+
+        public async Task<WorkflowStepOption> FindOrCreateWorkflowStepOptionAsync(vm.Proposal proposal, int reviewerGroupId, int reviewerId, string actionType)
+        {
+            WorkflowStepOption workflowStepOption = null;
+
+            var reviewer = await _capitalRequestServices.GetReviewer(reviewerId);
+
+            if (reviewer == null)
+            {
+                return workflowStepOption;
+            }
+
+            var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
+            var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
+
+            if (workflowStep == null)
+            {
+                return workflowStepOption;
+            }
+
+            var workflowStepId = workflowStep.WorkflowStepID;
+            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupId);
+            workflowStepOption = await ExistingWorkflowStepOption(workflowStepId, reviewer, actionType, proposal, reviewerGroup);
+
+            if (workflowStepOption == null)
+            {
+                workflowStepOption = new WorkflowStepOption
+                {
+                    OptionName = reviewer.Email,
+                    Created = DateTime.Now,
+                    CreatedBy = reviewer.UserId,
+                    WorkflowStepID = workflowStepId,
+                    ReviewerGroupId = reviewerGroup.Id,
+                    OptionType = actionType
+                };
+            }
+
+            return workflowStepOption;
+        }
+
+        public async Task<WorkflowStepOption> ExistingWorkflowStepOption(Guid workflowStepId, vm.Reviewer reviewer, string actionType, vm.Proposal proposal, vm.ReviewerGroup reviewerGroup)
+        {
+            var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStepId))
+                .Where(x => x.ReviewerGroupId == reviewer.ReviewerGroupId &&
+                        !x.IsComplete &&
+                        !x.IsTerminate &&
+                        x.OptionName == (string.IsNullOrEmpty(reviewer.Email) && reviewerGroup.StepNumber == 0
+                           ? proposal.AuthorEmail
+                           : reviewer.Email) &&
+                        x.OptionType == actionType);
+                      
+
+            var workflowStepOption = workflowStepOptions
+                .Select(x => _mapper.Map<WorkflowStepOption>(x))
+                .FirstOrDefault();
+
+            return workflowStepOption;
         }
 
     }

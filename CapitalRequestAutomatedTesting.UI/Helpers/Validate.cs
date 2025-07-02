@@ -32,6 +32,20 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
         public static Func<IWebDriver, Task<SeleniumStepResult>> DashboardStatus(int dashboardOrder, string expectedName, DateTime expectedDate)
             => SeleniumHelper.ValidateReviewerDashboardCell(dashboardOrder, expectedName, expectedDate);
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> NoRequestsMessage()
+            => SeleniumHelper.NoRequestsMessage();
+        //public static Func<IWebDriver, Task<SeleniumStepResult>> NoRequestsMessage()
+        //{
+        //    var syncFunc = SeleniumHelper.NoRequestsMessage(); // This is Func<IWebDriver, SeleniumStepResult>
+
+        //    return driver =>
+        //    {
+        //        var result = syncFunc(driver); // Call the sync function
+        //        return Task.FromResult(result); // Wrap the result in a Task
+        //    };
+        //}
+
+
     }
 
 }
