@@ -239,7 +239,10 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
-        public static Func<IWebDriver, Task<SeleniumStepResult>> AssertElementTextById(string id, string expectedText, string description)
+        public static Func<IWebDriver, Task<SeleniumStepResult>> AssertElementTextById(
+    string id,
+    string expectedText,
+    string description)
         {
             return async driver =>
             {
@@ -248,7 +251,13 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                     var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
                     var element = wait.Until(drv => drv.FindElement(By.Id(id)));
 
-                    var actualText = element.Text.Trim();
+                    string actualText = element.Text?.Trim();
+                    if (string.IsNullOrWhiteSpace(actualText))
+                    {
+                        actualText = ((IJavaScriptExecutor)driver)
+                            .ExecuteScript($"return document.getElementById('{id}')?.textContent?.trim()")
+                            ?.ToString();
+                    }
 
                     if (actualText == expectedText.Trim())
                     {
@@ -259,30 +268,29 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                         };
                     }
 
+                    string screenshotPath = CaptureScreenshot(driver, $"{description}_text_mismatch");
+
                     return new SeleniumStepResult
                     {
                         Success = false,
-                        Message = $"{description} is present but text differs.\nExpected: '{expectedText}'\nActual: '{actualText}'"
-                    };
-                }
-                catch (NoSuchElementException)
-                {
-                    return new SeleniumStepResult
-                    {
-                        Success = false,
-                        Message = $"{description} not found on the page."
+                        Message = $"{description} is present but text differs.\nExpected: '{expectedText}'\nActual: '{actualText}'\nScreenshot: {screenshotPath}",
+                        ScreenshotPath = screenshotPath
                     };
                 }
                 catch (Exception ex)
                 {
+                    string screenshotPath = CaptureScreenshot(driver, $"{description}_error");
+
                     return new SeleniumStepResult
                     {
                         Success = false,
-                        Message = $"Error validating {description}: {ex.Message}"
+                        Message = $"Error validating {description}: {ex.Message}\nScreenshot: {screenshotPath}",
+                        ScreenshotPath = screenshotPath
                     };
                 }
             };
         }
+
 
         public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateElementTextIsEmpty(string elementId, string description)
         {
@@ -375,43 +383,97 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
-        public static Func<IWebDriver, Task<SeleniumStepResult>> ClickWhenVisibleById(string elementId, string description)
+        //public static Func<IWebDriver, Task<SeleniumStepResult>> ClickWhenVisibleById(string elementId, string description)
+        //{
+        //    return async driver =>
+        //    {
+        //        try
+        //        {
+        //            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+        //            var element = wait.Until(ExpectedConditions.ElementExists(By.Id(elementId)));
+
+        //            // Force scroll using JavaScript
+        //            ((IJavaScriptExecutor)driver).ExecuteScript("window.scrollTo(0, document.body.scrollHeight);");
+        //            await Task.Delay(500);                    // Wait again for the element to be clickable after scroll
+
+        //            //var element = driver.FindElement(By.Id(dropdownId));
+        //            //var yPosition = element.Location.Y;
+        //            //((IJavaScriptExecutor)driver).ExecuteScript($"window.scrollTo(0, {yPosition - 100});");
+
+        //            element = wait.Until(ExpectedConditions.ElementToBeClickable(By.Id(elementId)));
+
+        //            element.Click();
+
+        //            return new SeleniumStepResult
+        //            {
+        //                Success = true,
+        //                Message = $"Clicked '{description}' after scrolling into view."
+        //            };
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            return new SeleniumStepResult
+        //            {
+        //                Success = false,
+        //                Message = $"Could not click '{description}': {ex.Message}"
+        //            };
+        //        }
+        //    };
+        //}
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> RobustClickById(string elementId, string description, int maxRetries = 3)
         {
             return async driver =>
             {
-                try
+                var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+                for (int attempt = 1; attempt <= maxRetries; attempt++)
                 {
-                    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-                    var element = wait.Until(ExpectedConditions.ElementExists(By.Id(elementId)));
-
-                    // Force scroll using JavaScript
-                    ((IJavaScriptExecutor)driver).ExecuteScript("window.scrollTo(0, document.body.scrollHeight);");
-                    await Task.Delay(500);                    // Wait again for the element to be clickable after scroll
-
-                    //var element = driver.FindElement(By.Id(dropdownId));
-                    //var yPosition = element.Location.Y;
-                    //((IJavaScriptExecutor)driver).ExecuteScript($"window.scrollTo(0, {yPosition - 100});");
-
-                    element = wait.Until(ExpectedConditions.ElementToBeClickable(By.Id(elementId)));
-
-                    element.Click();
-
-                    return new SeleniumStepResult
+                    try
                     {
-                        Success = true,
-                        Message = $"Clicked '{description}' after scrolling into view."
-                    };
+                        var element = wait.Until(ExpectedConditions.ElementToBeClickable(By.Id(elementId)));
+
+                        ((IJavaScriptExecutor)driver)
+                            .ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", element);
+
+                        await Task.Delay(500);
+                        element.Click();
+
+                        return new SeleniumStepResult
+                        {
+                            Success = true,
+                            Message = $"✅ Clicked '{description}' on attempt #{attempt}."
+                        };
+                    }
+                    catch (Exception ex) when (attempt < maxRetries)
+                    {
+                        Debug.WriteLine($"Retry #{attempt} failed: {ex.Message}");
+                        await Task.Delay(700);
+                    }
+                    catch (Exception finalEx)
+                    {
+                        var screenshotPath = CaptureScreenshot(driver, $"{description}_ClickFailed");
+
+                        return new SeleniumStepResult
+                        {
+                            Success = false,
+                            Message = $"❌ Failed to click '{description}' after {maxRetries} attempts.\nError: {finalEx.Message}\nScreenshot: {screenshotPath}",
+                            ScreenshotPath = screenshotPath
+                        };
+                    }
                 }
-                catch (Exception ex)
+
+                var fallbackScreenshot = CaptureScreenshot(driver, $"{description}_ClickExceeded");
+                return new SeleniumStepResult
                 {
-                    return new SeleniumStepResult
-                    {
-                        Success = false,
-                        Message = $"Could not click '{description}': {ex.Message}"
-                    };
-                }
+                    Success = false,
+                    Message = $"❌ Exceeded max attempts clicking '{description}'. Screenshot saved: {fallbackScreenshot}",
+                    ScreenshotPath = fallbackScreenshot
+                };
             };
         }
+
+
 
         public static Func<IWebDriver, Task<SeleniumStepResult>> SelectDropdownById(string dropdownId, string visibleText, string description)
         {
@@ -613,6 +675,30 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
+        private static string CaptureScreenshot(IWebDriver driver, string label)
+        {
+            try
+            {
+                if (driver is ITakesScreenshot screenshotDriver)
+                {
+                    var screenshot = screenshotDriver.GetScreenshot();
+                    var fileName = $"{label}_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+                    var filePath = Path.Combine("Screenshots", fileName);
+
+                    Directory.CreateDirectory("Screenshots");
+                    screenshot.SaveAsFile(filePath);
+
+                    Debug.WriteLine($"Screenshot saved: {filePath}");
+                    return filePath;
+                }
+            }
+            catch (Exception screenshotEx)
+            {
+                Debug.WriteLine($"Screenshot capture failed: {screenshotEx.Message}");
+            }
+
+            return null;
+        }
 
         //public static Func<IWebDriver, SeleniumStepResult> NoRequestsMessage()
         //{

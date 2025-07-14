@@ -15,8 +15,11 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
         public static Func<IWebDriver, Task<SeleniumStepResult>> ClickButtonById(string buttonId, string buttonText)
             => SeleniumHelper.ClickButtonById(buttonId, buttonText);
 
-        public static Func<IWebDriver, Task<SeleniumStepResult>> ClickWhenVisibleById(string id, string description)
-            => SeleniumHelper.ClickWhenVisibleById(id, description);
+        //public static Func<IWebDriver, Task<SeleniumStepResult>> ClickWhenVisibleById(string id, string description)
+        //    => SeleniumHelper.ClickWhenVisibleById(id, description);
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> RobustClickById(string elementId, string description, int maxRetries = 3)
+            => SeleniumHelper.RobustClickById(elementId, description, maxRetries);
 
         public static Func<IWebDriver, Task<SeleniumStepResult>> SelectDropdown(string dropdownId, string visibleText, string description)
             => SeleniumHelper.SelectDropdownById(dropdownId, visibleText, description);

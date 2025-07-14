@@ -4,13 +4,20 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public static class Conditional
     {
-        public static Func<IWebDriver, SeleniumStepResult> If(
+        public static Func<IWebDriver, Task<SeleniumStepResult>> If(
             bool condition,
-            Func<IWebDriver, SeleniumStepResult> whenTrue,
-            Func<IWebDriver, SeleniumStepResult> whenFalse)
+            Func<IWebDriver, Task<SeleniumStepResult>> whenTrue,
+            Func<IWebDriver, Task<SeleniumStepResult>> whenFalse)
         {
-            return driver => condition ? whenTrue(driver) : whenFalse(driver);
+            return async driver =>
+            {
+                if (condition)
+                    return await whenTrue(driver);
+                else
+                    return await whenFalse(driver);
+            };
         }
     }
+
 
 }

@@ -371,7 +371,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 return;
             }
 
-            ValidateReviewer(proposal, workflowStep);
+            await ValidateReviewer(proposal, workflowStep);
 
             return;
         }

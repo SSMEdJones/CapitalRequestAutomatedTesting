@@ -136,9 +136,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var requestButtonText = "Request More Information button";
             var dashboardOrder = reviewerGroup.DashboardOrder ?? 0;
             var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
-            
 
-            var filter = new DashboardSearchFilter { CapitalFundingYear = DateTime.Now.Year};
+
+            var filter = new DashboardSearchFilter { CapitalFundingYear = DateTime.Now.Year };
 
             scenarioDetail.RequestCount = (await _actualDashboardService.GetDashboardDataByUserId(filter, reviewer)).Count();
 
@@ -147,29 +147,35 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var homeDashboardUrl = BuildTestModeUrl($"", reviewer.UserId);
             var viewProposalUrl = BuildTestModeUrl($"/Proposal/ViewProposal/{proposalId}", reviewer.UserId);
             bool reviewerHasNoRequests = scenarioDetail.RequestCount == 0;
+            //TODO add to config
+            var maxRetries = 3;
 
+            var stepNumber = 0;
             if (scenarioId == "SCN001")
             {
                 var WorkflowDashboardButtonText = Constants.ACTION_TYPE_VERIFY;
                 var RequestMoreInformationButton = Constants.RESPONSE_REQUEST_MORE_INFORMATION;
 
+                stepNumber++;
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
-                    StepNumber = 1,
+                    StepNumber = stepNumber,
                     Description = "Validate Workflow DashBoard button click and validate Requesting Reviewer Group Verify button",
                     Action = new SeleniumDsl()
                         .BeginWith(Execute.NavigateTo(viewProposalUrl))
                         .Then(Validate.ElementById(workflowButtonId, $"{workflowButtonText} button"))
-                        .Then(Execute.ClickWhenVisibleById(workflowButtonId, workflowButtonText))
+                        .Then(Execute.RobustClickById(workflowButtonId, workflowButtonText, maxRetries))
                         .Then(Validate.Text(workflowPortion))
                         .Then(Validate.ButtonInRowWithText(workflowPortion, WorkflowDashboardButtonText))
                         .Build("Reached Workflow DashBoard page")
 
                 });
 
+                stepNumber++;
+
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
-                    StepNumber = 2,
+                    StepNumber = stepNumber,
                     Description = $"Click '{WorkflowDashboardButtonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
                     Action = new SeleniumDsl()
                         .BeginWith(Execute.ClickButtonInRow(workflowPortion, WorkflowDashboardButtonText))
@@ -179,12 +185,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 });
 
+                stepNumber++;
+
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
-                    StepNumber = 3,
+                    StepNumber = stepNumber,
                     Description = $"Click '{RequestMoreInformationButton}' and validate Targeted Reviewer Group avaiable in drop down selector",
                     Action = new SeleniumDsl()
-                    .BeginWith(Execute.ClickWhenVisibleById(requestButtonId, requestButtonText))
+                    .BeginWith(Execute.RobustClickById(requestButtonId, requestButtonText, maxRetries))
                     .Then(Validate.ElementById("RequestedInfo_ReviewerGroupId", "Target Reviewer dropdown"))
                     .Then(Execute.SelectDropdown("RequestedInfo_ReviewerGroupId", targetGroup.Name, "Reviewer Group"))
                     .Build("Clicked Request More Information button and confirmed dropdown selection")
@@ -192,47 +200,71 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 });
 
+                stepNumber++;
+
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
-                    StepNumber = 4,
+                    StepNumber = stepNumber,
                     Description = $"Enter requested information press submit and verify success message",
                     Action = new SeleniumDsl()
                     .BeginWith(Execute.EnterRequestedInformation(scenarioDetail.RequestedInformation))
                     .Then(Execute.ClickButtonById("btnSubmitMoreInfo", "Submit button"))
-                    .Then(Validate.ElementTextById("responseMessage",Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT, "Submission success message"))
+                    .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT, "Submission success message"))
                     .Build("Entered requested information and clicked Submit button")
 
                 });
 
+                stepNumber++;
+
+                var conditionalDashboardSteps = new SeleniumDsl()
+                    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
+                    .Then(Conditional.If(
+                        reviewerHasNoRequests,
+                        Validate.NoRequestsMessage(), // When no requests
+                        new SeleniumDsl()
+                            .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
+                            .Then(Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now))
+                            .Build("Dashboard Search + Status Validation")
+                    ))
+                    .Build("Navigate to Home Dashboard and validate group status");
+
+                ActualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = stepNumber,
+                    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
+                    Action = conditionalDashboardSteps,
+                    Retryable = true
+                });
+
                 //ActualSteps.Add(new SeleniumScenarioStep
                 //{
-                //    StepNumber = 5,
+                //    StepNumber = stepNumber,
                 //    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
                 //    Action = new SeleniumDsl()
                 //     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
                 //     .Then(Execute.DashboardSearch(proposalId.ToString()))
                 //     .Then(Conditional.If(
-                //         reviewerHasNoRequests,
-                //         Validate.NoRequestsMessage(),
-                //         Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now)
+                //        reviewerHasNoRequests,
+                //        Validate.NoRequestsMessage(),
+                //        Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now)
                 //     ))
                 //     .Build("Navigate to Home Dashboard enter Request verify group status"),
                 //    Retryable = true
                 //});
 
 
-                ActualSteps.Add(new SeleniumScenarioStep
-                {
-                    StepNumber = 5,
-                    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
-                    Action = new SeleniumDsl()
-                    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
-                    .Then(Execute.DashboardSearch(proposalId.ToString()))
-                    .Then(Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now))
-                    .Build("Navigate to Home Dashboard enter Request verify group status"),
-                    Retryable = true
+                //ActualSteps.Add(new SeleniumScenarioStep
+                //{
+                //    StepNumber = stepNumber,
+                //    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
+                //    Action = new SeleniumDsl()
+                //    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
+                //    .Then(Execute.DashboardSearch(proposalId.ToString()))
+                //    .Then(Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now))
+                //    .Build("Navigate to Home Dashboard enter Request verify group status"),
+                //    Retryable = true
 
-                });
+                //});
             }
 
             return ActualSteps;
