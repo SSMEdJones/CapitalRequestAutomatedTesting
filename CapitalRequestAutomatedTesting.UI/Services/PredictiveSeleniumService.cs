@@ -21,9 +21,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly IWorkflowControllerService _workflowControllerService;
         private readonly IPredictiveRequestedInfoService _predictiveRequestedInfoService;
-        private IPredictiveWorkflowStepResponderService _predictiveWorkflowStepResponderService;
-        private IPredictiveWorkflowStepOptionService _predictiveWorkflowStepOptionService;
-        private IPredictiveEmailNotificationService _predictiveEmailNotificationService;
+        private readonly IPredictiveWorkflowStepResponderService _predictiveWorkflowStepResponderService;
+        private readonly IPredictiveWorkflowStepOptionService _predictiveWorkflowStepOptionService;
+        private readonly IPredictiveEmailNotificationService _predictiveEmailNotificationService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IMapper _mapper;
@@ -94,27 +94,88 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 Expected = new SeleniumScenarioResult()
             };
 
-            int stepNumber = 1;
+            bool hasFailed = false;
 
             foreach (var method in methods)
             {
-                var result = await ExecuteSeleniumMethodAsync(method, scenarioDetail);
+                SeleniumStepResult result;
+
+                if (!hasFailed)
+                {
+                    result = await ExecuteSeleniumMethodAsync(method, scenarioDetail);
+
+                    if (!result.Success)
+                    {
+                        hasFailed = true;
+                        outcome.Expected.Success = false;
+                        scenarioDetail.PredictiveStopReason = $"Step {method.StepNumber} failed due to: {result.Message}";
+                    }
+                    else
+                    {
+                        scenarioDetail.PredictiveCompletionStep = method.StepNumber;
+                    }
+                }
+                else
+                {
+                    // After failure, mark remaining steps as skipped
+                    result = new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = $"Step skipped due to predictive failure at step {scenarioDetail.PredictiveCompletionStep}."
+                    };
+                }
+
                 var step = new SeleniumScenarioStep
                 {
-                    StepNumber = stepNumber++,
+                    StepNumber = method.StepNumber,
                     Description = $"{method.MethodName} → {method.Parameters?.FirstOrDefault()?.ToString() ?? "no params"}",
                     Result = result,
-                    Action = _ => Task.FromResult(result) // Not executable in prediction, but keeps step shape consistent
+                    Action = _ => Task.FromResult(result)
                 };
 
                 outcome.Expected.Steps.Add(step);
                 outcome.Expected.Messages.Add(result.Message);
-                if (!result.Success)
-                    outcome.Expected.Success = false;
             }
 
             return outcome;
         }
+
+        //public async Task<SeleniumScenarioOutcome> ExecuteSeleniumMethodsAsync(List<PredictiveMethod> methods, ScenarioDetailsViewModel scenarioDetail)
+        //{
+        //    var outcome = new SeleniumScenarioOutcome
+        //    {
+        //        Expected = new SeleniumScenarioResult()
+        //    };
+
+        //    foreach (var method in methods)
+        //    {
+        //        var result = await ExecuteSeleniumMethodAsync(method, scenarioDetail);
+        //        var step = new SeleniumScenarioStep
+        //        {
+        //            StepNumber = method.StepNumber,
+        //            Description = $"{method.MethodName} → {method.Parameters?.FirstOrDefault()?.ToString() ?? "no params"}",
+        //            Result = result,
+        //            Action = _ => Task.FromResult(result) // Not executable in prediction, but keeps step shape consistent
+        //        };
+
+        //        outcome.Expected.Steps.Add(step);
+        //        outcome.Expected.Messages.Add(result.Message);
+        //        if (!result.Success)
+        //        {
+        //            outcome.Expected.Success = false;
+        //            scenarioDetail.PredictiveStopReason = $"Step {method.StepNumber} failed due to: {result.Message}";
+
+        //            break;
+        //        }
+        //        else
+        //        {
+        //            scenarioDetail.PredictiveCompletionStep = step.StepNumber;
+
+        //        }
+        //    }
+
+        //    return outcome;
+        //}
 
         public async Task<SeleniumStepResult> ExecuteSeleniumMethodAsync(PredictiveMethod method, ScenarioDetailsViewModel scenarioDetail)
         {
@@ -137,7 +198,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             // Get service instance
             using var scope = _scopeFactory.CreateScope();
             serviceInstance = scope.ServiceProvider.GetRequiredService(serviceType);
-
 
             // Get method info
             MethodInfo methodInfo = serviceInstance.GetType().GetMethod(method.MethodName);
@@ -168,14 +228,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 return stepResult;
             }
 
-            if (result is bool boolResult)
-            {
-                return new SeleniumStepResult
-                {
-                    Success = boolResult,
-                    Message = $"Boolean result: {boolResult}"
-                };
-            }
             return new SeleniumStepResult { Success = false, Message = "Unexpected result type." };
 
         }
@@ -198,7 +250,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         {
             return (await GetWorkflowActionAsync(proposal)).Any();
         }
-
 
         private async Task<List<PredictiveMethod>> GetSeleniumMethodsAsync(ScenarioDetailsViewModel scenarioDetail)
         {
@@ -240,9 +291,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 var email = _userContextService.Email;
 
+                var stepNumber = 0;
+
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
+                        StepNumber = ++stepNumber,
                         ServiceName = "IPredictiveWorkflowActionService",
                         MethodName = "ValidateWorkflowButtonAsync",
                         Parameters = new List<object> { proposal }
@@ -252,15 +306,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
+                        StepNumber = ++stepNumber,
                         ServiceName = "IPredictiveWorkflowActionService",
                         MethodName = "ValidateVerifyButtonAsync",
-                        Parameters = new List<object> { proposal, proposal.ReviewerGroupId }
+                        Parameters = new List<object> { proposal, proposal.ReviewerGroupId, expectedMessage }
                     }
                 );
 
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
+                        StepNumber = ++stepNumber,
                         ServiceName = "IScenarioControllerService",
                         MethodName = "ValidateTargetGroupIdAsync",
                         Parameters = new List<object> { proposal, requestingGroupId, targetGroupId }
@@ -270,6 +326,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
+                        StepNumber = ++stepNumber,
                         ServiceName = "IPredictiveWorkflowStepOptionService",
                         MethodName = "ValidateResponseMessageAsync",
                         Parameters = new List<object> { proposal, actionType, expectedMessage }
@@ -279,6 +336,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 predictiveMethods.Add(
                    new PredictiveMethod
                    {
+                       StepNumber = ++stepNumber,
                        ServiceName = "IPredictiveDashboardService",
                        MethodName = "ValidateDashboardStatusAsync",
                        Parameters = new List<object> { proposal, requestingGroup.Name, targetGroup.Name, Constants.DASHBOARD_STATUS_INFORMATION_REQUESTED }
@@ -289,6 +347,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return predictiveMethods;
         }
-       
+
     }
 }

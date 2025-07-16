@@ -156,10 +156,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var WorkflowDashboardButtonText = Constants.ACTION_TYPE_VERIFY;
                 var RequestMoreInformationButton = Constants.RESPONSE_REQUEST_MORE_INFORMATION;
 
-                stepNumber++;
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
-                    StepNumber = stepNumber,
+                    StepNumber = ++stepNumber,
                     Description = "Validate Workflow DashBoard button click and validate Requesting Reviewer Group Verify button",
                     Action = new SeleniumDsl()
                         .BeginWith(Execute.NavigateTo(viewProposalUrl))
@@ -171,11 +170,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 });
 
-                stepNumber++;
 
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
-                    StepNumber = stepNumber,
+                    StepNumber = ++stepNumber,
                     Description = $"Click '{WorkflowDashboardButtonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
                     Action = new SeleniumDsl()
                         .BeginWith(Execute.ClickButtonInRow(workflowPortion, WorkflowDashboardButtonText))
@@ -185,11 +183,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 });
 
-                stepNumber++;
 
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
-                    StepNumber = stepNumber,
+                    StepNumber = ++stepNumber,
                     Description = $"Click '{RequestMoreInformationButton}' and validate Targeted Reviewer Group avaiable in drop down selector",
                     Action = new SeleniumDsl()
                     .BeginWith(Execute.RobustClickById(requestButtonId, requestButtonText, maxRetries))
@@ -200,11 +197,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 });
 
-                stepNumber++;
-
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
-                    StepNumber = stepNumber,
+                    StepNumber = ++stepNumber,
                     Description = $"Enter requested information press submit and verify success message",
                     Action = new SeleniumDsl()
                     .BeginWith(Execute.EnterRequestedInformation(scenarioDetail.RequestedInformation))
@@ -214,7 +209,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 });
 
-                stepNumber++;
 
                 var conditionalDashboardSteps = new SeleniumDsl()
                     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
@@ -230,7 +224,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 ActualSteps.Add(new SeleniumScenarioStep
                 {
-                    StepNumber = stepNumber,
+                    StepNumber = ++stepNumber,
                     Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
                     Action = conditionalDashboardSteps,
                     Retryable = true
@@ -272,6 +266,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<SeleniumScenarioOutcome> ExecuteSeleniumStepsAsync(List<SeleniumScenarioStep> steps, ScenarioDetailsViewModel scenarioDetail, IWebDriver driver)
         {
+            var maxStep = scenarioDetail.PredictiveCompletionStep;
+
             var outcome = new SeleniumScenarioOutcome
             {
                 ScenarioId = scenarioDetail.ScenarioId,
@@ -283,6 +279,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             foreach (var step in steps)
             {
+                if (maxStep > 0 && step.StepNumber > maxStep)
+                {
+                    step.Result = new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = $"Step skipped due to predictive cutoff at step {maxStep}."
+                    };
+
+                    outcome.Expected.Steps.Add(step);
+                    continue;
+                }
+
+
                 SeleniumStepResult result = null;
 
                 try

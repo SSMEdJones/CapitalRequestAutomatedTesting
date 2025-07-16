@@ -9,24 +9,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services
     public interface IPredictiveWorkflowActionService
     {
         Task<SeleniumStepResult> ValidateWorkflowButtonAsync(vm.Proposal proposal);
-        Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId);
+        Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId, string expectedMessage);
     }
     public class PredictiveWorkflowActionService : IPredictiveWorkflowActionService
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IUserContextService _userContextService;
+        private readonly IPredictiveWorkflowStepOptionService _predictiveWorkflowStepOptionService;
         private readonly IMapper _mapper;
 
         public PredictiveWorkflowActionService(
             ISSMWorkflowServices ssmWorkflowServices,
             ICapitalRequestServices capitalRequestServices,
             IUserContextService userContextService,
+            IPredictiveWorkflowStepOptionService predictiveWorkflowStepOptionService,
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
             _userContextService = userContextService;
+            _predictiveWorkflowStepOptionService = predictiveWorkflowStepOptionService;
             _mapper = mapper;
         }
 
@@ -53,13 +56,24 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 Message = isValid
                     ? "Workflow button validation passed."
                     : "Workflow button not found for this Request."
+
             };
         }
 
-        public async Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId)
+        public async Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId, string expectedMessage)
         {
+            var responseMessage = string.Empty;
+            var buttonIsValid = (await GetWorkflowActionAsync(proposal))
+                .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId)
+                .FirstOrDefault();
 
-            bool isValid = (await GetWorkflowActionAsync(proposal)).Any();
+            var actionType = buttonIsValid != null ? buttonIsValid.ActionType : string.Empty;
+            if (buttonIsValid != null)
+            {
+                responseMessage = (await _predictiveWorkflowStepOptionService.PredictiveMessage(proposal, actionType)).ResponseMessage;
+            }
+
+            bool isValid = responseMessage == expectedMessage;
 
             return new SeleniumStepResult
             {

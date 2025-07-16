@@ -71,7 +71,10 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         public ScenarioDataViewModel ActualData { get; set; } = new();
 
+        public int PredictiveCompletionStep { get; set; }
+        public string PredictiveStopReason { get; set; }
 
+        public bool CanExecuteActualSteps { get; set; } = true;
     }
 
 }

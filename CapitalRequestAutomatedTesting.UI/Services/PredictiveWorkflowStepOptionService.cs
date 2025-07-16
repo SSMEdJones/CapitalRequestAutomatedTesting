@@ -20,6 +20,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string OptionType, int? requestedInfoId);
         Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage);
         Task<WorkflowStepOption> FindOrCreateWorkflowStepOptionAsync(vm.Proposal proposal, int reviewerGroupId, int reviewerId, string actionType);
+        Task<vm.Proposal> PredictiveMessage(vm.Proposal proposal, string actionType);
     }
 
     public class PredictiveWorkflowStepOptionService : IPredictiveWorkflowStepOptionService

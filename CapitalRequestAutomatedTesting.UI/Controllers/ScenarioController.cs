@@ -179,43 +179,92 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
         private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
         {
-            // ⏱ Measure actual execution time
-            var stopwatch = Stopwatch.StartNew();
-
-            // Predictive data
-            scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
-
-            // Predictive Selenium outcome
+            // Step 1: Predictive Selenium
             scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
+            var completionStep = scenario.PredictiveCompletionStep;
+
+            var stopwatch = Stopwatch.StartNew();
+
+            // Step 2: Predictive Data (only if prediction succeeded)
+            if (scenario.PredictedSeleniumOutcome.Success)
+            {
+                scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
+            }
+
+            // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
             scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
-            stopwatch.Stop();
 
-            // Retrieve actual data
-            scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+            // Step 4: Actual Data (only if prediction succeeded)
+            if (scenario.PredictedSeleniumOutcome.Success)
+            {
+                scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+                stopwatch.Stop();
 
-            scenario.ActualData.ActualExecutionDuration = stopwatch.Elapsed;
-            // Store rounded-up duration in minutes
-
-            scenario.ActualData.ActualExecutionDurationMinutes = (int)Math.Ceiling(stopwatch.Elapsed.TotalMinutes);
+                scenario.ActualData.ActualExecutionDuration = stopwatch.Elapsed;
+                scenario.ActualData.ActualExecutionDurationMinutes = (int)Math.Ceiling(stopwatch.Elapsed.TotalMinutes);
+            }
 
             return scenario;
         }
 
         //private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
         //{
-        //    //var runner = new ScenarioSeleniumRunner(_actualSeleniumService);
-        //    //var outcome = await runner.RunScenarioAsync(scenario);
+        //    // Predictive Selenium outcome
+        //    scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+
+        //    // Check if predictive failed
+        //    if (!scenario.PredictedSeleniumOutcome.Success)
+        //    {
+        //        scenario.CanExecuteActualSteps = false;
+        //        scenario.PredictiveStopReason = "Predictive Selenium outcome failed — halting actual execution.";
+        //        return scenario;
+        //    }
+
+        //    // ⏱ Measure actual execution time
+        //    var stopwatch = Stopwatch.StartNew();
 
         //    // Predictive data
         //    scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
-        //    // Run Selenium Scenario
-        //    scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+        //    // Actual Selenium outcome (match steps up to prediction limit if needed)
         //    scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
-        //    // Retrieve data
+        //    stopwatch.Stop();
+
+        //    // Conditional actual data retrieval
+        //    if (scenario.CanExecuteActualSteps)
+        //    {
+        //        scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+        //        scenario.ActualData.ActualExecutionDuration = stopwatch.Elapsed;
+        //        scenario.ActualData.ActualExecutionDurationMinutes = (int)Math.Ceiling(stopwatch.Elapsed.TotalMinutes);
+        //    }
+
+        //    return scenario;
+        //}
+
+        //private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
+        //{
+
+        //    // Predictive Selenium outcome
+        //    scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+
+        //    // ⏱ Measure actual execution time
+        //    var stopwatch = Stopwatch.StartNew();
+
+        //    // Predictive data
+        //    scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
+
+        //    scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+        //    stopwatch.Stop();
+
+        //    // Retrieve actual data
         //    scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+
+        //    scenario.ActualData.ActualExecutionDuration = stopwatch.Elapsed;
+        //    // Store rounded-up duration in minutes
+
+        //    scenario.ActualData.ActualExecutionDurationMinutes = (int)Math.Ceiling(stopwatch.Elapsed.TotalMinutes);
 
         //    return scenario;
         //}

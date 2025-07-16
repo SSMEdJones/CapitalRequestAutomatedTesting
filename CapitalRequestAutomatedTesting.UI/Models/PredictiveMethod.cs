@@ -5,6 +5,8 @@ namespace CapitalRequestAutomatedTesting.UI.Models
     public class PredictiveMethod
     {
         public int Id { get; set; }
+        public int StepNumber { get; set; }
+
         public int Order { get; set; }
         public string ScenarioId { get; set; }
         public string ServiceName { get; set; } = string.Empty;
