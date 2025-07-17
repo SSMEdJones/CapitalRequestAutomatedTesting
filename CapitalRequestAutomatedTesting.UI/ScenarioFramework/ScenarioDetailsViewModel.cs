@@ -58,10 +58,10 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public int RequestCount { get; set; }
 
         [ValidateNever]
-        public SeleniumScenarioOutcome PredictedSeleniumOutcome { get; set; }
+        public SeleniumScenarioOutcome PredictedSeleniumOutcome { get; set; } = new ();
 
         [ValidateNever]
-        public SeleniumScenarioOutcome ActualSeleniumOutcome { get; set; }
+        public SeleniumScenarioOutcome ActualSeleniumOutcome { get; set; } = new ();
 
         [ValidateNever]
 

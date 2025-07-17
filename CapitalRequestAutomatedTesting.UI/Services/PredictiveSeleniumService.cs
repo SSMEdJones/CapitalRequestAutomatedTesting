@@ -89,12 +89,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<SeleniumScenarioOutcome> ExecuteSeleniumMethodsAsync(List<PredictiveMethod> methods, ScenarioDetailsViewModel scenarioDetail)
         {
-            var outcome = new SeleniumScenarioOutcome
-            {
-                Expected = new SeleniumScenarioResult()
-            };
+            var outcome = scenarioDetail.PredictedSeleniumOutcome;
+            //outcome.Expected
+            //{
+            //    Expected = new SeleniumScenarioResult()
+            //};
 
             bool hasFailed = false;
+            scenarioDetail.PredictedSeleniumOutcome.Success = true;
 
             foreach (var method in methods)
             {
@@ -108,6 +110,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     {
                         hasFailed = true;
                         outcome.Expected.Success = false;
+                        outcome.Success = false;
                         scenarioDetail.PredictiveStopReason = $"Step {method.StepNumber} failed due to: {result.Message}";
                     }
                     else

@@ -3,7 +3,7 @@
     public class SeleniumScenarioOutcome
     {
         public string ScenarioId { get; set; }
-        public SeleniumScenarioResult Expected { get; set; }
+        public SeleniumScenarioResult Expected { get; set; } = new();
         public SeleniumScenarioResult Actual { get; set; }  
         public SeleniumScenarioComparisonResult Comparison { get; set; }
 
