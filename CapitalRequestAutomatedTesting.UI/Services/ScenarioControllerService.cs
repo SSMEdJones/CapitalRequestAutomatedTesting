@@ -13,7 +13,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
     {
         //Task<List<object>> GetAvailableScenariosAsync();
         IActionResult GetScenarioPartialView(string scenarioId);
-        Task<List<SelectListItem>> GetReviewersByRequestingGroupAsync(int proposalId, int requestingGroupId);
+        Task<List<SelectListItem>> GetReviewersBySelectedGroupAsync(int proposalId, int requestingGroupId);
 
         string GetScenarioViewName(string scenarioId);
         Task<ScenarioFormViewModel> GenerateScenarioFormViewModel(int? requestId);
@@ -60,9 +60,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 {
                     ScenarioId = "SCN002",
                     PartialViewName = "_ReplyToRequest",
-                    DisplayText  = "Reply to request",
+                    DisplayText  = "Reply to Request",
                     SequenceNumber = 2,
-                    RequestingGroups = requestId.HasValue ? await GetRequestingGroupsAsync(requestId.Value) : new List<SelectListItem>(),
+                    ReplyingGroups = requestId.HasValue ? await GetReplyingGroupsAsync(requestId.Value) : new List<SelectListItem>(),
                     //TargetGroups = requestId.HasValue ? await GetTargetGroupsByRequestIdAsync(requestId.Value, null) : new List<SelectListItem>(),
                     //Reviewers = requestId.HasValue ? await GetReviewersByRequestIdAsync(requestId.Value) : new List<SelectListItem>()
                 }
@@ -101,6 +101,50 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                  };
              });
            
+        }
+
+        public async Task<List<SelectListItem>> GetReplyingGroupsAsync(int proposalId)
+        {
+
+            var WorkflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId, Constants.ACTION_TYPE_ADD_INFO))
+                .Select(x => x.WorkflowPortion)
+                .Distinct()
+                .ToList();
+
+            var groups = await GetAvailableNamesAsync(WorkflowPortions);
+
+            return groups
+                .ToList()
+                .ConvertAll(x =>
+                {
+                    return new SelectListItem()
+                    {
+                        Text = x.Name,
+                        Value = x.Id.ToString()
+                    };
+                });
+
+        }
+
+        private async Task<List<vm.ReviewerGroup>> GetAvailableNamesAsync(List<string> WorkflowPortions)
+        {
+            var availableNames = new List<string>();
+
+            WorkflowPortions.ForEach(x =>
+            {
+                var groupName = ExtractGroupName(x);
+                availableNames.Add(groupName);
+
+            });
+
+            var groups = await _capitalRequestServices.GetAllReviewerGroups(new ReviewerGroupSearchFilter { ReviewerType = Constants.REVIEW_TYPE_REVIEW });
+
+            groups = (from data in groups
+                      join name in availableNames on data.Name equals name
+                      select data)
+                      .ToList();
+
+            return groups;
         }
 
         public async Task<(List<SelectListItem> RequestingGroups, List<SelectListItem> TargetGroups)> BuildRequestingAndTargetGroupsAsync(int proposalId, int? requestingGroupId)
@@ -170,29 +214,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 });
 
         }
-        public async Task<List<CapitalRequest.API.Models.ReviewerGroup>> GetFilteredReviewerGroups(int proposalId, int? requestingGroupId)
+        public async Task<List<vm.ReviewerGroup>> GetFilteredReviewerGroups(int proposalId, int? requestingGroupId)
         {
             var proposal = await _capitalRequestServices.GetProposal(proposalId);
             var WorkflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId))
                 .Select(x => x.WorkflowPortion)
                 .Distinct()
                 .ToList();
-            
-            var availableNames = new List<string>();
-            
-            WorkflowPortions.ForEach(x =>
-            {
-                var groupName = ExtractGroupName(x);
-                availableNames.Add(groupName);
 
-            });
-
-            var groups = await _capitalRequestServices.GetAllReviewerGroups(new ReviewerGroupSearchFilter { ReviewerType = Constants.REVIEW_TYPE_REVIEW });
-
-            groups = (from data in groups
-                      join name in availableNames on data.Name equals name
-                      select data)
-                      .ToList();
+            var groups = await GetAvailableNamesAsync(WorkflowPortions);
 
             var author = (await _capitalRequestServices
                 .GetAllReviewerGroups(new ReviewerGroupSearchFilter { Name = Constants.REVIEWER_GROUP_AUTHOR, StepNumber = null }))
@@ -274,7 +304,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             };
         }
 
-        public async Task<List<SelectListItem>> GetReviewersByRequestingGroupAsync(int proposalId, int requestingGroupId)
+        public async Task<List<SelectListItem>> GetReviewersBySelectedGroupAsync(int proposalId, int reviewerGroupId)
         {
             var proposal = await _capitalRequestServices.GetProposal(proposalId);
             var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId)).FirstOrDefault();
@@ -286,7 +316,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 RegionId = proposal.Region,
                 SegmentId = proposal.SegmentId,
                 StepNumber = workflowTemplate?.StepNumber,
-                ReviewerGroupId = requestingGroupId
+                ReviewerGroupId = reviewerGroupId
             };
             var reviewers = await _capitalRequestServices.GetAllReviewers(filter);
 

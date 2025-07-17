@@ -51,6 +51,12 @@ function bindRequestIdEvents() {
             .then(html => {
                 scenarioContainer.innerHTML = html;
                 cancelDelayedLoading();
+
+                console.log("Scenario content injected");
+
+                // ✅ Re-bind events for newly injected content
+            //    bindSelectedGroupEvents();
+            //    bindReviewerEvents();
             })
             .catch(error => {
                 console.error("Error loading scenarios:", error);
@@ -102,13 +108,14 @@ function bindRequestIdEvents() {
 //    });
 //}
 
-function bindRequestingGroupEvents() {
+function bindSelectedGroupEvents() {
     const requestingGroupSelect = document.getElementById("RequestingGroupId");
+    const replyingGroupSelect = document.getElementById("ReplyingGroupId");
     const targetGroupSelect = document.getElementById("TargetGroupId");
     const reviewerSelect = document.getElementById("ReviewerId");
     const proposalId = document.getElementById("RequestId")?.value;
 
-    if (!requestingGroupSelect || !targetGroupSelect || !reviewerSelect) return;
+    if ((!requestingGroupSelect && !replyingGroupSelect) || !targetGroupSelect || !reviewerSelect) return;
 
     if (requestingGroupSelect.dataset.bound === "true") return;
     requestingGroupSelect.dataset.bound = "true";
@@ -144,45 +151,109 @@ function bindRequestingGroupEvents() {
             });
     });
 }
-
-function bindReviewerEvents() {
+function bindReviewerEvents(partial) {
     const reviewerSelect = partial.querySelector('[id$="ReviewerId"]');
     const emailInput = partial.querySelector('[id$="ReviewerEmail"]');
     const userIdInput = partial.querySelector('[id$="ReviewerUserId"]');
-    const requestedInfoTextarea = partial.querySelector('[id$="RequestedInformation"]');
+    const requestedInfoTextarea = partial.querySelector('[id$="RequestedInformation"]'); // may not exist
 
-    if (!reviewerSelect || !emailDisplay || !userIdDisplay || !requestedInfoTextarea) return;
+    if (!reviewerSelect) {
+        console.warn("Reviewer select not found");
+        return;
+    }
 
+    console.log("✅ Bound reviewer change event");
     reviewerSelect.addEventListener("change", function () {
         console.log("✅ Reviewer changed:", this.value);
-
         const reviewerId = this.value;
         const proposalId = document.getElementById("RequestId")?.value;
         const requestingGroupId = document.getElementById("RequestingGroupId")?.value;
-        const targetGroupId = document.getElementById("TargetGroupId")?.value;
+        const replyingGroupId = document.getElementById("ReplyingGroupId")?.value;
+        //const targetGroupId = document.getElementById("TargetGroupId")?.value ?? "";
         const displayText = document.getElementById("DisplayText")?.value || "Request More Information";
 
-        if (!reviewerId || !proposalId || !requestingGroupId || !targetGroupId) {
-            console.warn("Missing required values for fetch");
+        const groupId = requestingGroupId || replyingGroupId;
+        const groupType = requestingGroupId ? "requesting" : "replying";
+
+        if (!reviewerId || !proposalId || !groupId) {
+            console.warn("Missing required values for reviewer fetch");
             return;
         }
 
         showLoadingDelayed("Loading Reviewer Details...", 200);
-        fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&requestingGroupId=${requestingGroupId}&targetGroupId=${targetGroupId}&displayText=${encodeURIComponent(displayText)}`)
-            .then(response => response.json())
-            .then(data => {
-                emailDisplay.textContent = data.reviewerEmail;
-                userIdDisplay.textContent = data.reviewerUserId;
-                requestedInfoTextarea.value = data.requestedInformation;
-                cancelDelayedLoading();
-            })
-            .catch(error => {
-                console.error("Error loading reviewer details:", error);
-                cancelDelayedLoading();
-            });
-    });
+        //const params = new URLSearchParams({
+        //    reviewerId,
+        //    proposalId,
+        //    groupId,
+        //    groupType,
+        //    targetGroupId,
+        //    displayText
+        //});
 
+        let targetGroupId = document.getElementById("TargetGroupId")?.value;
+        if (!targetGroupId || targetGroupId === "undefined") {
+            targetGroupId = "";
+        }
+        console.log("targetGroupId being sent:", targetGroupId);
+
+        //fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&groupId=${groupId}&groupType=${groupType}&targetGroupId=${targetGroupId}&displayText=${encodeURIComponent(displayText)}`)
+
+        ////fetch(`/Scenario/GetReviewerDetails?${params.toString()}`)
+        //    .then(response => response.json())
+        //    .then(data => {
+        //        if (emailInput) emailInput.value = data.reviewerEmail;
+        //        if (userIdInput) userIdInput.value = data.reviewerUserId;
+        //        if (requestedInfoTextarea) {
+        //            requestedInfoTextarea.value = data.requestedInformation || "";
+        //        }
+
+        //        cancelDelayedLoading();
+        //    })
+        //    .catch(error => {
+        //        console.error("Error loading reviewer details:", error);
+        //        cancelDelayedLoading();
+        //    });
+    });
 }
+
+//function bindReviewerEvents() {
+//    const reviewerSelect = partial.querySelector('[id$="ReviewerId"]');
+//    const emailInput = partial.querySelector('[id$="ReviewerEmail"]');
+//    const userIdInput = partial.querySelector('[id$="ReviewerUserId"]');
+//    const requestedInfoTextarea = partial.querySelector('[id$="RequestedInformation"]');
+
+//    if (!reviewerSelect || !emailDisplay || !userIdDisplay || !requestedInfoTextarea) return;
+
+//    reviewerSelect.addEventListener("change", function () {
+//        console.log("✅ Reviewer changed:", this.value);
+
+//        const reviewerId = this.value;
+//        const proposalId = document.getElementById("RequestId")?.value;
+//        const requestingGroupId = document.getElementById("RequestingGroupId")?.value;
+//        const targetGroupId = document.getElementById("TargetGroupId")?.value;
+//        const displayText = document.getElementById("DisplayText")?.value || "Request More Information";
+
+//        if (!reviewerId || !proposalId || !requestingGroupId || !targetGroupId) {
+//            console.warn("Missing required values for fetch");
+//            return;
+//        }
+
+//        showLoadingDelayed("Loading Reviewer Details...", 200);
+//        fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&requestingGroupId=${requestingGroupId}&targetGroupId=${targetGroupId}&displayText=${encodeURIComponent(displayText)}`)
+//            .then(response => response.json())
+//            .then(data => {
+//                emailDisplay.textContent = data.reviewerEmail;
+//                userIdDisplay.textContent = data.reviewerUserId;
+//                requestedInfoTextarea.value = data.requestedInformation;
+//                cancelDelayedLoading();
+//            })
+//            .catch(error => {
+//                console.error("Error loading reviewer details:", error);
+//                cancelDelayedLoading();
+//            });
+//    });
+
+//}
 
 
 
@@ -190,6 +261,7 @@ function bindReviewerEvents() {
 const observer = new MutationObserver((mutations, obs) => {
     const requestSelect = document.getElementById("RequestId");
     const requestingGroupSelect = document.getElementById("RequestingGroupId");
+    const replyingGroupSelect = document.getElementById("ReplyingGroupId");
     const targetGroupSelect = document.getElementById("TargetGroupId");
     const reviewerSelect = document.getElementById("ReviewerId");
 
@@ -197,8 +269,8 @@ const observer = new MutationObserver((mutations, obs) => {
         bindRequestIdEvents();
     }
 
-    if (requestingGroupSelect && targetGroupSelect) {
-        bindRequestingGroupEvents();
+    if ((requestingGroupSelect && targetGroupSelect) || replyingGroupSelect) {
+        bindSelectedGroupEvents();
     }
 
     if (reviewerSelect) {
@@ -224,81 +296,183 @@ document.addEventListener('change', function (e) {
             if (e.target.checked) {
                 // Wait for DOM to update
                 setTimeout(() => {
+                    const proposalId = document.getElementById("RequestId")?.value;
 
                     const requestingGroupSelect = partial.querySelector('[id$="RequestingGroupId"]');
+                    const replyingGroupSelect = partial.querySelector('[id$="ReplyingGroupId"]');
                     const targetGroupSelect = partial.querySelector('[id$="TargetGroupId"]');
                     const reviewerSelect = partial.querySelector('[id$="ReviewerId"]');
 
-                    if (!requestingGroupSelect || !targetGroupSelect || !reviewerSelect) {
-                        console.warn("Missing one or more group dropdowns in partial");
+
+                    const groupSelect = requestingGroupSelect || replyingGroupSelect;
+                    const groupType = requestingGroupSelect ? "requesting" : "replying";
+
+                    if (!groupSelect || !reviewerSelect) {
+                        console.warn("Missing group or reviewer dropdown");
                         return;
                     }
 
-                    // Prevent double-binding
-                    if (requestingGroupSelect.dataset.bound === "true") return;
-                    requestingGroupSelect.dataset.bound = "true";
+                    if (groupSelect.dataset.bound === "true") return;
+                    groupSelect.dataset.bound = "true";
 
-                    requestingGroupSelect.addEventListener("change", function () {
-                        const proposalId = document.getElementById("RequestId")?.value;
-                        const requestingGroupId = this.value;
+                    groupSelect.addEventListener("change", function () {
+                        const groupId = this.value;
+                        if (!groupId || !proposalId) return;
 
-                        if (!requestingGroupId || !proposalId) return;
-
-                        fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&requestingGroupId=${requestingGroupId}`)
+                        fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&groupId=${groupId}&groupType=${groupType}`)
                             .then(response => response.json())
                             .then(data => {
-                                targetGroupSelect.innerHTML = '<option value="">--Select One--</option>';
-                                data.targetGroups.forEach(group => {
-                                    const option = document.createElement("option");
-                                    option.value = group.value;
-                                    option.text = group.text;
-                                    targetGroupSelect.appendChild(option);
-                                });
+                                if (targetGroupSelect) {
+                                    targetGroupSelect.innerHTML = '<option value="">--Select One--</option>';
+                                    data.targetGroups?.forEach(group => {
+                                        const option = document.createElement("option");
+                                        option.value = group.value;
+                                        option.text = group.text;
+                                        targetGroupSelect.appendChild(option);
+                                    });
+                                }
 
                                 reviewerSelect.innerHTML = '<option value="">--Select Reviewer--</option>';
-                                data.reviewers.forEach(reviewer => {
+                                data.reviewers?.forEach(reviewer => {
                                     const option = document.createElement("option");
                                     option.value = reviewer.value;
                                     option.text = reviewer.text;
                                     reviewerSelect.appendChild(option);
                                 });
 
-                                // ✅ Re-bind the change event after populating
                                 reviewerSelect.addEventListener("change", function () {
-                                    console.log("✅ Reviewer changed:", this.value);
-
                                     const reviewerId = this.value;
-                                    const proposalId = document.getElementById("RequestId")?.value;
-                                    const requestingGroupId = partial.querySelector('[id$="RequestingGroupId"]')?.value;
-                                    const targetGroupId = partial.querySelector('[id$="TargetGroupId"]')?.value;
-                                    const displayText = partial.querySelector('[id$="DisplayText"]')?.value || "Request More Information";
+                                    const requestingGroupId = requestingGroupSelect?.value ?? "";
+                                    const targetGroupId = targetGroupSelect?.value ?? "";
+                                    const replyingGroupId = replyingGroupSelect?.value ?? "";
+                                    //TODO fix what is returned by querySelector
+                                    //const displayText = partial.querySelector('[id$="DisplayText"]')?.value || "Request More Information";
+                                    let displayText = partial.querySelector('[id$="DisplayText"]')?.value || "Request More Information";
 
-                                    if (!reviewerId || !proposalId || !requestingGroupId || !targetGroupId) {
-                                        console.warn("Missing required values for reviewer fetch");
-                                        return;
+                                    if (groupType == "replying")
+                                    {
+                                        displayText = "Reply to Request"
                                     }
+                                    const params = new URLSearchParams({
+                                        reviewerId,
+                                        proposalId,
+                                        requestingGroupId,
+                                        targetGroupId,
+                                        replyingGroupId,
+                                        displayText
+                                    });
+                                    //        public async Task<IActionResult> GetReviewerDetails(int reviewerId, int proposalId, int? requestingGroupId, int? targetGroupId, string displayText, int? replyingGroupId)
 
-                                    fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&requestingGroupId=${requestingGroupId}&targetGroupId=${targetGroupId}&displayText=${encodeURIComponent(displayText)}`)
+                                    fetch(`/Scenario/GetReviewerDetails?${params.toString()}`)
+
+                                    //fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&requestingGroupId=${requestingGroupId}&targetGroupId=${targetGroupId}&replyingGroupId=${replyingGroupId}&displayText=${encodeURIComponent(displayText)}`)
                                         .then(response => response.json())
                                         .then(data => {
                                             const emailInput = partial.querySelector('[id$="ReviewerEmail"]');
                                             const userIdInput = partial.querySelector('[id$="ReviewerUserId"]');
                                             const requestedInfoTextarea = partial.querySelector('[id$="RequestedInformation"]');
+                                            const returnedInfoTextarea = partial.querySelector('[id$="ReturnedInformation"]');
 
                                             if (emailInput) emailInput.value = data.reviewerEmail;
                                             if (userIdInput) userIdInput.value = data.reviewerUserId;
                                             if (requestedInfoTextarea) requestedInfoTextarea.value = data.requestedInformation;
+                                            if (returnedInfoTextarea) returnedInfoTextarea.value = data.returnedInformation;
                                         });
                                 });
-
                             });
                     });
                 }, 0);
-
             }
         }
     }
 });
+
+//document.addEventListener('change', function (e) {
+//    if (e.target.name === 'SelectedScenarioIds') {
+//        const targetId = e.target.getAttribute('data-target');
+//        const partial = document.getElementById(targetId);
+
+//        if (partial) {
+//            partial.style.display = e.target.checked ? 'block' : 'none';
+
+//            if (e.target.checked) {
+//                // Wait for DOM to update
+//                setTimeout(() => {
+
+//                    const requestingGroupSelect = partial.querySelector('[id$="RequestingGroupId"]');
+//                    const targetGroupSelect = partial.querySelector('[id$="TargetGroupId"]');
+//                    const reviewerSelect = partial.querySelector('[id$="ReviewerId"]');
+
+//                    if (!requestingGroupSelect || !targetGroupSelect || !reviewerSelect) {
+//                        console.warn("Missing one or more group dropdowns in partial");
+//                        return;
+//                    }
+
+//                    // Prevent double-binding
+//                    if (requestingGroupSelect.dataset.bound === "true") return;
+//                    requestingGroupSelect.dataset.bound = "true";
+
+//                    requestingGroupSelect.addEventListener("change", function () {
+//                        const proposalId = document.getElementById("RequestId")?.value;
+//                        const requestingGroupId = this.value;
+
+//                        if (!requestingGroupId || !proposalId) return;
+
+//                        fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&requestingGroupId=${requestingGroupId}`)
+//                            .then(response => response.json())
+//                            .then(data => {
+//                                targetGroupSelect.innerHTML = '<option value="">--Select One--</option>';
+//                                data.targetGroups.forEach(group => {
+//                                    const option = document.createElement("option");
+//                                    option.value = group.value;
+//                                    option.text = group.text;
+//                                    targetGroupSelect.appendChild(option);
+//                                });
+
+//                                reviewerSelect.innerHTML = '<option value="">--Select Reviewer--</option>';
+//                                data.reviewers.forEach(reviewer => {
+//                                    const option = document.createElement("option");
+//                                    option.value = reviewer.value;
+//                                    option.text = reviewer.text;
+//                                    reviewerSelect.appendChild(option);
+//                                });
+
+//                                // ✅ Re-bind the change event after populating
+//                                reviewerSelect.addEventListener("change", function () {
+//                                    console.log("✅ Reviewer changed:", this.value);
+
+//                                    const reviewerId = this.value;
+//                                    const proposalId = document.getElementById("RequestId")?.value;
+//                                    const requestingGroupId = partial.querySelector('[id$="RequestingGroupId"]')?.value;
+//                                    const targetGroupId = partial.querySelector('[id$="TargetGroupId"]')?.value;
+//                                    const displayText = partial.querySelector('[id$="DisplayText"]')?.value || "Request More Information";
+
+//                                    if (!reviewerId || !proposalId || !requestingGroupId || !targetGroupId) {
+//                                        console.warn("Missing required values for reviewer fetch");
+//                                        return;
+//                                    }
+
+//                                    fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&requestingGroupId=${requestingGroupId}&targetGroupId=${targetGroupId}&displayText=${encodeURIComponent(displayText)}`)
+//                                        .then(response => response.json())
+//                                        .then(data => {
+//                                            const emailInput = partial.querySelector('[id$="ReviewerEmail"]');
+//                                            const userIdInput = partial.querySelector('[id$="ReviewerUserId"]');
+//                                            const requestedInfoTextarea = partial.querySelector('[id$="RequestedInformation"]');
+
+//                                            if (emailInput) emailInput.value = data.reviewerEmail;
+//                                            if (userIdInput) userIdInput.value = data.reviewerUserId;
+//                                            if (requestedInfoTextarea) requestedInfoTextarea.value = data.requestedInformation;
+//                                        });
+//                                });
+
+//                            });
+//                    });
+//                }, 0);
+
+//            }
+//        }
+//    }
+//});
 
 function showSpinner(message = "Loading...") {
     const modal = document.getElementById("loadingModal");
@@ -380,7 +554,6 @@ function hideLoading() {
     const modal = document.getElementById('loadingModal');
     modal.style.display = 'none';
 }
-
 
 
 

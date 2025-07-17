@@ -24,6 +24,9 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [Range(1, int.MaxValue, ErrorMessage = "Please select a valid requesting group.")]
         public int? RequestingGroupId { get; set; }
 
+        [DisplayName("Replying Group:")]
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a valid replying group.")]
+        public int? ReplyingGroupId { get; set; }
         [DisplayName("Target Group:")]
         [Range(1, int.MaxValue, ErrorMessage = "Please select a valid target group.")]
         public int? TargetGroupId { get; set; }
@@ -49,9 +52,14 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [Required(ErrorMessage = "Requested Information is required.")]
         public string RequestedInformation { get; set; } = string.Empty;
 
+        [DisplayName("Returned Information:")]
+        [Required(ErrorMessage = "Returned Information is required.")]
+        public string ReturnedInformation { get; set; } = string.Empty;
+
         public string Message { get; set; } = string.Empty;
 
         public List<SelectListItem> RequestingGroups { get; set; } = new();
+        public List<SelectListItem> ReplyingGroups { get; set; } = new();
         public List<SelectListItem> TargetGroups { get; set; } = new();
         public List<SelectListItem> Reviewers { get; set; } = new();
 

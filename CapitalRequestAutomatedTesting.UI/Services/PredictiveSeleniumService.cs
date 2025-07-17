@@ -82,6 +82,30 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 seleniumScenarioOutcome = await ExecuteSeleniumMethodsAsync(methods, scenarioDetail);
             }
 
+            if (scenarioId == "SCN002")
+            {
+                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                //var targetGroup = await _capitalRequestServices.GetReviewerGroup(detail.TargetGroupId);
+                var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+
+                scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
+                scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
+                scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
+                //scenarioDetail.SelectedProperties["Target Group"] = targetGroup.Name;
+                scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
+                scenarioDetail.SelectedProperties["Requested Information"] = scenarioDetail.RequestedInformation;
+
+
+                var methods = await GetSeleniumMethodsAsync(scenarioDetail);
+                seleniumScenarioOutcome = await ExecuteSeleniumMethodsAsync(methods, scenarioDetail);
+            }
             seleniumScenarioOutcome.ScenarioId = scenarioId;
 
             return seleniumScenarioOutcome;

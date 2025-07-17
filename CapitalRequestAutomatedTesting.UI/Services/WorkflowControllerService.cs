@@ -23,6 +23,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         Task<DashboardInitializationResult> InitializeDashboardItemsAsync();
         Task<List<CapitalRequest.API.Models.WorkflowAction>> GetWorkflowActionsFromApiAsync(int? id);
+        Task<List<CapitalRequest.API.Models.WorkflowAction>> GetWorkflowActionsFromApiAsync(int? id, string actionType);
         Task<Request> GetRequestByIdAsync(int id);
         WorkflowTestResult RunLoadButtonTest(WorkflowTestContext context);
         Task<WorkflowTestResult> RunLoadVerifyButtonTestAsync(WorkflowTestContext context);
@@ -85,6 +86,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var filter = new WorkflowActionSearchFilter { Id = id, UserId = applicationUser.UserId, Email = applicationUser.Email };
 
             var workflowActions = await _capitalRequestServices.GetAllWorkflowActions(filter);
+
+            return workflowActions;
+        }
+
+        public async Task<List<CapitalRequest.API.Models.WorkflowAction>> GetWorkflowActionsFromApiAsync(int? id, string actionType)
+        {
+            //TODO Implement persona
+            var userId = _userContextService.UserId;
+
+            var applicationUser = await _capitalRequestServices.GetApplicationUser(userId);
+
+            var filter = new WorkflowActionSearchFilter { Id = id, UserId = applicationUser.UserId, Email = applicationUser.Email };
+
+            var workflowActions = (await _capitalRequestServices.GetAllWorkflowActions(filter))
+                .Where(x => x.ActionType == actionType)
+                .ToList();
 
             return workflowActions;
         }

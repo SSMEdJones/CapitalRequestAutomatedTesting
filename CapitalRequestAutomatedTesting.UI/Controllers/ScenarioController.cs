@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
@@ -96,19 +97,53 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetReviewerDetails(int reviewerId, int proposalId, int requestingGroupId, int targetGroupId, string displayText)
+        public async Task<IActionResult> GetReviewerDetails(int reviewerId, int proposalId, int? requestingGroupId, int? targetGroupId, int? replyingGroupId,string displayText)
         {
             var reviewer = await _scenarioControllerService.GetReviewerByIdAsync(reviewerId);
-            var requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId);
-            var targetGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(targetGroupId);
 
-            var requestedInfo = $"{requestingGroup.Name} requesting more information from {targetGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
+            var requestedInfo = string.Empty;
+            var returnedInfo = string.Empty;
+            var requestingGroup = new ReviewerGroup();
+            var targetGroup = new ReviewerGroup();
+            var replyingGroup = new ReviewerGroup();
+            if (requestingGroupId.HasValue)
+            {
+                requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId.Value);
+                if (targetGroupId.HasValue)
+                {
+                    targetGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(targetGroupId.Value);
+                }
+
+                if (requestingGroupId.HasValue && targetGroupId.HasValue)
+                {
+                    requestedInfo = $"{requestingGroup.Name} requesting more information from {targetGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
+                }
+
+            }
+            else if (replyingGroupId.HasValue)
+            {
+                var filter = new CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter
+                {
+                    ProposalId = proposalId,
+                    IsOpen = true,
+                    ReviewerGroupId = replyingGroupId
+                };
+
+                //TODO will need to supply RequestingGroupId for instances with multiple requesters to the same group
+                var requestedInfos = await _capitalRequestServices.GetAllRequestedInfos(filter);
+                requestingGroupId = requestedInfos.FirstOrDefault()?.RequestingReviewerGroupId;
+
+                requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId.Value);
+                replyingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(replyingGroupId.Value);
+                returnedInfo = $"{replyingGroup.Name} replying to request for more information from {requestingGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
+            }
 
             return Json(new
             {
                 reviewerEmail = reviewer.Email,
                 reviewerUserId = reviewer.UserId,
-                requestedInformation = requestedInfo
+                requestedInformation = requestedInfo,
+                returnedInformation = returnedInfo
             });
         }
 
@@ -307,16 +342,26 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
 
         [HttpGet]
-        public async Task<JsonResult> GetTargetGroupsAndReviewers(int proposalId, int requestingGroupId)
+        public async Task<JsonResult> GetTargetGroupsAndReviewers(int proposalId, int groupId, string groupType)
         {
-            var targetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(proposalId, requestingGroupId);
-            var reviewers = await _scenarioControllerService.GetReviewersByRequestingGroupAsync(proposalId, requestingGroupId);
+            var targetGroups = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+            var reviewers = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+
+            if (groupType == "requesting")
+            {
+                targetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(proposalId, groupId);
+                reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
+            }
+            else if (groupType == "replying")
+            {
+                reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
+            }
 
             return Json(new
-            {
-                targetGroups,
-                reviewers
-            });
+                {
+                    targetGroups,
+                    reviewers
+                });
         }
 
         //public async Task<IActionResult> PrintScenarioPdf(int scenarioId)

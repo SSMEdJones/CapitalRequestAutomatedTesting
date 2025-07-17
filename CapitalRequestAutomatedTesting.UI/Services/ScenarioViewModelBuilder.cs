@@ -26,7 +26,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 vm.RequestingGroups = requestingGroups;
                 vm.TargetGroups = targetGroups;
-                vm.Reviewers = await _scenarioControllerService.GetReviewersByRequestingGroupAsync(proposalId, vm.RequestingGroupId ?? 0);
+                vm.Reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, vm.RequestingGroupId ?? 0);
 
                 // Set selected items
                 vm.RequestingGroups.ForEach(x => x.Selected = x.Value == vm.RequestingGroupId?.ToString());

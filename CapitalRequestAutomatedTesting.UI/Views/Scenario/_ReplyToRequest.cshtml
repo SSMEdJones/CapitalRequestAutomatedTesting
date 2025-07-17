@@ -1,21 +1,39 @@
-﻿<div>
-    <label>Requesting Group:</label>
-    
+﻿@using CapitalRequestAutomatedTesting.UI.ScenarioFramework
+@model ScenarioDetailsViewModel
 
-    <label>Target Group:</label>
-    <select name="targetGroup">
-        <option value="GroupX">Group X</option>
-        <option value="GroupY">Group Y</option>
-    </select>
+<div>
+    <div class="form-group">
+        <label asp-for="ReplyingGroupId" class="control-label"></label>
+            <select asp-for="ReplyingGroupId" asp-items="Model.ReplyingGroups" class="form-control">
+            <option value="">-- Select One --</option>
+        </select>
+    </div>
 
-    <label>Reviewer:</label>
-    <select name="reviewer">
-        <option value="GroupX">Group X</option>
-        <option value="GroupY">Group Y</option>
-    </select>
+    <div class="form-group">
+        <label asp-for="ReviewerId" class="control-label"></label>
+        <select asp-for="ReviewerId" asp-items="Model.Reviewers" class="form-control">
+            <option value="">-- Select Reviewer --</option>
+        </select>
+    </div>
 
-    <input type="text" name="reviewer" placeholder="Reviewer Name" />
 
-    <label>Message:</label>
-    <textarea name="message">Please provide more information...</textarea>
+    <div class="form-group">
+        <label asp-for="ReviewerEmail" class="control-label"></label>
+        <input asp-for="ReviewerEmail" class="form-control" readonly />
+        <input type="hidden" asp-for="ReviewerEmail" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ReviewerUserId" class="control-label"></label>
+        <input asp-for="ReviewerUserId" class="form-control" readonly />
+        <input type="hidden" asp-for="ReviewerUserId" />
+    </div>
+
+
+    <div class="form-group">
+        <label asp-for="ReturnedInformation" class="control-label"></label>
+        <textarea asp-for="ReturnedInformation" class="form-control"></textarea>
+    </div>
 </div>
+
+
