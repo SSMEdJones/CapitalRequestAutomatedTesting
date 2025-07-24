@@ -23,7 +23,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id);
         Task<SeleniumStepResult> ValidateTargetGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
         Task<CapitalRequest.API.Models.ReviewerGroup> GetReviewerGroupByIdAsync(int id);
+        Task<List<SelectListItem>> GetRequestingGroupsByReplyingIdAsync(int proposalId, int replyingGroupId);
         Task<(List<SelectListItem> RequestingGroups, List<SelectListItem> TargetGroups)> BuildRequestingAndTargetGroupsAsync(int proposalId, int? requestingGroupId);
+        Task<ScenarioDetailsViewModel> GetScenarioDetail(string scenarioId, int requestId);
 
     }
 
@@ -44,6 +46,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<ScenarioFormViewModel> GenerateScenarioFormViewModel(int? requestId = null)
         {
+            //TODO Make conditional based on requestId ie may not have a reply etc
             var scenarioDetails = new List<ScenarioDetailsViewModel>
             {
                 new ScenarioDetailsViewModel
@@ -76,6 +79,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             };
         }
 
+        public async Task<ScenarioDetailsViewModel> GetScenarioDetail(string scenarioId, int requestId)
+        {
+            var formModel = await GenerateScenarioFormViewModel(requestId);
+            var detail = formModel.ScenarioDetails
+                .FirstOrDefault(s => s.ScenarioId == scenarioId);
+
+
+            // Optional: inject fresh group/reviewer lists if needed
+            // if (detail.RequestingGroups == null)
+            //     detail.RequestingGroups = await GetRequestingGroupsAsync(requestId);
+            // ... same for TargetGroups, Reviewers etc.
+
+            return detail;
+        }
+        
         public async Task<List<SelectListItem>> GetRequestSelectListAsync()
         {
             return (await _workflowControllerService.GetDashboardItemsFromApiAsync())
@@ -214,6 +232,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 });
 
         }
+        
         public async Task<List<vm.ReviewerGroup>> GetFilteredReviewerGroups(int proposalId, int? requestingGroupId)
         {
             var proposal = await _capitalRequestServices.GetProposal(proposalId);
@@ -240,6 +259,43 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 }
             }
 
+
+            return groups;
+        }
+
+        public async Task<List<SelectListItem>> GetRequestingGroupsByReplyingIdAsync(int proposalId, int replyingGroupId)
+        {
+            // Get all open requests for proposal by replying group.  If more than one, present requesting group list
+            var groups = new List<SelectListItem>();
+            var filter = new RequestedInfoSearchFilter
+            {
+                ProposalId = proposalId,
+                ReviewerGroupId = replyingGroupId,
+                IsOpen = true
+            };
+
+            var requestedInfos = await _capitalRequestServices.GetAllRequestedInfos(filter);
+            if (requestedInfos.Count > 1)
+            {
+                var groupFilter = new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter { ReviewerType = Constants.REVIEW_TYPE_REVIEW };
+                var reviewerGroups = await _capitalRequestServices.GetAllReviewerGroups(groupFilter);
+                reviewerGroups = (from data in reviewerGroups
+                          join requests in requestedInfos on data.Id equals requests.RequestingReviewerGroupId
+                          select data)
+                  .ToList();
+
+                //var reviewerGroups = 
+                groups  = reviewerGroups
+                .ToList()
+                .ConvertAll(x =>
+                {
+                    return new SelectListItem()
+                    {
+                        Text = x.Name,
+                        Value = x.Id.ToString()
+                    };
+                });
+            }
 
             return groups;
         }

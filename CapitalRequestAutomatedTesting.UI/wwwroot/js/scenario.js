@@ -1,263 +1,91 @@
-﻿$(document).ready(function () {
-    $('#RequestId').select2({
-        tags: true,
-        placeholder: "Select or enter a Request ID",
-        allowClear: true
-    });
-});
+﻿import { ScenarioBinder } from './ScenarioBinder.js';
+import { DevLogger } from './logger.js';
+
+// Enable logging if not already set
+window.DEBUG = window.DEBUG || true;
+
+const ScenarioInitializer = {
+    init() {
+        DevLogger.info("Initializing ScenarioInitializer", "🚀");
+        this.loadRequestIds();         // AJAX load
+    },
+
+    loadRequestIds() {
+        DevLogger.info("Loading request IDs", "📋");
+        showLoadingDelayed("Loading Requests...", 200);  // Show spinner
+
+        fetch("/Scenario/GetRequestIds")
+            .then(response => response.json())
+            .then(data => {
+                const $requestSelect = $('#RequestId');
+
+                if (!$requestSelect.length) {
+                    DevLogger.warn("RequestId dropdown not found", "⛔");
+                    cancelDelayedLoading();  // Hide spinner on error
+                    return;
+                }
+
+                // Destroy existing Select2 instance if present
+                if ($.fn.select2 && $requestSelect.hasClass('select2-hidden-accessible')) {
+                    $requestSelect.select2('destroy');
+                }
+
+                // Populate the dropdown
+                $requestSelect.empty().append('<option value="">-- Select One --</option>');
+                data.forEach(item => {
+                    $requestSelect.append(new Option(item.text, item.value));
+                });
+
+                DevLogger.info("Request IDs loaded", data.length);
+
+                // Let ScenarioBinder handle UI + behavior
+                ScenarioBinder.bindRequestIdEvents();
+
+                cancelDelayedLoading();  // Hide spinner on success
+            })
+            .catch(error => {
+                DevLogger.error("Error loading request IDs", error);
+                cancelDelayedLoading();  // Hide spinner on error
+            });
+    },
+
+    observeDynamicPartials(proposalId) {
+        if (!proposalId) {
+            DevLogger.warn("No proposal ID found for observer", "🛑");
+            return;
+        }
+
+        DevLogger.info("Setting up mutation observer for proposal", proposalId);
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1 && node.classList.contains("scenario-partial")) {
+                        DevLogger.info("Dynamic partial detected", node.id);
+                        ScenarioBinder.bindScenario(node, proposalId);
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+};
 
 document.addEventListener("DOMContentLoaded", () => {
-    bindRequestIdEvents(); // bind immediately if already present
+    DevLogger.info("DOM loaded, initializing modules", "🌐");
+    ScenarioBinder.init();
+    ScenarioInitializer.init();
 
-    loadRequestIds(); // 🔁 Load request list via AJAX
     observer.observe(document.body, {
         childList: true,
         subtree: true
     });
 });
 
-function bindRequestIdEvents() {
-    console.log("Binding RequestId event...");
-
-    const $requestSelect = $('#RequestId');
-    const scenarioContainer = document.getElementById("scenarioContainer");
-
-    if (!$requestSelect.length || !scenarioContainer) {
-        console.warn("RequestId or scenarioContainer not found");
-        return;
-    }
-
-    if ($requestSelect.data('bound') === true) {
-        console.log("RequestId already bound");
-        return;
-    }
-
-    $requestSelect.data('bound', true);
-
-    $requestSelect.on("change", function () {
-        const requestId = $(this).val();
-        console.log("RequestId changed:", requestId);
-
-        if (!requestId) {
-            scenarioContainer.innerHTML = "";
-            return;
-        }
-
-        fetch(`/Scenario/GetScenariosForRequest?requestId=${requestId}`)
-            .then(response => {
-                showLoadingDelayed("Loading Requests...", 200);
-                return response.text();
-            })
-            .then(html => {
-                scenarioContainer.innerHTML = html;
-                cancelDelayedLoading();
-
-                console.log("Scenario content injected");
-
-                // ✅ Re-bind events for newly injected content
-            //    bindSelectedGroupEvents();
-            //    bindReviewerEvents();
-            })
-            .catch(error => {
-                console.error("Error loading scenarios:", error);
-                cancelDelayedLoading();
-            });
-    });
-}
-
-//function bindRequestIdEvents() {
-//    console.log("Binding RequestId event...");
-
-//    const requestSelect = document.getElementById("RequestId");
-//    const scenarioContainer = document.getElementById("scenarioContainer");
-
-//    if (!requestSelect || !scenarioContainer) {
-//        console.warn("RequestId or scenarioContainer not found");
-//        return;
-//    }
-
-//    if (requestSelect.dataset.bound === "true") {
-//        console.log("RequestId already bound");
-//        return;
-//    }
-
-//    requestSelect.dataset.bound = "true";
-
-//    requestSelect.addEventListener("change", function () {
-//        console.log("RequestId changed:", this.value);
-//        const requestId = this.value;
-//        if (!requestId) {
-//            scenarioContainer.innerHTML = "";
-//            return;
-//        }
-
-//        fetch(`/Scenario/GetScenariosForRequest?requestId=${requestId}`)
-//            .then(response => {
-//                showLoadingDelayed("Loading Requests...", 200);
-//                return response.text();
-//            })
-//            .then(html => {
-//                scenarioContainer.innerHTML = html;
-//                cancelDelayedLoading()
-//            })
-//            .catch(error => {
-//                console.error("Error loading scenarios:", error);
-//                cancelDelayedLoading();
-//            });
-
-//    });
-//}
-
-function bindSelectedGroupEvents() {
-    const requestingGroupSelect = document.getElementById("RequestingGroupId");
-    const replyingGroupSelect = document.getElementById("ReplyingGroupId");
-    const targetGroupSelect = document.getElementById("TargetGroupId");
-    const reviewerSelect = document.getElementById("ReviewerId");
-    const proposalId = document.getElementById("RequestId")?.value;
-
-    if ((!requestingGroupSelect && !replyingGroupSelect) || !targetGroupSelect || !reviewerSelect) return;
-
-    if (requestingGroupSelect.dataset.bound === "true") return;
-    requestingGroupSelect.dataset.bound = "true";
-
-    requestingGroupSelect.addEventListener("change", function () {
-        const requestingGroupId = this.value;
-
-        showLoadingDelayed("Loading Groups and Reviewers...", 200);
-
-        fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&requestingGroupId=${requestingGroupId}`)
-            .then(response => response.json())
-            .then(data => {
-                targetGroupSelect.innerHTML = '<option value="">--Select One--</option>';
-                data.targetGroups.forEach(group => {
-                    const option = document.createElement("option");
-                    option.value = group.value;
-                    option.text = group.text;
-                    targetGroupSelect.appendChild(option);
-                    cancelDelayedLoading();
-                });
-
-                reviewerSelect.innerHTML = '<option value="">--Select Reviewer--</option>';
-                data.reviewers.forEach(reviewer => {
-                    const option = document.createElement("option");
-                    option.value = reviewer.value;
-                    option.text = reviewer.text;
-                    reviewerSelect.appendChild(option);
-                });
-            })
-            .catch(error => {
-                console.error("Error loading groups/reviewers:", error);
-                cancelDelayedLoading();
-            });
-    });
-}
-function bindReviewerEvents(partial) {
-    const reviewerSelect = partial.querySelector('[id$="ReviewerId"]');
-    const emailInput = partial.querySelector('[id$="ReviewerEmail"]');
-    const userIdInput = partial.querySelector('[id$="ReviewerUserId"]');
-    const requestedInfoTextarea = partial.querySelector('[id$="RequestedInformation"]'); // may not exist
-
-    if (!reviewerSelect) {
-        console.warn("Reviewer select not found");
-        return;
-    }
-
-    console.log("✅ Bound reviewer change event");
-    reviewerSelect.addEventListener("change", function () {
-        console.log("✅ Reviewer changed:", this.value);
-        const reviewerId = this.value;
-        const proposalId = document.getElementById("RequestId")?.value;
-        const requestingGroupId = document.getElementById("RequestingGroupId")?.value;
-        const replyingGroupId = document.getElementById("ReplyingGroupId")?.value;
-        //const targetGroupId = document.getElementById("TargetGroupId")?.value ?? "";
-        const displayText = document.getElementById("DisplayText")?.value || "Request More Information";
-
-        const groupId = requestingGroupId || replyingGroupId;
-        const groupType = requestingGroupId ? "requesting" : "replying";
-
-        if (!reviewerId || !proposalId || !groupId) {
-            console.warn("Missing required values for reviewer fetch");
-            return;
-        }
-
-        showLoadingDelayed("Loading Reviewer Details...", 200);
-        //const params = new URLSearchParams({
-        //    reviewerId,
-        //    proposalId,
-        //    groupId,
-        //    groupType,
-        //    targetGroupId,
-        //    displayText
-        //});
-
-        let targetGroupId = document.getElementById("TargetGroupId")?.value;
-        if (!targetGroupId || targetGroupId === "undefined") {
-            targetGroupId = "";
-        }
-        console.log("targetGroupId being sent:", targetGroupId);
-
-        //fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&groupId=${groupId}&groupType=${groupType}&targetGroupId=${targetGroupId}&displayText=${encodeURIComponent(displayText)}`)
-
-        ////fetch(`/Scenario/GetReviewerDetails?${params.toString()}`)
-        //    .then(response => response.json())
-        //    .then(data => {
-        //        if (emailInput) emailInput.value = data.reviewerEmail;
-        //        if (userIdInput) userIdInput.value = data.reviewerUserId;
-        //        if (requestedInfoTextarea) {
-        //            requestedInfoTextarea.value = data.requestedInformation || "";
-        //        }
-
-        //        cancelDelayedLoading();
-        //    })
-        //    .catch(error => {
-        //        console.error("Error loading reviewer details:", error);
-        //        cancelDelayedLoading();
-        //    });
-    });
-}
-
-//function bindReviewerEvents() {
-//    const reviewerSelect = partial.querySelector('[id$="ReviewerId"]');
-//    const emailInput = partial.querySelector('[id$="ReviewerEmail"]');
-//    const userIdInput = partial.querySelector('[id$="ReviewerUserId"]');
-//    const requestedInfoTextarea = partial.querySelector('[id$="RequestedInformation"]');
-
-//    if (!reviewerSelect || !emailDisplay || !userIdDisplay || !requestedInfoTextarea) return;
-
-//    reviewerSelect.addEventListener("change", function () {
-//        console.log("✅ Reviewer changed:", this.value);
-
-//        const reviewerId = this.value;
-//        const proposalId = document.getElementById("RequestId")?.value;
-//        const requestingGroupId = document.getElementById("RequestingGroupId")?.value;
-//        const targetGroupId = document.getElementById("TargetGroupId")?.value;
-//        const displayText = document.getElementById("DisplayText")?.value || "Request More Information";
-
-//        if (!reviewerId || !proposalId || !requestingGroupId || !targetGroupId) {
-//            console.warn("Missing required values for fetch");
-//            return;
-//        }
-
-//        showLoadingDelayed("Loading Reviewer Details...", 200);
-//        fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&requestingGroupId=${requestingGroupId}&targetGroupId=${targetGroupId}&displayText=${encodeURIComponent(displayText)}`)
-//            .then(response => response.json())
-//            .then(data => {
-//                emailDisplay.textContent = data.reviewerEmail;
-//                userIdDisplay.textContent = data.reviewerUserId;
-//                requestedInfoTextarea.value = data.requestedInformation;
-//                cancelDelayedLoading();
-//            })
-//            .catch(error => {
-//                console.error("Error loading reviewer details:", error);
-//                cancelDelayedLoading();
-//            });
-//    });
-
-//}
-
-
-
-// Observe the DOM for when the dropdowns are added
 const observer = new MutationObserver((mutations, obs) => {
     const requestSelect = document.getElementById("RequestId");
     const requestingGroupSelect = document.getElementById("RequestingGroupId");
@@ -265,280 +93,114 @@ const observer = new MutationObserver((mutations, obs) => {
     const targetGroupSelect = document.getElementById("TargetGroupId");
     const reviewerSelect = document.getElementById("ReviewerId");
 
-    if (requestSelect) {
-        bindRequestIdEvents();
+    // Find the container where the elements were added
+    let container = null;
+    if (mutations.length > 0 && mutations[0].target) {
+        container = mutations[0].target.closest('.scenario-partial') || document.body;
     }
 
     if ((requestingGroupSelect && targetGroupSelect) || replyingGroupSelect) {
-        bindSelectedGroupEvents();
+        DevLogger.info("DOM changed - binding selected group events", "🔄");
+        ScenarioBinder.bindSelectedGroupEvents(container); // Pass container
     }
 
     if (reviewerSelect) {
-        bindReviewerEvents();
+        DevLogger.info("DOM changed - binding reviewer events", "👤");
+        ScenarioBinder.bindReviewerEvents(container); // Pass container
     }
 });
 
-document.addEventListener("DOMContentLoaded", () => {
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-});
+document.addEventListener('change', async function (e) {
+    if (e.target.name !== 'SelectedScenarioIds') return;
 
-document.addEventListener('change', function (e) {
-    if (e.target.name === 'SelectedScenarioIds') {
-        const targetId = e.target.getAttribute('data-target');
-        const partial = document.getElementById(targetId);
+    const scenarioId = e.target.value;
+    const targetId = e.target.getAttribute('data-target');
+    const requestSelect = document.getElementById("RequestId");
+    const proposalId = requestSelect?.value;
 
-        if (partial) {
-            partial.style.display = e.target.checked ? 'block' : 'none';
+    // Add debug logging
+    DevLogger.group("Scenario Selection Changed");
+    DevLogger.info("Scenario toggled", scenarioId);
+    DevLogger.info("Target ID", targetId);
+    DevLogger.info("Request/Proposal ID", proposalId);
+    DevLogger.info("Request element found", !!requestSelect);
+    DevLogger.groupEnd();
 
-            if (e.target.checked) {
-                // Wait for DOM to update
-                setTimeout(() => {
-                    const proposalId = document.getElementById("RequestId")?.value;
+    // Enhanced validation
+    if (!proposalId || proposalId === "0" || proposalId === 0) {
+        DevLogger.warn("Valid Proposal ID not found or is zero", proposalId);
+        return;
+    }
 
-                    const requestingGroupSelect = partial.querySelector('[id$="RequestingGroupId"]');
-                    const replyingGroupSelect = partial.querySelector('[id$="ReplyingGroupId"]');
-                    const targetGroupSelect = partial.querySelector('[id$="TargetGroupId"]');
-                    const reviewerSelect = partial.querySelector('[id$="ReviewerId"]');
+    const partial = document.getElementById(targetId);
+    const show = e.target.checked;
 
+    // If showing and partial doesn't have content, fetch it
+    if (show && partial && partial.children.length === 0) {
+        try {
+            DevLogger.info("Fetching partial view for scenario", scenarioId);
+            showLoadingDelayed("Loading Scenario...", 200);
 
-                    const groupSelect = requestingGroupSelect || replyingGroupSelect;
-                    const groupType = requestingGroupSelect ? "requesting" : "replying";
+            // Use requestId parameter name to match controller expectation
+            const params = new URLSearchParams({
+                scenarioId,
+                requestId: proposalId  // Changed from proposalId to requestId
+            });
 
-                    if (!groupSelect || !reviewerSelect) {
-                        console.warn("Missing group or reviewer dropdown");
-                        return;
-                    }
+            const html = await fetch(`/Scenario/GetPartialViewForScenario?${params}`)
+                .then(r => r.text());
 
-                    if (groupSelect.dataset.bound === "true") return;
-                    groupSelect.dataset.bound = "true";
+            partial.innerHTML = html;
+            partial.style.display = 'block';
+            
+            DevLogger.info("Partial view injected successfully", targetId);
+            cancelDelayedLoading();
 
-                    groupSelect.addEventListener("change", function () {
-                        const groupId = this.value;
-                        if (!groupId || !proposalId) return;
-
-                        fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&groupId=${groupId}&groupType=${groupType}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (targetGroupSelect) {
-                                    targetGroupSelect.innerHTML = '<option value="">--Select One--</option>';
-                                    data.targetGroups?.forEach(group => {
-                                        const option = document.createElement("option");
-                                        option.value = group.value;
-                                        option.text = group.text;
-                                        targetGroupSelect.appendChild(option);
-                                    });
-                                }
-
-                                reviewerSelect.innerHTML = '<option value="">--Select Reviewer--</option>';
-                                data.reviewers?.forEach(reviewer => {
-                                    const option = document.createElement("option");
-                                    option.value = reviewer.value;
-                                    option.text = reviewer.text;
-                                    reviewerSelect.appendChild(option);
-                                });
-
-                                reviewerSelect.addEventListener("change", function () {
-                                    const reviewerId = this.value;
-                                    const requestingGroupId = requestingGroupSelect?.value ?? "";
-                                    const targetGroupId = targetGroupSelect?.value ?? "";
-                                    const replyingGroupId = replyingGroupSelect?.value ?? "";
-                                    //TODO fix what is returned by querySelector
-                                    //const displayText = partial.querySelector('[id$="DisplayText"]')?.value || "Request More Information";
-                                    let displayText = partial.querySelector('[id$="DisplayText"]')?.value || "Request More Information";
-
-                                    if (groupType == "replying")
-                                    {
-                                        displayText = "Reply to Request"
-                                    }
-                                    const params = new URLSearchParams({
-                                        reviewerId,
-                                        proposalId,
-                                        requestingGroupId,
-                                        targetGroupId,
-                                        replyingGroupId,
-                                        displayText
-                                    });
-                                    //        public async Task<IActionResult> GetReviewerDetails(int reviewerId, int proposalId, int? requestingGroupId, int? targetGroupId, string displayText, int? replyingGroupId)
-
-                                    fetch(`/Scenario/GetReviewerDetails?${params.toString()}`)
-
-                                    //fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&requestingGroupId=${requestingGroupId}&targetGroupId=${targetGroupId}&replyingGroupId=${replyingGroupId}&displayText=${encodeURIComponent(displayText)}`)
-                                        .then(response => response.json())
-                                        .then(data => {
-                                            const emailInput = partial.querySelector('[id$="ReviewerEmail"]');
-                                            const userIdInput = partial.querySelector('[id$="ReviewerUserId"]');
-                                            const requestedInfoTextarea = partial.querySelector('[id$="RequestedInformation"]');
-                                            const returnedInfoTextarea = partial.querySelector('[id$="ReturnedInformation"]');
-
-                                            if (emailInput) emailInput.value = data.reviewerEmail;
-                                            if (userIdInput) userIdInput.value = data.reviewerUserId;
-                                            if (requestedInfoTextarea) requestedInfoTextarea.value = data.requestedInformation;
-                                            if (returnedInfoTextarea) returnedInfoTextarea.value = data.returnedInformation;
-                                        });
-                                });
-                            });
-                    });
-                }, 0);
-            }
+            // Bind events to the newly loaded partial
+            ScenarioBinder.bindScenarioPartial(partial, proposalId);
+            
+        } catch (err) {
+            DevLogger.error("Error loading scenario partial", err);
+            cancelDelayedLoading();
+            return;
         }
+    } else if (partial) {
+        // Just toggle visibility for already loaded partials
+        partial.style.display = show ? "block" : "none";
+        DevLogger.info(`Scenario partial ${show ? 'shown' : 'hidden'}`, targetId);
     }
 });
 
-//document.addEventListener('change', function (e) {
-//    if (e.target.name === 'SelectedScenarioIds') {
-//        const targetId = e.target.getAttribute('data-target');
-//        const partial = document.getElementById(targetId);
-
-//        if (partial) {
-//            partial.style.display = e.target.checked ? 'block' : 'none';
-
-//            if (e.target.checked) {
-//                // Wait for DOM to update
-//                setTimeout(() => {
-
-//                    const requestingGroupSelect = partial.querySelector('[id$="RequestingGroupId"]');
-//                    const targetGroupSelect = partial.querySelector('[id$="TargetGroupId"]');
-//                    const reviewerSelect = partial.querySelector('[id$="ReviewerId"]');
-
-//                    if (!requestingGroupSelect || !targetGroupSelect || !reviewerSelect) {
-//                        console.warn("Missing one or more group dropdowns in partial");
-//                        return;
-//                    }
-
-//                    // Prevent double-binding
-//                    if (requestingGroupSelect.dataset.bound === "true") return;
-//                    requestingGroupSelect.dataset.bound = "true";
-
-//                    requestingGroupSelect.addEventListener("change", function () {
-//                        const proposalId = document.getElementById("RequestId")?.value;
-//                        const requestingGroupId = this.value;
-
-//                        if (!requestingGroupId || !proposalId) return;
-
-//                        fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&requestingGroupId=${requestingGroupId}`)
-//                            .then(response => response.json())
-//                            .then(data => {
-//                                targetGroupSelect.innerHTML = '<option value="">--Select One--</option>';
-//                                data.targetGroups.forEach(group => {
-//                                    const option = document.createElement("option");
-//                                    option.value = group.value;
-//                                    option.text = group.text;
-//                                    targetGroupSelect.appendChild(option);
-//                                });
-
-//                                reviewerSelect.innerHTML = '<option value="">--Select Reviewer--</option>';
-//                                data.reviewers.forEach(reviewer => {
-//                                    const option = document.createElement("option");
-//                                    option.value = reviewer.value;
-//                                    option.text = reviewer.text;
-//                                    reviewerSelect.appendChild(option);
-//                                });
-
-//                                // ✅ Re-bind the change event after populating
-//                                reviewerSelect.addEventListener("change", function () {
-//                                    console.log("✅ Reviewer changed:", this.value);
-
-//                                    const reviewerId = this.value;
-//                                    const proposalId = document.getElementById("RequestId")?.value;
-//                                    const requestingGroupId = partial.querySelector('[id$="RequestingGroupId"]')?.value;
-//                                    const targetGroupId = partial.querySelector('[id$="TargetGroupId"]')?.value;
-//                                    const displayText = partial.querySelector('[id$="DisplayText"]')?.value || "Request More Information";
-
-//                                    if (!reviewerId || !proposalId || !requestingGroupId || !targetGroupId) {
-//                                        console.warn("Missing required values for reviewer fetch");
-//                                        return;
-//                                    }
-
-//                                    fetch(`/Scenario/GetReviewerDetails?reviewerId=${reviewerId}&proposalId=${proposalId}&requestingGroupId=${requestingGroupId}&targetGroupId=${targetGroupId}&displayText=${encodeURIComponent(displayText)}`)
-//                                        .then(response => response.json())
-//                                        .then(data => {
-//                                            const emailInput = partial.querySelector('[id$="ReviewerEmail"]');
-//                                            const userIdInput = partial.querySelector('[id$="ReviewerUserId"]');
-//                                            const requestedInfoTextarea = partial.querySelector('[id$="RequestedInformation"]');
-
-//                                            if (emailInput) emailInput.value = data.reviewerEmail;
-//                                            if (userIdInput) userIdInput.value = data.reviewerUserId;
-//                                            if (requestedInfoTextarea) requestedInfoTextarea.value = data.requestedInformation;
-//                                        });
-//                                });
-
-//                            });
-//                    });
-//                }, 0);
-
-//            }
-//        }
-//    }
-//});
-
-function showSpinner(message = "Loading...") {
-    const modal = document.getElementById("loadingModal");
-    const messageEl = document.getElementById("loadingMessage");
-    if (modal && messageEl) {
-        messageEl.textContent = message;
-        modal.style.display = "flex";
+export function populateDropdown(select, items, defaultText) {
+    if (!select) {
+        DevLogger.warn("Cannot populate dropdown - select element is null", defaultText);
+        return;
     }
+
+    select.innerHTML = `<option value="">${defaultText}</option>`;
+    items?.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.text = item.text;
+        select.appendChild(option);
+    });
+
+    DevLogger.info("Dropdown populated", {
+        selectId: select.id,
+        itemCount: items?.length || 0,
+        defaultText
+    });
 }
-
-function hideSpinner() {
-    const modal = document.getElementById("loadingModal");
-    if (modal) {
-        modal.style.display = "none";
-    }
-}
-
-function loadRequestIds() {
-    showLoadingDelayed("Loading Requests...", 200);
-
-    fetch("/Scenario/GetRequestIds")
-        .then(response => response.json())
-        .then(data => {
-            const $requestSelect = $('#RequestId');
-
-            if (!$requestSelect.length) {
-                console.warn("RequestId dropdown not found");
-                cancelDelayedLoading();
-                return;
-            }
-
-            // Destroy existing Select2 instance if present
-            if ($.fn.select2 && $requestSelect.hasClass('select2-hidden-accessible')) {
-                $requestSelect.select2('destroy');
-            }
-
-            // Clear and repopulate options
-            $requestSelect.empty().append('<option value="">-- Select One --</option>');
-            data.forEach(item => {
-                $requestSelect.append(new Option(item.text, item.value));
-            });
-
-            // Re-initialize Select2
-            $requestSelect.select2({
-                tags: true,
-                placeholder: "Select or enter a Request ID",
-                allowClear: true
-            });
-
-            bindRequestIdEvents(); // rebind after populating
-            cancelDelayedLoading();
-        })
-        .catch(error => {
-            console.error("Error loading request IDs:", error);
-            cancelDelayedLoading();
-        });
-}
-
 
 let spinnerTimeout;
 
-function showLoadingDelayed(message = "Loading...", delay = 200) {
+export function showLoadingDelayed(message = "Loading...", delay = 200) {
+    DevLogger.info("Showing delayed loading indicator", message);
     spinnerTimeout = setTimeout(() => showLoading(message), delay);
 }
 
-function cancelDelayedLoading() {
+export function cancelDelayedLoading() {
+    DevLogger.info("Canceling delayed loading indicator", "✓");
     clearTimeout(spinnerTimeout);
     hideLoading();
 }
@@ -546,15 +208,39 @@ function cancelDelayedLoading() {
 function showLoading(message = 'Loading...') {
     const modal = document.getElementById('loadingModal');
     const messageElem = document.getElementById('loadingMessage');
-    messageElem.textContent = message;
-    modal.style.display = 'flex';
+    if (modal && messageElem) {
+        messageElem.textContent = message;
+        modal.style.display = 'flex';
+        DevLogger.info("Loading indicator displayed", message);
+    } else {
+        DevLogger.warn("Cannot show loading - modal elements not found", "⚠️");
+    }
 }
 
 function hideLoading() {
     const modal = document.getElementById('loadingModal');
-    modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+        DevLogger.info("Loading indicator hidden", "✓");
+    } else {
+        DevLogger.warn("Cannot hide loading - modal element not found", "⚠️");
+    }
 }
 
+function showSpinner(message = "Loading...") {
+    const modal = document.getElementById("loadingModal");
+    const messageEl = document.getElementById("loadingMessage");
+    if (modal && messageEl) {
+        messageEl.textContent = message;
+        modal.style.display = "flex";
+        DevLogger.info("Spinner displayed", message);
+    }
+}
 
-
-
+function hideSpinner() {
+    const modal = document.getElementById("loadingModal");
+    if (modal) {
+        modal.style.display = "none";
+        DevLogger.info("Spinner hidden", "✓");
+    }
+}

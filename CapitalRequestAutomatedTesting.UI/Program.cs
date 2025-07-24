@@ -1,6 +1,7 @@
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequestAutomatedTesting.UI;
 using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.StaticFiles;
 using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using System.Diagnostics;
@@ -67,6 +68,14 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = new FileExtensionContentTypeProvider
+    {
+        Mappings = { [".js"] = "application/javascript" }
+    }
+});
+
 app.UseSession();
 app.UseRouting();
 

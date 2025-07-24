@@ -23,21 +23,20 @@
                            name="SelectedScenarioIds"
                            value="@detail.ScenarioId"
                            data-target="@partialId"
+                           data-partial-name="@detail.PartialViewName"
                     @(Model.SelectedScenarioIds?.Contains(detail.ScenarioId) == true ? "checked" : "") />
                     @detail.DisplayText
                 </label>
 
                 <div id="@partialId" class="scenario-partial"
                      style="display: @(Model.SelectedScenarioIds?.Contains(detail.ScenarioId) == true ? "block" : "none")">
-                    @{
-                        var viewData = new ViewDataDictionary<ScenarioDetailsViewModel>(
-                        ViewData,
-                        detail
-                        );
+                    @* Partial will be loaded reactively via JavaScript *@
+                    @if (Model.SelectedScenarioIds?.Contains(detail.ScenarioId) == true)
+                    {
+                        var viewData = new ViewDataDictionary<ScenarioDetailsViewModel>(ViewData, detail);
                         viewData.TemplateInfo.HtmlFieldPrefix = $"ScenarioDetails[{i}]";
+                        @await Html.PartialAsync(detail.PartialViewName, detail, viewData)
                     }
-
-                    @await Html.PartialAsync(detail.PartialViewName, detail, viewData)
                 </div>
             </div>
         }
