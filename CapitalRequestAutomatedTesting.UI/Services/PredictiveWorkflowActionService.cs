@@ -70,7 +70,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var actionType = buttonIsValid != null ? buttonIsValid.ActionType : string.Empty;
             if (buttonIsValid != null)
             {
-                responseMessage = (await _predictiveWorkflowStepOptionService.PredictiveMessage(proposal, actionType)).ResponseMessage;
+                responseMessage = (await _predictiveWorkflowStepOptionService.PredictiveMessage(proposal)).ResponseMessage;
             }
 
             bool isValid = responseMessage == expectedMessage;
@@ -81,6 +81,33 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 Message = isValid
                     ? "Verify button validation passed."
                     : "Verify button not found for this Request."
+            };
+
+        }
+
+        public async Task<SeleniumStepResult> ValidateActionButtonAsync(vm.Proposal proposal, int reviewerGroupId, string expectedMessage)
+        {
+            var responseMessage = string.Empty;
+
+            var workflowAction = (await GetWorkflowActionAsync(proposal))
+                .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId && 
+                        x.ActionType == proposal.ActionType)
+                .FirstOrDefault();
+
+            if (workflowAction != null)
+            {
+                responseMessage = (await _predictiveWorkflowStepOptionService.PredictiveMessage(proposal)).ResponseMessage;
+            }
+
+            bool isValid = responseMessage == expectedMessage;
+
+            var buttonCaption = proposal.ButtonCaption;
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid
+                    ? $"{buttonCaption} button validation passed."
+                    : $"{buttonCaption} button not found for this Request."
             };
 
         }

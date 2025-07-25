@@ -178,6 +178,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             });
         }
 
+
         public async Task<IActionResult> RunSelected()
         {
 
@@ -191,8 +192,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 Debug.WriteLine("ScenarioDetails is empty");
             }
 
-            //TODO remove after debugging
-            model.SelectedScenarioIds.Add("SCN001");
 
             var selectedScenarios = model.ScenarioDetails
             .Where(s => model.SelectedScenarioIds.Contains(s.ScenarioId))
@@ -247,6 +246,9 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         {
             // Step 1: Predictive Selenium
             scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+
+            ////TODO remove after debugging
+            return scenario;
 
             var completionStep = scenario.PredictiveCompletionStep;
 

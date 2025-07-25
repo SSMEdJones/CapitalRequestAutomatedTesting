@@ -93,6 +93,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var reviewName = nameProp.GetValue(dashboardData)?.ToString();
                 var reviewStatus = statusProp.GetValue(dashboardData)?.ToString();
 
+                var todayStr = DateTime.Now.ToShortDateString();
+                var errors = new List<string>();
+
+
                 //TODO Need to test for any available proposals by reviewer or Author
                 //If none need to check for message
                 //TODO condtional based on predictive Response Message
@@ -108,20 +112,34 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     reviewDate = DateTime.Now.ToShortDateString();
                     reviewName = targetGroup;
                     reviewStatus = Constants.DASHBOARD_STATUS_INFORMATION_REQUESTED;
+                    
+                    if (!string.Equals(reviewDate, todayStr, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected review date '{todayStr}', but got '{reviewDate}'.");
+
+                    if (!string.Equals(reviewName, targetGroup, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected reviewer name '{targetGroup}', but got '{reviewName}'.");
+
+                    if (!string.Equals(reviewStatus, dashboardStatus, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected status '{dashboardStatus}', but got '{reviewStatus}'.");
 
                 }
+                else if(proposal.ResponseMessage == Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT)
+                {
+                    todayStr = string.Empty;
+                    reviewDate = string.Empty;
+                    reviewName = requestingGroup;
+                    reviewStatus = Constants.DASHBOARD_STATUS_CLEAR;
 
-                var todayStr = DateTime.Now.ToShortDateString();
-                var errors = new List<string>();
+                    if (!string.Equals(reviewDate, todayStr, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected review date '{todayStr}', but got '{reviewDate}'.");
 
-                if (!string.Equals(reviewDate, todayStr, StringComparison.OrdinalIgnoreCase))
-                    errors.Add($"Expected review date '{todayStr}', but got '{reviewDate}'.");
+                    if (!string.Equals(reviewName, targetGroup, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected reviewer name '{targetGroup}', but got '{reviewName}'.");
 
-                if (!string.Equals(reviewName, targetGroup, StringComparison.OrdinalIgnoreCase))
-                    errors.Add($"Expected reviewer name '{targetGroup}', but got '{reviewName}'.");
+                    if (!string.Equals(reviewStatus, dashboardStatus, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected status '{dashboardStatus}', but got '{reviewStatus}'.");
 
-                if (!string.Equals(reviewStatus, dashboardStatus, StringComparison.OrdinalIgnoreCase))
-                    errors.Add($"Expected status '{dashboardStatus}', but got '{reviewStatus}'.");
+                }
 
                 if (errors.Any())
                 {

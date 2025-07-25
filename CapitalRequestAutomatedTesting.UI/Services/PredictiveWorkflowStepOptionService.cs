@@ -20,7 +20,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string OptionType, int? requestedInfoId);
         Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage);
         Task<WorkflowStepOption> FindOrCreateWorkflowStepOptionAsync(vm.Proposal proposal, int reviewerGroupId, int reviewerId, string actionType);
-        Task<vm.Proposal> PredictiveMessage(vm.Proposal proposal, string actionType);
+        Task<vm.Proposal> PredictiveMessage(vm.Proposal proposal);
     }
 
     public class PredictiveWorkflowStepOptionService : IPredictiveWorkflowStepOptionService
@@ -264,10 +264,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             }
         }
 
-        public async Task<vm.Proposal> PredictiveMessage(vm.Proposal proposal, string actionType)
+        public async Task<vm.Proposal> PredictiveMessage(vm.Proposal proposal)
         {
-            var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
-            var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
+            //var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
+            //var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
+            var workflowStep = _mapper.Map<WorkflowStep>(proposal.WorkflowStep);
 
             var reviewerGroups = (await GetReviewerGroupsAsync(proposal, workflowStep))
                 .Where(x => x.Id == proposal.RequestedInfo.ReviewerGroupId)
@@ -279,7 +280,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             var emailType = emailTemplate?.OptionType ?? string.Empty;
 
-            var workflowStepOptionsViewModel = await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID);
+            //var workflowStepOptionsViewModel = await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID);
+            var workflowStepOptionsViewModel = proposal.workflowStepOptions;
+
             var workflowStepOptions = workflowStepOptionsViewModel
                    .Select(x => _mapper.Map<WorkflowStepOption>(x))
                    .ToList();
@@ -291,7 +294,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage)
         {
-            proposal = await PredictiveMessage(proposal, actionType);
+            proposal = await PredictiveMessage(proposal);
 
             bool isValid = proposal.ResponseMessage == expectedMessage;
 
@@ -422,8 +425,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             }
             else
             {
-                //TODO conditional based on scenario actionType                
-                proposal.ResponseMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
+                if (proposal.ActionType == Constants.ACTION_TYPE_ADD_INFO)
+                {
+                    proposal.ResponseMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
+                }
+                else
+                { 
+                    //TODO conditional based on scenario actionType                
+                    proposal.ResponseMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
+                }
             }
             return;
         }

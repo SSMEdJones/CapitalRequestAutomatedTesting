@@ -22,6 +22,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<SelectListItem>> GetRequestingGroupsAsync(int proposalId);
         Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id);
         Task<SeleniumStepResult> ValidateTargetGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
+        Task<SeleniumStepResult> ValidateRequestingGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
         Task<CapitalRequest.API.Models.ReviewerGroup> GetReviewerGroupByIdAsync(int id);
         Task<List<SelectListItem>> GetRequestingGroupsByReplyingIdAsync(int proposalId, int replyingGroupId);
         Task<(List<SelectListItem> RequestingGroups, List<SelectListItem> TargetGroups)> BuildRequestingAndTargetGroupsAsync(int proposalId, int? requestingGroupId);
@@ -327,6 +328,42 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 Message = isValid
                     ? "Target Reviewer Group validation passed."
                     : "Target Reviewer Group not found for this Request."
+            };
+        }
+
+        public async Task<SeleniumStepResult> ValidateRequestingGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId)
+        {
+            bool isValid = true;
+            if (requestingGroupId > 0)
+            {
+                isValid = (await GetFilteredReviewerGroups(proposal.Id, requestingGroupId)).Where(x => x.Id == targetGroupId).Any();
+            }
+
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid
+                    ? "Requesting Reviewer Group validation passed."
+                    : "Requesting Reviewer Group not found for this Request."
+            };
+        }
+
+        public async Task<SeleniumStepResult> ValidateRequestingGroupForReplyIdAsync(vm.Proposal proposal, int requestingGroupId, int replyingGroupId)
+        {
+            bool isValid = true;
+            if (requestingGroupId > 0)
+            {
+                var groups = await GetFilteredReviewerGroups(proposal.Id, requestingGroupId);
+
+                isValid = (await GetFilteredReviewerGroups(proposal.Id, replyingGroupId)).Where(x => x.Id == replyingGroupId).Any();
+            }
+
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid
+                    ? "Requesting Reviewer Group validation passed."
+                    : "Requesting Reviewer Group not found for this Request."
             };
         }
 

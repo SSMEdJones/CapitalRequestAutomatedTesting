@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
-
 namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class ScenarioDetailsViewModel
@@ -11,7 +10,6 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public int ProposalId { get; set; }
 
         [ValidateNever]
-
         public string ScenarioId { get; set; }
 
         public string PartialViewName { get; set; }
@@ -24,13 +22,14 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [Range(1, int.MaxValue, ErrorMessage = "Please select a valid requesting group.")]
         public int? RequestingGroupId { get; set; }
 
-        [DisplayName("Requesting Group:")]
-        [Range(1, int.MaxValue, ErrorMessage = "Please select a valid requesting group.")]
-        public int? SecondaryRequestingGroupId { get; set; }
+        //[DisplayName("Requesting Group:")]
+        //[Range(1, int.MaxValue, ErrorMessage = "Please select a valid requesting group.")]
+        //public int? SecondaryRequestingGroupId { get; set; }
 
         [DisplayName("Replying Group:")]
         [Range(1, int.MaxValue, ErrorMessage = "Please select a valid replying group.")]
         public int? ReplyingGroupId { get; set; }
+
         [DisplayName("Target Group:")]
         [Range(1, int.MaxValue, ErrorMessage = "Please select a valid target group.")]
         public int? TargetGroupId { get; set; }
@@ -41,12 +40,10 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         [DisplayName("Reviewer Email:")]
         [ValidateNever]
-
         public string ReviewerEmail { get; set; }
 
         [DisplayName("Reviewer UserId:")]
         [ValidateNever]
-
         public string ReviewerUserId { get; set; }
 
         [ValidateNever]
@@ -71,17 +68,15 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public int RequestCount { get; set; }
 
         [ValidateNever]
-        public SeleniumScenarioOutcome PredictedSeleniumOutcome { get; set; } = new ();
+        public SeleniumScenarioOutcome PredictedSeleniumOutcome { get; set; } = new();
 
         [ValidateNever]
-        public SeleniumScenarioOutcome ActualSeleniumOutcome { get; set; } = new ();
+        public SeleniumScenarioOutcome ActualSeleniumOutcome { get; set; } = new();
 
         [ValidateNever]
-
         public ScenarioDataViewModel PredictiveData { get; set; } = new();
 
         [ValidateNever]
-
         public ScenarioDataViewModel ActualData { get; set; } = new();
 
         public int PredictiveCompletionStep { get; set; }
@@ -89,5 +84,4 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         public bool CanExecuteActualSteps { get; set; } = true;
     }
-
 }

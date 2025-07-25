@@ -3,6 +3,7 @@ using CapitalRequest.API.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using SSMWorkflow.API.Models;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
@@ -398,6 +399,7 @@ namespace CapitalRequest.API.Models
         public int ReviewerGroupId { get; set; }
         public string ReviewerGroupName { get; set; }
         public int RequestingGroupId { get; set; }
+        public int ReplyingGroupId { get; set; }
         public int ReviewerId { get; set; }
         public int RequestedInfoId { get; set; }
         public RequestedInfo RequestedInfo { get; set; } = new RequestedInfo();
@@ -405,6 +407,7 @@ namespace CapitalRequest.API.Models
         public ProvidedInfo ProvidedInfo { get; set; } = new ProvidedInfo();
         public List<ReviewerGroup> ReviewerGroups { get; set; } = new List<ReviewerGroup>();
 
+        public string ReturnedInformation { get; set; } = string.Empty;
         public int StepNumber { get; set; }
         public string ActiveTab { get; set; } = string.Empty;
         public string ActiveView { get; set; } = string.Empty;
@@ -447,6 +450,10 @@ namespace CapitalRequest.API.Models
         //public List<RequestedInfoThread> RequestedInfoThreads { get; set; }
         public int OriginalCapitalFundingYear { get; set; }
         public string SubmitButtonCaption { get; set; }
-
+        public string ButtonCaption { get; set; }
+        public string ExpectedMessage { get; set; }
+        public Guid WorkflowStepId { get; set; }
+        public WorkFlowStepViewModel WorkflowStep { get; set; }
+        public List<WorkFlowStepOptionViewModel> workflowStepOptions { get; set; }
     }
 }

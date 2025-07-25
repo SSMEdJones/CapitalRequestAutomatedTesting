@@ -25,4 +25,8 @@
     <None Include="DataAccess\Models\AttachmentSearchFilter.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\SSMWorkflow.API\SSMWorkflow.API\SSMWorkflow.API.csproj" />
+  </ItemGroup>
+
 </Project>

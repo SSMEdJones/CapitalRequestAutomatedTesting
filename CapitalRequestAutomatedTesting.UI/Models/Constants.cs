@@ -17,6 +17,9 @@
         public const string OPTION_TYPE_VERIFY = "Verify";
         public const string OPTION_TYPE_VERIFY_WBS = "VerifyWBS";
 
+        public const string BUTTON_CAPTION_VERIFY = "Verify";
+        public const string BUTTON_CAPTION_REPLY = "Reply";
+
         //Response Types
         public const string RESPONSE_VERIFIED = "Verified";
         public const string RESPONSE_REQUEST_MORE_INFORMATION = "Requested More Information";
@@ -76,6 +79,7 @@
         public const string DASHBOARD_STATUS_VERIFIED = "V";
         public const string DASHBOARD_STATUS_CANCELLED = "X";
         public const string DASHBOARD_STATUS_SKIPPED = "-";
+        public const string DASHBOARD_STATUS_CLEAR = " ";
 
         //Access Maintenance
         public const string APPLICATION_ROLE_NAME_ADMIN = "Admin";

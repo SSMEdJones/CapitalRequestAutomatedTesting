@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -57,55 +58,47 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
 
+            var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+            var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+
+            var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
+            proposal.ReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+            proposal.ReviewerId = detail.ReviewerId;
+            proposal.Reviewer = reviewer;
+
+            scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
+            scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
+            scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
+            scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
+            scenarioDetail.SelectedProperties["Requested Information"] = scenarioDetail.RequestedInformation;
+            scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
+
+
             if (scenarioId == "SCN001")
             {
-                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
-                proposal.ReviewerGroupId = detail.RequestingGroupId;
-                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
                 var targetGroup = await _capitalRequestServices.GetReviewerGroup(detail.TargetGroupId);
-                var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
                 proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
-                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-                proposal.ReviewerId = detail.ReviewerId;
-                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 
-                scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
-                scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
-                scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
                 scenarioDetail.SelectedProperties["Target Group"] = targetGroup.Name;
-                scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
-                scenarioDetail.SelectedProperties["Requested Information"] = scenarioDetail.RequestedInformation;
 
-
-                var methods = await GetSeleniumMethodsAsync(scenarioDetail);
-                seleniumScenarioOutcome = await ExecuteSeleniumMethodsAsync(methods, scenarioDetail);
+                //var methods = await GetSeleniumMethodsAsync(scenarioDetail);
+                //seleniumScenarioOutcome = await ExecuteSeleniumMethodsAsync(methods, scenarioDetail);
             }
 
             if (scenarioId == "SCN002")
             {
-                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
-                proposal.ReviewerGroupId = detail.RequestingGroupId;
-                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
-                //var targetGroup = await _capitalRequestServices.GetReviewerGroup(detail.TargetGroupId);
-                var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
-                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
-                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-                proposal.ReviewerId = detail.ReviewerId;
-                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+                var replyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
 
-                scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
-                scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
-                scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
-                //scenarioDetail.SelectedProperties["Target Group"] = targetGroup.Name;
-                scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
-                scenarioDetail.SelectedProperties["Requested Information"] = scenarioDetail.RequestedInformation;
+                scenarioDetail.SelectedProperties["Replying Group"] = replyingGroup.Name;
+                scenarioDetail.SelectedProperties["Returned Information"] = scenarioDetail.ReturnedInformation;
 
-
-                var methods = await GetSeleniumMethodsAsync(scenarioDetail);
-                seleniumScenarioOutcome = await ExecuteSeleniumMethodsAsync(methods, scenarioDetail);
             }
+
+            var methods = await GetSeleniumMethodsAsync(scenarioDetail);
+            seleniumScenarioOutcome = await ExecuteSeleniumMethodsAsync(methods, scenarioDetail);
+
             seleniumScenarioOutcome.ScenarioId = scenarioId;
 
             return seleniumScenarioOutcome;
@@ -167,42 +160,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return outcome;
         }
 
-        //public async Task<SeleniumScenarioOutcome> ExecuteSeleniumMethodsAsync(List<PredictiveMethod> methods, ScenarioDetailsViewModel scenarioDetail)
-        //{
-        //    var outcome = new SeleniumScenarioOutcome
-        //    {
-        //        Expected = new SeleniumScenarioResult()
-        //    };
-
-        //    foreach (var method in methods)
-        //    {
-        //        var result = await ExecuteSeleniumMethodAsync(method, scenarioDetail);
-        //        var step = new SeleniumScenarioStep
-        //        {
-        //            StepNumber = method.StepNumber,
-        //            Description = $"{method.MethodName} → {method.Parameters?.FirstOrDefault()?.ToString() ?? "no params"}",
-        //            Result = result,
-        //            Action = _ => Task.FromResult(result) // Not executable in prediction, but keeps step shape consistent
-        //        };
-
-        //        outcome.Expected.Steps.Add(step);
-        //        outcome.Expected.Messages.Add(result.Message);
-        //        if (!result.Success)
-        //        {
-        //            outcome.Expected.Success = false;
-        //            scenarioDetail.PredictiveStopReason = $"Step {method.StepNumber} failed due to: {result.Message}";
-
-        //            break;
-        //        }
-        //        else
-        //        {
-        //            scenarioDetail.PredictiveCompletionStep = step.StepNumber;
-
-        //        }
-        //    }
-
-        //    return outcome;
-        //}
 
         public async Task<SeleniumStepResult> ExecuteSeleniumMethodAsync(PredictiveMethod method, ScenarioDetailsViewModel scenarioDetail)
         {
@@ -280,45 +237,55 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         private async Task<List<PredictiveMethod>> GetSeleniumMethodsAsync(ScenarioDetailsViewModel scenarioDetail)
         {
+            var actionType = string.Empty;
+            var expectedMessage = string.Empty;
             var predictiveMethods = new List<PredictiveMethod>();
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
+            var requestingGroupId = detail.RequestingGroupId;
+            var replyingGroupId = detail.ReplyingGroupId;
+            var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+            var replyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
+
+            var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
+            proposal.RequestingGroupId = detail.RequestingGroupId;
+            proposal.ReplyingGroupId = detail.ReplyingGroupId;
+            proposal.ReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+            proposal.ReturnedInformation = detail.ReturnedInformation;
+
+            proposal.ReviewerId = detail.ReviewerId;
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+
+            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
+                .Where(x => !x.IsComplete)
+                .FirstOrDefault();
+
+            proposal.WorkflowStepId = workflowStep.WorkflowStepID;
+            proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
+            proposal.workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                .Where(x => x.IsComplete == false && x.IsTerminate == false)
+                .ToList();
+
+            var stepNumber = 0;
 
             if (scenarioId == "SCN001")
             {
-                var requestingGroupId = detail.RequestingGroupId;
                 var targetGroupId = detail.TargetGroupId;
-
-                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
                 var targetGroup = await _capitalRequestServices.GetReviewerGroup(targetGroupId);
+                proposal.ButtonCaption = Constants.BUTTON_CAPTION_VERIFY;
 
-                var actionType = Constants.ACTION_TYPE_VERIFY;
-                var expectedMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
+                proposal.ActionType = Constants.ACTION_TYPE_VERIFY;
+                actionType = proposal.ActionType;
+                expectedMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
+                
                 var increment = 1;
-
-                var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
-                proposal.RequestingGroupId = detail.RequestingGroupId;
-                proposal.ReviewerGroupId = detail.RequestingGroupId;
-                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
-                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-                proposal.ReviewerId = detail.ReviewerId;
-                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
-                proposal.ActionType = actionType;
 
                 proposal.RequestedInfo.Id = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id) + increment; ;
 
-                var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
-                    .Where(x => !x.IsComplete)
-                    .FirstOrDefault();
-
-                var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                               .Where(x => x.IsComplete == false && x.IsTerminate == false)
-                               .ToList();
-
-                var email = _userContextService.Email;
-
-                var stepNumber = 0;
+                //var email = _userContextService.Email;
 
                 predictiveMethods.Add(
                     new PredictiveMethod
@@ -367,6 +334,79 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                        ServiceName = "IPredictiveDashboardService",
                        MethodName = "ValidateDashboardStatusAsync",
                        Parameters = new List<object> { proposal, requestingGroup.Name, targetGroup.Name, Constants.DASHBOARD_STATUS_INFORMATION_REQUESTED }
+                   }
+               );
+
+            }
+            else if (scenarioId == "SCN002")
+            {
+                proposal.ActionType = Constants.ACTION_TYPE_ADD_INFO;
+                proposal.ButtonCaption = Constants.BUTTON_CAPTION_REPLY;
+                proposal.ExpectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
+                actionType = proposal.ActionType;
+                expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
+
+                var filter = new RequestedInfoSearchFilter
+                {
+                    ProposalId = detail.ProposalId,
+                    RequestingReviewerGroupId = detail.RequestingGroupId,
+                    ReviewerGroupId = detail.ReplyingGroupId,
+                    IsOpen = true
+
+                };
+                var requestedInfo = (await _capitalRequestServices.GetAllRequestedInfos(filter)).FirstOrDefault();
+                if (requestedInfo != null)
+                {
+                    proposal.RequestedInfo = requestedInfo;
+                }
+                    
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        ServiceName = "IPredictiveWorkflowActionService",
+                        MethodName = "ValidateWorkflowButtonAsync",
+                        Parameters = new List<object> { proposal }
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        ServiceName = "IPredictiveWorkflowActionService",
+                        MethodName = "ValidateActionButtonAsync",
+                        Parameters = new List<object> { proposal, proposal.RequestingGroupId, expectedMessage }
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        ServiceName = "IScenarioControllerService",
+                        MethodName = "ValidateRequestingGroupForReplyIdAsync",
+                        Parameters = new List<object> { proposal, requestingGroupId, replyingGroupId }
+                    }
+                );
+
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       StepNumber = ++stepNumber,
+                       ServiceName = "IPredictiveWorkflowStepOptionService",
+                       MethodName = "ValidateResponseMessageAsync",
+                       Parameters = new List<object> { proposal, actionType, expectedMessage }
+                   }
+               );
+
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       StepNumber = ++stepNumber,
+                       ServiceName = "IPredictiveDashboardService",
+                       MethodName = "ValidateDashboardStatusAsync",
+                       Parameters = new List<object> { proposal, requestingGroup.Name, requestingGroup.Name, Constants.DASHBOARD_STATUS_CLEAR }
                    }
                );
 

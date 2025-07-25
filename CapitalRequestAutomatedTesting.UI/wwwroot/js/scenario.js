@@ -84,7 +84,58 @@ document.addEventListener("DOMContentLoaded", () => {
         childList: true,
         subtree: true
     });
+
+    const form = document.getElementById("scenarioForm");
+    if (!form) {
+        DevLogger.warn("scenarioForm not found");
+        return;
+    }
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault(); // Prevent default form submission
+
+        const actionType = document.getElementById("actionType")?.value;
+        if (actionType === "RunSelected") {
+            showSpinner("Running selected scenario...");
+
+            // 📦 Use FormData to serialize the entire form
+            const formData = new FormData(form);
+            formData.append("actionType", actionType); // Include actionType if not part of the form
+
+            fetch("/Scenario/Index", {
+                method: "POST",
+                body: formData // No need for headers — browser sets content type automatically
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error("Request failed");
+                    return res.text(); // Or .json() depending on response type
+                })
+                .then(data => {
+                    console.log("Success:", data);
+                    // Handle response or redirect if needed
+                })
+                .catch(err => {
+                    console.error("Error:", err);
+                })
+                .finally(() => {
+                    hideSpinner();
+                });
+        }
+    });
+
 });
+
+
+//document.addEventListener("DOMContentLoaded", () => {
+//    DevLogger.info("DOM loaded, initializing modules", "🌐");
+//    ScenarioBinder.init();
+//    ScenarioInitializer.init();
+
+//    observer.observe(document.body, {
+//        childList: true,
+//        subtree: true
+//    });
+//});
 
 const observer = new MutationObserver((mutations, obs) => {
     const requestSelect = document.getElementById("RequestId");
