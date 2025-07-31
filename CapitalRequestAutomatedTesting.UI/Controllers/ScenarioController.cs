@@ -257,8 +257,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
             }
 
-            //todo remove
-            return scenario;
+            ////todo remove
+            //return scenario;
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
             scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);

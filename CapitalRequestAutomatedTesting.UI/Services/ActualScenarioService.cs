@@ -296,7 +296,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     new ActualMethod
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
-                        MethodName = "GetRequestTypeClosedWorkflowStepOptionAsync",
+                        MethodName = "GetReplyTypeClosedWorkflowStepOptionAsync",
                         Parameters = new List<object> { proposal },
                         Operation = CrudOperationType.Update
                     }
@@ -311,7 +311,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         Operation = CrudOperationType.Update
                     }
                 );
-
+                //TODO change to reply
                 actualMethods.Add(
                     new ActualMethod
                     {
