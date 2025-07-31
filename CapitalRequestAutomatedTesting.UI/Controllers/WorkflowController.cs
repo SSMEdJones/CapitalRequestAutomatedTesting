@@ -1,8 +1,8 @@
 ﻿
 using CapitalRequestAutomatedTesting.UI.Models;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
 using Microsoft.AspNetCore.Mvc;
-using ScenarioFramework;
 
 namespace CapitalRequestAutomatedTesting.UI.Controllers
 {

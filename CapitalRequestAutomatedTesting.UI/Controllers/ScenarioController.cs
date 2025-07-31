@@ -247,9 +247,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             // Step 1: Predictive Selenium
             scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
-            ////TODO remove after debugging
-            return scenario;
-
             var completionStep = scenario.PredictiveCompletionStep;
 
             var stopwatch = Stopwatch.StartNew();
@@ -259,6 +256,9 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             {
                 scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
             }
+
+            //todo remove
+            return scenario;
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
             scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);

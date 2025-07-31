@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using CapitalRequest.UI.Enum;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using SSMWorkflow.API.DataAccess.Models;
 using System.Reflection;
 using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
 using vm = CapitalRequest.API.Models;
@@ -56,11 +58,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
 
-            if (scenarioId == "SCN001")
-            {
-                var methods = await GetScenarioMethodsAsync(scenarioDetail);
-                scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
-            }
+            //if (scenarioId == "SCN001")
+            //{
+            //    var methods = await GetScenarioMethodsAsync(scenarioDetail);
+            //    scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
+            //}
+
+            var methods = await GetScenarioMethodsAsync(scenarioDetail);
+            scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
 
             scenarioDataViewModel.ScenarioId = scenarioId;
 
@@ -183,38 +188,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var actualMethods = new List<ActualMethod>();
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
+            var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
+            var requestedInfo = new vm.RequestedInfo();
+
+
+            proposal.ReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestedInfo = requestedInfo ?? new vm.RequestedInfo();
+            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
+                        .Where(x => !x.IsComplete)
+                        .FirstOrDefault();
+
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
+                        .Where(x => x.IsComplete == false && x.IsTerminate == false)
+                        .ToList();
 
             if (scenarioId == "SCN001")
             {
-                var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-                var requestedInfo = (await _capitalRequestServices
-                    .GetAllRequestedInfos(new RequestedInfoSearchFilter
-                    {
-                        ProposalId = proposal.Id,
-                        RequestingReviewerGroupId = scenarioDetail.RequestingGroupId,
-                        ReviewerGroupId = scenarioDetail.TargetGroupId,
-                        IsOpen = true
-                    }))
-                   .FirstOrDefault();
-
-
-
-                proposal.ReviewerGroupId = detail.RequestingGroupId;
-                proposal.RequestedInfo = requestedInfo ?? new vm.RequestedInfo();
-                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
-                proposal.ReviewerId = detail.ReviewerId;
-                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
-
-                var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
-                    .Where(x => !x.IsComplete)
-                    .FirstOrDefault();
-
-                var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                               .Where(x => x.IsComplete == false && x.IsTerminate == false)
-                               .ToList();
-
-                var email = _userContextService.Email;
 
                 actualMethods.Add(
                     new ActualMethod
@@ -242,6 +232,82 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         ServiceName = "IActualWorkflowStepOptionService",
                         MethodName = "GetRequestTypeClosedWorkflowStepOptionAsync",
                         Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Update
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowStepOptionService",
+                        MethodName = "GetRequestTypeWorkflowStepOptionsAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualEmailNotificationService",
+                        MethodName = "GetRequestEmailNotificationsAsync",
+                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+            }
+            else if (scenarioId == "SCN002")
+            {
+                string fileName = null;
+                var fileType = UploadFileType.Attachment;
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualProvidedInfoService",
+                        MethodName = "GetProvidedInfoAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualFileService",
+                        MethodName = "DownloadFile",
+                        Parameters = new List<object> { fileName, proposal.Id, fileType },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowStepResponderService",
+                        MethodName = "GetWorkflowStepResponderAsync",
+                        Parameters = new List<object> { proposal, Constants.RESPONDER_REPLY },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowStepOptionService",
+                        MethodName = "GetRequestTypeClosedWorkflowStepOptionAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Update
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowStepOptionService",
+                        MethodName = "GetReOpenedOptionsAsync",
+                        Parameters = new List<object> {Constants.OPTION_TYPE_VERIFY, proposal },
                         Operation = CrudOperationType.Update
                     }
                 );

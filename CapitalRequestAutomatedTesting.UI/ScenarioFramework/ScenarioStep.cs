@@ -1,5 +1,4 @@
-
-namespace ScenarioFramework
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     using System;
     using System.Threading.Tasks;

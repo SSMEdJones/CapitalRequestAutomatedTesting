@@ -32,6 +32,7 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
 
             CreateMap<dto.RequestedInfo, vm.RequestedInfo>();
             CreateMap<dto.ProvidedInfo, vm.ProvidedInfo>();
+            CreateMap<vm.ProvidedInfo, dto.ProvidedInfo>();
             CreateMap<dto.ReviewerGroup, vm.ReviewerGroup>();
             CreateMap<dto.Reviewer, vm.Reviewer>();
             CreateMap<dto.Wbs, vm.Wbs>();
@@ -46,8 +47,13 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
             CreateMap<dto.RequestedInfo, vm.RequestedInfo>();
             CreateMap<vm.DeletedReviewer, vm.Reviewer>();
 
-            //using dto = CapitalRequest.API.DataAccess.Models;
-            //using vm = CapitalRequest.API.Models;
+
+            CreateMap<vm.Proposal, dto.ProvidedInfo>()
+               .ForMember(dest => dest.RequestedInfoId, o => o.MapFrom(src => src.ProvidedInfo.RequestedInfoId))
+               .ForMember(dest => dest.ProvidedInformation, o => o.MapFrom(src => src.ProvidedInfo.ProvidedInformation))
+               .ForMember(dest => dest.ReviewerId, o => o.MapFrom(src => src.ProvidedInfo.ReviewerId))
+               .ForMember(dest => dest.Created, o => o.MapFrom(src => DateTime.Now))
+               .ForMember(dest => dest.CreatedBy, o => o.MapFrom(src => src.Reviewer.UserId));
 
             //CapitalRequest.API.Models.RequestedInfo->CapitalRequest.API.DataAccess.Models.RequestedInfo
         }

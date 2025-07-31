@@ -1,4 +1,4 @@
-﻿using ScenarioFramework;
+﻿using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {

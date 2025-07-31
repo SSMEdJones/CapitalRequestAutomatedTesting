@@ -73,6 +73,7 @@
         public const string AUTHOR_GROUP = "Author";
 
         public const string EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION = "{{ fullName }} from {{ requestingGroupName }} requested more information from {{ requestedGroup }} on {{ requestDate }}";
+        public const string EMAIL_TEMPLATE_RETURN_OF_REQUESTED_INFORMATION = "{{ fullName }} from {{ replyingGroupName }} returned requested information to {{ requestingUser }} in {{requestingGroup}} on {{ requestDate }}";
 
         //Dashboard
         public const string DASHBOARD_STATUS_INFORMATION_REQUESTED = "I";

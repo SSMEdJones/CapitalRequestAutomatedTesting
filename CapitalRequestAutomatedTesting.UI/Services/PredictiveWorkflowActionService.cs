@@ -89,8 +89,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         {
             var responseMessage = string.Empty;
 
+            //var workflowAction = (await GetWorkflowActionAsync(proposal))
+            //    .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId && 
+            //            x.ActionType == proposal.ActionType)
+            //    .FirstOrDefault();
+
             var workflowAction = (await GetWorkflowActionAsync(proposal))
-                .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId && 
+                .Where(x => x.RequestedInfoId == proposal.RequestedInfo.Id &&
                         x.ActionType == proposal.ActionType)
                 .FirstOrDefault();
 
@@ -111,6 +116,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             };
 
         }
+
+        
 
     }
 

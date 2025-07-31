@@ -27,6 +27,9 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
         public static Func<IWebDriver, Task<SeleniumStepResult>> EnterRequestedInformation(string text)
             => SeleniumHelper.EnterTextById("RequestedInfo_RequestedInformation", text, "Requested Information field");
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> EnterReturnedInformation(string text)
+            => SeleniumHelper.EnterTextById("ProvidedInfo_ProvidedInformation", text, "Returned Information field");
+
         public static Func<IWebDriver, Task<SeleniumStepResult>> DashboardSearch(string proposalId)
             => SeleniumHelper.EnterDashboardSearch(proposalId);
 

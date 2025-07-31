@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
@@ -16,9 +17,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 {
     public interface IPredictiveEmailNotificationService
     {
-        Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal, string emailType);
+        Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser);
         Task<string> GenerateEmailMessageAsync(vm.EmailTemplate emailTemplate, vm.Reviewer reviewer, vm.ReviewerGroup requestingGroup, vm.Proposal proposal);
-        string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName);
+        string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName, string requestingUser);
     }
     public class PredictiveEmailNotificationService : IPredictiveEmailNotificationService
     {
@@ -42,7 +43,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             _mapper = mapper;
         }
 
-        public async Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal, string emailType)
+        public async Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser)
         {
             var emailNotifications = new List<EmailNotification>();
 
@@ -52,7 +53,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var worflowStepId = workflowStep.WorkflowStepID;
 
             var reviewerGroupdId = proposal.RequestedInfo.ReviewerGroupId;
-            var requestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId.Value;
+            var requestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
 
             var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
             var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
@@ -70,11 +71,33 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 .Select(z => _mapper.Map<vm.Reviewer>(z))
                 .ToList();
 
-          
+            var emailActionTemplate = string.Empty;
+
             var fullName = (await _capitalRequestServices.GetReviewer(proposal.ReviewerId)).FullName;
+            switch (emailType)
+            {
+                case Constants.EMAIL_REQUEST_MORE_INFORMATION:
+                    emailActionTemplate = Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION;
+                    break;
+                case Constants.EMAIL_PROVIDE_MORE_INFORMATION:
+                    emailActionTemplate = Constants.EMAIL_TEMPLATE_RETURN_OF_REQUESTED_INFORMATION;
+                    var requestedInfo = await _capitalRequestServices.GetRequestedInfo(proposal.RequestedInfo.Id);
+
+                    reviewers = (await GetReviewers(proposal))
+                        .Where(x => x.ReviewerGroupId == requestingGroup.Id &&
+                               x.Id == requestedInfo.RequestingReviewerId)
+                        .Select(z => _mapper.Map<vm.Reviewer>(z))
+                        .ToList();
+
+                    //reviewers = reviewers.Where(x => x.Id == requestedInfo.RequestingReviewerId).ToList();
+                    break;
+                default:
+                    throw new ArgumentException($"Unknown email type: {emailType}");
+            }
+
             foreach (var reviewer in reviewers)
             {
-                var action = GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION, fullName);
+                var action = GenerateActionString(reviewerGroup, requestingGroup, emailActionTemplate, fullName, requestingUser);
                 var emailMessage = await GenerateEmailMessageAsync(emailTemplate, reviewer, requestingGroup, proposal);
                 
                 var emallQueryViewModel = new EmailQueryViewModel
@@ -110,7 +133,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return emailNotifications;
         }
-
 
         private string GenerateEmailQuery(EmailQueryViewModel emailQueryViewModel)
         {
@@ -188,13 +210,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var reviewerGroupId = proposal.RequestedInfo.ReviewerGroupId;
 
                 var projectLink = GenerateProjectLink(
-                 _ssmWorkFlowSettings.ProjectReviewLink,
-                 proposal.Id,
-                 emailTemplate.OptionType,
-                 proposal.RequestedInfo?.Id,
-                 reviewer.Id,
-                 proposal.ReviewerGroupId,
-                 proposal.RequestedInfo.RequestingReviewerGroupId
+                     _ssmWorkFlowSettings.ProjectReviewLink,
+                     proposal.Id,
+                     emailTemplate.OptionType,
+                     proposal.RequestedInfo?.Id,
+                     reviewer.Id,
+                     proposal.ReviewerGroupId,
+                     proposal.RequestedInfo.RequestingReviewerGroupId
                 );
 
                 //var projectLink = $"{_ssmWorkFlowSettings.ProjectReviewLink} ?Id={reqId}";
@@ -227,10 +249,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return template.Render(model);
         }
 
-        public string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName)
+        public string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName, string requestingUser)
         {
             var requestingGroupName = requestingGroup.Name;
             var requestedGroup = reviewerGroup.Name;
+            var replyingGroupName = reviewerGroup.Name;
 
             var requestDate = DateTime.Now.ToShortDateString();
 
@@ -238,6 +261,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 ["fullName"] = fullName,
                 ["requestingGroupName"] = requestingGroupName,
+                ["replyingGroupName"] = replyingGroupName,
+                ["requestingUser"] = requestingUser,
                 ["requestedGroup"] = requestedGroup,
                 ["requestDate"] = requestDate
             };

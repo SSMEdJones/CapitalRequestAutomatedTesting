@@ -3,6 +3,7 @@ using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
+using CapitalRequestAutomatedTesting.UI.Utilities;
 using Scriban;
 using SSMWorkflow.API.Models;
 using dto = CapitalRequest.API.DataAccess.Models;
@@ -13,6 +14,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services;
 public interface IPredictiveRequestedInfoService
 {
     Task<dto.RequestedInfo> CreateRequestedInfoAsync(vm.Proposal proposal, int increment);
+    Task<dto.RequestedInfo> UpdateRequestedInfoAsync(vm.Proposal proposal);
     Task<dto.RequestedInfo> GetRequestedInfoAsync(vm.Proposal proposal);
 }
 
@@ -76,7 +78,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
 
         var fullName = reviewer.FullName;
 
-        var action = _predictiveEmailNotificationService.GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION, fullName);
+        var action = _predictiveEmailNotificationService.GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION, fullName, null);
 
         //var requestingReviewer = (await _capitalRequestServices
         //        .GetReviewers(proposal.SegmentId))
@@ -97,7 +99,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
             RequestingReviewerGroupId = proposal.ReviewerGroupId,
             RequestingReviewerId = requestingReviewerId,
             ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
-            RequestedInformation = proposal.RequestedInfo.RequestedInformation,
+            RequestedInformation = TextManipulation.ConvertToHtmlText(proposal.RequestedInfo.RequestedInformation),
             Action = $"{action}.",
             WorkflowStepOptionId = workflowStepOption?.OptionID ?? Guid.Empty,
             IsOpen = true,
@@ -115,13 +117,14 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
     {
 
         var requestedInfo = ( await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter
-            {
-                ProposalId = proposal.Id,
-                ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
-                RequestingReviewerGroupId = proposal.ReviewerGroupId,
-                IsOpen = true
-            }))
-            .FirstOrDefault();
+                {
+                    ProposalId = proposal.Id,
+                    ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
+                    RequestingReviewerGroupId = proposal.ReviewerGroupId,
+                    IsOpen = true
+                })
+            ).FirstOrDefault();
+
 
         return _mapper.Map<dto.RequestedInfo>(requestedInfo);
     }
@@ -157,5 +160,19 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
         return workflowSteps.FirstOrDefault(x => !x.IsComplete);
     }
 
-    
+    public async Task<RequestedInfo> UpdateRequestedInfoAsync(vm.Proposal proposal)
+    {
+        var requestedInfo = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter
+                {
+                    ProposalId = proposal.Id,
+                    ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
+                    RequestingReviewerGroupId = proposal.ReviewerGroupId,
+                    IsOpen = true
+                })
+            ).FirstOrDefault();
+
+        requestedInfo.IsOpen = false;
+
+        return _mapper.Map< RequestedInfo>(requestedInfo);
+    }
 }

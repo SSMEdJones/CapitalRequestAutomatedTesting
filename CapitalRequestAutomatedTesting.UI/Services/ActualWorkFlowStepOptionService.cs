@@ -30,7 +30,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<List<WorkflowStepOption>> GetRequestTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal)
         {
-            WorkFlowStepViewModel? workflowStep = await GetActiveWorkflowStepAsync(proposal);
+            var workflowStep = proposal.WorkflowStep;
 
             if (workflowStep == null)
             {
@@ -41,22 +41,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                             .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
                                                    x.OptionType == Constants.OPTION_TYPE_VERIFY)
                                             .ToList();
-
-            //var mostRecent = allOptions.OrderByDescending(x => x.Updated)
-            //    .Where(x => x.OptionName != proposal.Reviewer.Email)
-            //    .FirstOrDefault();
-
-            //if (mostRecent == null)
-            //{
-            //    mostRecent = allOptions.OrderByDescending(x => x.Updated)
-            //    .FirstOrDefault();
-            //}
-
-            //if (mostRecent == null)
-            //{
-            //    throw new Exception("No workflowtepOptions found for the given proposal.");
-
-            //}
 
             var deduplicated = allOptions
                 .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
@@ -83,9 +67,43 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return actual;
         }
 
+        public async Task<List<WorkflowStepOption>> GetReplyTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal)
+        {
+            //left off here
+            var workflowStep = proposal.WorkflowStep;
+
+            var allOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                                            .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
+                                                   x.OptionType == Constants.OPTION_TYPE_VERIFY)
+                                            .ToList();
+
+            var deduplicated = allOptions
+                .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
+                            x.ReviewerGroupId == proposal.ReviewerGroupId)
+                .GroupBy(x => new { x.OptionName, x.ReviewerGroupId, x.WorkflowStepID })
+                .Select(g =>
+                    g.OrderBy(x => x.IsTerminate) // false (active) comes before true
+                     .ThenByDescending(x => x.Updated ?? x.Created)
+                     .First()
+                )
+                .ToList();
+
+            var relevantOptions = deduplicated
+                .Where(x => x.Updated.HasValue && x.Updated.Value.ToShortDateString() == DateTime.Now.ToShortDateString() &&
+                x.IsTerminate && !x.IsComplete ||
+                (!x.Updated.HasValue && !x.IsTerminate && !x.IsComplete &&
+                x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower()))
+                .ToList();
+
+            var actual = relevantOptions
+                .Select(x => _mapper.Map<WorkflowStepOption>(x))
+                .ToList();
+
+            return actual;
+        }
         public async Task<List<WorkflowStepOption>> GetRequestTypeWorkflowStepOptionsAsync(vm.Proposal proposal)
         {
-            WorkFlowStepViewModel? workflowStep = await GetActiveWorkflowStepAsync(proposal);
+            var workflowStep = proposal.WorkflowStep;
 
             var allOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
                                 .Where(x => x.ReviewerGroupId == proposal.RequestedInfo.ReviewerGroupId &&
@@ -103,12 +121,30 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         }
 
-        private async Task<WorkFlowStepViewModel?> GetActiveWorkflowStepAsync(vm.Proposal proposal)
+        public async Task<List<WorkflowStepOption>> GetReOpenedOptionsAsync(string optionType, vm.Proposal proposal)
         {
-            var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
-            var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
+            var workflowStep = proposal.WorkflowStep;
+            var workflowstepOptions = proposal.WorkflowStepOptions;
+            var optionId = Guid.Empty;
 
-            return workflowStep;
+            var reviewerGroupId = proposal.ReplyingGroup.Id;
+
+            var filteredOptions = proposal.WorkflowStepOptions
+                .Where(x => x.ReviewerGroupId == reviewerGroupId && x.OptionType == optionType)
+                .ToList();
+
+            var workflowStepOption = filteredOptions
+                .Where(x => x.IsTerminate == false)
+                 .OrderByDescending(x => x.Created)
+                 .FirstOrDefault();
+
+            if (workflowStepOption != null)
+            {
+                optionId = workflowStepOption.OptionID;
+            }
+            
+
+            return workflowstepOptions.Select(x => _mapper.Map<WorkflowStepOption>(x)).ToList();
         }
 
 

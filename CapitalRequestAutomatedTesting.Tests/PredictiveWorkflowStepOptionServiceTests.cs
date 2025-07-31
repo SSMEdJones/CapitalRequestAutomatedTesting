@@ -34,7 +34,7 @@ public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase
         proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
         proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
 
-        var predicted = await _service.CloseOptionsAsync(proposal, Guid.Empty, Constants.OPTION_TYPE_VERIFY, null, Constants.OPTION_TYPE_REQUEST);
+        var predicted = await _service.CloseOptionsAsync(proposal, Guid.Empty, Constants.OPTION_TYPE_VERIFY, null);
 
         var actual = await _service.GetFilteredOptionsAsync(proposal, Constants.OPTION_TYPE_VERIFY, null);
 

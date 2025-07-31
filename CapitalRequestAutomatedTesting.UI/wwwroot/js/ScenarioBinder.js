@@ -80,7 +80,16 @@ export const ScenarioBinder = {
         
         // Bind appropriate events based on scenario type
         if (requestingGroupSelect) {
-            this.bindGroupChange(partial, proposalId, "requesting");
+            // Check if this is a replying scenario by looking for the replyingGroupId field
+            const replyingGroupField = this.getField(partial, "replyingGroupId");
+            const isReplyingScenario = !!replyingGroupField;
+
+            // Skip binding requesting group for replying scenarios
+            if (isReplyingScenario) {
+                DevLogger.info("Skipping binding for requesting group in replying scenario", partial.id);
+            } else {
+                this.bindGroupChange(partial, proposalId, "requesting");
+            }
         }
 
         if (replyingGroupSelect) {

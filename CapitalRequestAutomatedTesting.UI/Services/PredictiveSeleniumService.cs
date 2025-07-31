@@ -230,9 +230,25 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return workflowActions;
         }
 
-        public async Task<bool> ValidateWorkflowButtonExists(vm.Proposal proposal)
+        //public async Task<bool> ValidateWorkflowButtonExists(vm.Proposal proposal)
+        //{
+        //    return (await GetWorkflowActionAsync(proposal)).Any();
+        //}
+
+        public async Task<bool> ValidateWorkflowButtonExists(vm.Proposal proposal, string actionType)
         {
-            return (await GetWorkflowActionAsync(proposal)).Any();
+            var workflowActions = await GetWorkflowActionAsync(proposal);
+            if (workflowActions == null || !workflowActions.Any())
+                return false;
+
+            if (actionType != null)
+            {
+                workflowActions = workflowActions
+                    .Where(x => x.ActionType == actionType)
+                    .ToList();
+            }
+
+            return workflowActions.Any();
         }
 
         private async Task<List<PredictiveMethod>> GetSeleniumMethodsAsync(ScenarioDetailsViewModel scenarioDetail)
@@ -265,7 +281,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             proposal.WorkflowStepId = workflowStep.WorkflowStepID;
             proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
-            proposal.workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
                 .Where(x => x.IsComplete == false && x.IsTerminate == false)
                 .ToList();
 
@@ -303,7 +319,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         StepNumber = ++stepNumber,
                         ServiceName = "IPredictiveWorkflowActionService",
                         MethodName = "ValidateVerifyButtonAsync",
-                        Parameters = new List<object> { proposal, proposal.ReviewerGroupId, expectedMessage }
+                        Parameters = new List<object> { proposal, requestingGroupId, expectedMessage }
                     }
                 );
 
@@ -376,7 +392,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         StepNumber = ++stepNumber,
                         ServiceName = "IPredictiveWorkflowActionService",
                         MethodName = "ValidateActionButtonAsync",
-                        Parameters = new List<object> { proposal, proposal.RequestingGroupId, expectedMessage }
+                        Parameters = new List<object> { proposal, requestingGroupId, expectedMessage }
                     }
                 );
 

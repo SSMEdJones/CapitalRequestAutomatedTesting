@@ -2,6 +2,7 @@
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Enums;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -15,7 +16,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
     public interface IPredictiveWorkflowStepOptionService
     {
         //WorkflowStepOption CreateWorkflowStepOption(vm.Proposal proposal, string OptionType);
-        Task<List<WorkflowStepOption>> CloseOptionsAsync(vm.Proposal proposal, Guid optionId, string OptionType, int? requestedInfoId, string actionType);
+        Task<List<WorkflowStepOption>> CloseOptionsAsync(vm.Proposal proposal, Guid optionId, string OptionType, int? requestedInfoId);
+        Task<List<WorkflowStepOption>> ReOpenOptionsAsync(string optionType, vm.Proposal proposal);
         Task<List<WorkflowStepOption>> GetFilteredOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId);
         Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string OptionType, int? requestedInfoId);
         Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage);
@@ -108,7 +110,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return await _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter { SegmentId = proposal.SegmentId });
         }
 
-        public async Task<List<WorkflowStepOption>> CloseOptionsAsync(vm.Proposal proposal, Guid optionId, string optionType, int? requestedInfoId, string actionType)
+        public async Task<List<WorkflowStepOption>> CloseOptionsAsync(vm.Proposal proposal, Guid optionId, string optionType, int? requestedInfoId)
         {
             var workflowStepOptions = new List<WorkflowStepOption>();
 
@@ -281,7 +283,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var emailType = emailTemplate?.OptionType ?? string.Empty;
 
             //var workflowStepOptionsViewModel = await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID);
-            var workflowStepOptionsViewModel = proposal.workflowStepOptions;
+            var workflowStepOptionsViewModel = proposal.WorkflowStepOptions;
 
             var workflowStepOptions = workflowStepOptionsViewModel
                    .Select(x => _mapper.Map<WorkflowStepOption>(x))
@@ -383,7 +385,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public async Task ValidateReviewer(vm.Proposal proposal, WorkflowStep workflowStep)
         {
 
-            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(proposal.ReviewerGroupId);
+            var reviewerGroupId = proposal.ActionType == Constants.ACTION_TYPE_ADD_INFO
+                ? proposal.ReplyingGroupId
+                : proposal.ReviewerGroupId;
+
+            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupId);
 
 
             if (proposal.Reviewer == null)
@@ -408,7 +414,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             if (workflowStepOptions.Any())
             {
                 var optionsByGroup = workflowStepOptions
-                    .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId &&
+                    .Where(x => x.ReviewerGroupId == reviewerGroupId &&
                                 proposal.ActionType == x.OptionType);
 
                 if (optionsByGroup.Any())
@@ -496,6 +502,67 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return workflowStepOption;
         }
 
+        public async Task<List<WorkflowStepOption>> ReOpenOptionsAsync(string optionType, vm.Proposal proposal)
+        {
+            var workflowStep = proposal.WorkflowStep;
+            var reviewer = proposal.Reviewer;
+            var reviewerGroupId = proposal.ReplyingGroup.Id;
+            
+            var workflowstepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                .Where(x=> x.ReviewerGroupId == reviewerGroupId && 
+                       x.OptionType == optionType)
+                .ToList();
+
+            var optionId = Guid.Empty;
+
+            var workflowStepOption = workflowstepOptions
+                .Where(x => x.IsTerminate == false &&
+                       x.OptionName == reviewer.Email)
+                 .OrderByDescending(x => x.Created)
+                 .FirstOrDefault();
+
+            if (workflowStepOption != null)
+            {
+                optionId = workflowStepOption.OptionID;
+            }
+
+            var workflowTemplate = (await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep?.StepName }))
+                .FirstOrDefault();
+
+            var stepNumber = workflowTemplate?.StepNumber ?? 0;
+
+            //var reviewers = await _capitalRequestServices
+            //    .GetAllReviewers(new ReviewerSearchFilter
+            //    {
+            //        SegmentId = proposal.SegmentId,
+            //        RegionId = proposal.Region,
+            //        ReviewerGroupId = reviewerGroupId,
+            //        StepNumber = stepNumber
+            //    }
+            //    );
+
+            workflowstepOptions.ForEach(x =>
+            {
+                if (x.OptionID == optionId || x.OptionName == workflowStepOption.OptionName)
+                {
+                    return;
+                }
+                else
+                {
+                    var reviewer = proposal.Reviewer;
+
+                    if (reviewer != null)
+                    {
+                        x.Updated = DateTime.Now;
+                        x.UpdatedBy = reviewer.UserId;
+                        x.IsTerminate = false;
+                    }
+                }
+
+            });
+            
+            return workflowstepOptions.Select(x => _mapper.Map<WorkflowStepOption>(x)).ToList();
+        }
     }
 
 }

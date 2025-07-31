@@ -27,17 +27,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public async Task<WorkflowStepResponder> GetWorkflowStepResponderAsync(vm.Proposal proposal, string responderType)
         {
 
-            var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
-
-            var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
-
+            var workflowStep = proposal.WorkflowStep;
             if (workflowStep == null)
             {
                 throw new Exception("No workflow steps found for the given proposal.");
             }
 
             var workflowStepResponders = await _ssmWorkflowServices.GetAllAddWorkFlowStepResponder(workflowStep.WorkflowStepID);
-            WorkFlowStepOptionViewModel workflowStepOption = await GetWorkflowStepOptionAsync(proposal, workflowStep);
+            var workflowStepOption = GetWorkflowStepOption(proposal);
 
             if (workflowStepOption == null)
             {
@@ -55,11 +52,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return _mapper.Map<WorkflowStepResponder>(actual);
         }
 
-        private async Task<WorkFlowStepOptionViewModel> GetWorkflowStepOptionAsync(vm.Proposal proposal, WorkFlowStepViewModel? workflowStep)
+        private WorkFlowStepOptionViewModel GetWorkflowStepOption(vm.Proposal proposal)
         {
-            var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                            .Where(x => !x.IsComplete && !x.IsTerminate)
-                            .ToList();
+            var workflowStepOptions = proposal.WorkflowStepOptions;
 
             WorkFlowStepOptionViewModel workflowStepOption = null;
             if (workflowStepOptions.Any())

@@ -1,4 +1,5 @@
-namespace ScenarioFramework
+
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class ScenarioRunner
     {

@@ -38,7 +38,7 @@ public class PredictiveEmailNotificationServiceTests : IntegrationTestBase
         proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
         proposal.RequestedInfo = _mapper.Map<CapitalRequest.API.Models.RequestedInfo>(await _requestedInfoService.CreateRequestedInfoAsync(proposal, 0));
 
-        var predicted = await _service.CreateEmailNotificationsAsync(proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION);
+        var predicted = await _service.CreateEmailNotificationsAsync(proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, null);
 
         var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
         var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));

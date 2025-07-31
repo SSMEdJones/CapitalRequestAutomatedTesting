@@ -1,4 +1,5 @@
 ﻿using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -27,6 +28,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<SelectListItem>> GetRequestingGroupsByReplyingIdAsync(int proposalId, int replyingGroupId);
         Task<(List<SelectListItem> RequestingGroups, List<SelectListItem> TargetGroups)> BuildRequestingAndTargetGroupsAsync(int proposalId, int? requestingGroupId);
         Task<ScenarioDetailsViewModel> GetScenarioDetail(string scenarioId, int requestId);
+        Task<List<vm.ReviewerGroup>> GetReviewerGroupsForReplyingGroup(int proposalId, int groupId);
 
     }
 
@@ -37,8 +39,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly IWorkflowControllerService _workflowControllerService;
 
-
-        public ScenarioControllerService(ICapitalRequestServices capitalRequestServices, ISSMWorkflowServices ssmWorkflowServices, IWorkflowControllerService workflowControllerService)
+        public ScenarioControllerService(ICapitalRequestServices capitalRequestServices,
+            ISSMWorkflowServices ssmWorkflowServices,
+            IWorkflowControllerService workflowControllerService
+)
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
@@ -94,7 +98,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return detail;
         }
-        
+
         public async Task<List<SelectListItem>> GetRequestSelectListAsync()
         {
             return (await _workflowControllerService.GetDashboardItemsFromApiAsync())
@@ -113,13 +117,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 .ToList()
                 .ConvertAll(x =>
                 {
-                 return new SelectListItem()
-                 {
-                     Text = x.Name,
-                     Value = x.Id.ToString()
-                 };
-             });
-           
+                    return new SelectListItem()
+                    {
+                        Text = x.Name,
+                        Value = x.Id.ToString()
+                    };
+                });
+
         }
 
         public async Task<List<SelectListItem>> GetReplyingGroupsAsync(int proposalId)
@@ -233,16 +237,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 });
 
         }
-        
+
         public async Task<List<vm.ReviewerGroup>> GetFilteredReviewerGroups(int proposalId, int? requestingGroupId)
         {
             var proposal = await _capitalRequestServices.GetProposal(proposalId);
-            var WorkflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId))
+
+            var workflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId))
+                .Distinct()
+                .ToList();
+
+            var workflowNames = workflowPortions
                 .Select(x => x.WorkflowPortion)
                 .Distinct()
                 .ToList();
 
-            var groups = await GetAvailableNamesAsync(WorkflowPortions);
+            var groups = await GetAvailableNamesAsync(workflowNames);
 
             var author = (await _capitalRequestServices
                 .GetAllReviewerGroups(new ReviewerGroupSearchFilter { Name = Constants.REVIEWER_GROUP_AUTHOR, StepNumber = null }))
@@ -266,8 +275,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<List<SelectListItem>> GetRequestingGroupsByReplyingIdAsync(int proposalId, int replyingGroupId)
         {
-            // Get all open requests for proposal by replying group.  If more than one, present requesting group list
             var groups = new List<SelectListItem>();
+
+            // Get all open requests for proposal by replying group.  If more than one, present requesting group list
+            var reviewerGroups = await GetReviewerGroupsForReplyingGroup(proposalId, replyingGroupId);
+
             var filter = new RequestedInfoSearchFilter
             {
                 ProposalId = proposalId,
@@ -276,17 +288,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             };
 
             var requestedInfos = await _capitalRequestServices.GetAllRequestedInfos(filter);
-            if (requestedInfos.Count > 1)
+            if (reviewerGroups.Count > 1)
             {
-                var groupFilter = new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter { ReviewerType = Constants.REVIEW_TYPE_REVIEW };
-                var reviewerGroups = await _capitalRequestServices.GetAllReviewerGroups(groupFilter);
-                reviewerGroups = (from data in reviewerGroups
-                          join requests in requestedInfos on data.Id equals requests.RequestingReviewerGroupId
-                          select data)
-                  .ToList();
 
-                //var reviewerGroups = 
-                groups  = reviewerGroups
+                groups = reviewerGroups
                 .ToList()
                 .ConvertAll(x =>
                 {
@@ -297,8 +302,48 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     };
                 });
             }
+            else if (requestedInfos.Count == 1)
+            {
+                // If only one request, use the requesting group from that request
+                var requestedInfo = requestedInfos.FirstOrDefault();
+                if (requestedInfo != null)
+                {
+                    var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestedInfo.RequestingReviewerGroupId);
+                    groups.Add(new SelectListItem
+                    {
+                        Text = requestingGroup.Name,
+                        Value = requestingGroup.Id.ToString()
+                    });
+                }
+            }
 
             return groups;
+        }
+
+        public async Task<List<vm.ReviewerGroup>> GetReviewerGroupsForReplyingGroup(int proposalId, int groupId)
+        {
+            var reviewerGroups = new List<vm.ReviewerGroup>();
+
+            var filter = new RequestedInfoSearchFilter
+            {
+                ProposalId = proposalId,
+                ReviewerGroupId = groupId,
+                IsOpen = true
+            };
+
+            var requestedInfos = await _capitalRequestServices.GetAllRequestedInfos(filter);
+
+            if (requestedInfos.Count > 1)
+            {
+                var groupFilter = new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter { ReviewerType = Constants.REVIEW_TYPE_REVIEW };
+                reviewerGroups = await _capitalRequestServices.GetAllReviewerGroups(groupFilter);
+                reviewerGroups = (from data in reviewerGroups
+                                  join requests in requestedInfos on data.Id equals requests.RequestingReviewerGroupId
+                                  select data)
+                  .ToList();
+            }
+
+            return reviewerGroups;
         }
 
         public async Task<List<CapitalRequest.API.Models.Reviewer>> GetFilteredReviewers(int proposalId, int requestingGroupId)
@@ -306,11 +351,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var proposal = await _capitalRequestServices.GetProposal(proposalId);
             var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
 
-            var filter = new ReviewerSearchFilter 
-                { RegionId = proposal.Region, 
-                  SegmentId = proposal.SegmentId, 
-                  StepNumber = reviewerGroup.StepNumber, 
-                  ReviewerGroupId = reviewerGroup.Id
+            var filter = new ReviewerSearchFilter
+            {
+                RegionId = proposal.Region,
+                SegmentId = proposal.SegmentId,
+                StepNumber = reviewerGroup.StepNumber,
+                ReviewerGroupId = reviewerGroup.Id
             };
 
             var reviewers = await _capitalRequestServices.GetAllReviewers(filter);
@@ -318,7 +364,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return reviewers;
         }
 
-        public async Task<SeleniumStepResult> ValidateTargetGroupIdAsync (vm.Proposal proposal,  int requestingGroupId, int targetGroupId)
+        public async Task<SeleniumStepResult> ValidateTargetGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId)
         {
             bool isValid = (await GetFilteredReviewerGroups(proposal.Id, requestingGroupId)).Where(X => X.Id == targetGroupId).Any();
 
@@ -351,11 +397,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public async Task<SeleniumStepResult> ValidateRequestingGroupForReplyIdAsync(vm.Proposal proposal, int requestingGroupId, int replyingGroupId)
         {
             bool isValid = true;
+
             if (requestingGroupId > 0)
             {
-                var groups = await GetFilteredReviewerGroups(proposal.Id, requestingGroupId);
 
-                isValid = (await GetFilteredReviewerGroups(proposal.Id, replyingGroupId)).Where(x => x.Id == replyingGroupId).Any();
+                isValid = (await GetReviewerGroupsForReplyingGroup(proposal.Id, replyingGroupId))
+                    .Where(x => x.Id == requestingGroupId).Any();
             }
 
             return new SeleniumStepResult
@@ -457,7 +504,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id)
         {
-            return  await _capitalRequestServices.GetReviewer(id);
+            return await _capitalRequestServices.GetReviewer(id);
         }
 
         public async Task<CapitalRequest.API.Models.ReviewerGroup> GetReviewerGroupByIdAsync(int id)

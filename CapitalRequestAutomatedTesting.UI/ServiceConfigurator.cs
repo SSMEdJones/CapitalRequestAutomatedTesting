@@ -5,7 +5,6 @@ using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Services;
 using DinkToPdf.Contracts;
 using DinkToPdf;
-using ScenarioFramework;
 using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
@@ -13,6 +12,7 @@ using SSMWorkflow.API.DataAccess.Services;
 using SSMWorkflow.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.AutoMapper.MappingProfile;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 
 namespace CapitalRequestAutomatedTesting.UI
 {
@@ -91,6 +91,8 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveEmailNotificationService, PredictiveEmailNotificationService>();
             services.AddScoped<IPredictiveScenarioService, PredictiveScenarioService>();
             services.AddScoped<IPredictiveWorkflowActionService, PredictiveWorkflowActionService>();
+            services.AddScoped<IPredictiveProvidedInfoService, PredictiveProvidedInfoService>();
+            services.AddScoped<IPredictiveFileService, PredictiveFileService>();
 
             //services.AddScoped<IPredictiveProposalControllerService, PredictiveProposalControllerService>();
 
@@ -105,6 +107,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualDashboardService, ActualDashboardService>();
             services.AddScoped<IActualScenarioService, ActualScenarioService>();
             services.AddScoped<IActualSeleniumService, ActualSeleniumService>();
+            services.AddScoped<IActualProvidedInfoService, ActualProvidedInfoService>();
             #endregion
 
             #region Scenario Framework

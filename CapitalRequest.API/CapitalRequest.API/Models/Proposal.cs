@@ -399,7 +399,10 @@ namespace CapitalRequest.API.Models
         public int ReviewerGroupId { get; set; }
         public string ReviewerGroupName { get; set; }
         public int RequestingGroupId { get; set; }
+        public ReviewerGroup RequestingGroup { get; set; } = new ReviewerGroup();
+
         public int ReplyingGroupId { get; set; }
+        public ReviewerGroup ReplyingGroup { get; set; } = new ReviewerGroup();
         public int ReviewerId { get; set; }
         public int RequestedInfoId { get; set; }
         public RequestedInfo RequestedInfo { get; set; } = new RequestedInfo();
@@ -454,6 +457,6 @@ namespace CapitalRequest.API.Models
         public string ExpectedMessage { get; set; }
         public Guid WorkflowStepId { get; set; }
         public WorkFlowStepViewModel WorkflowStep { get; set; }
-        public List<WorkFlowStepOptionViewModel> workflowStepOptions { get; set; }
+        public List<WorkFlowStepOptionViewModel> WorkflowStepOptions { get; set; }
     }
 }
