@@ -14,6 +14,8 @@
         public string RequestedInformation { get; set; }
         public string ReturnedInformation { get; set; }
         public int SequenceNumber { get; set; }
+        public int RequestedInfoId { get; set; }
+
         public string Message { get; set; }
 
         public SeleniumScenarioOutcome PredictedSeleniumOutcome { get; set; }

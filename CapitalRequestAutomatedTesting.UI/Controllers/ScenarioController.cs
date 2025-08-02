@@ -126,32 +126,36 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         public async Task<IActionResult> GetReviewerDetails(int reviewerId, int proposalId, int? requestingGroupId, int? targetGroupId, int? replyingGroupId, string displayText)
         {
             var reviewer = await _scenarioControllerService.GetReviewerByIdAsync(reviewerId);
-
-            var requestedInfo = string.Empty;
-            var returnedInfo = string.Empty;
+            var reviewerEmail = reviewer.Email;
+            var reviewerUserId = reviewer.UserId;
+            var requestedInfoId = 0;
+            var requestedInformation = string.Empty;
+            var returnedInformation = string.Empty;
             var requestingGroup = new ReviewerGroup();
             var targetGroup = new ReviewerGroup();
             var replyingGroup = new ReviewerGroup();
 
-            if (replyingGroupId.HasValue && requestingGroupId.HasValue)
-            {
-                var filter = new CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter
+            var requestedInfo = (await _capitalRequestServices.GetAllRequestedInfos(
+                new CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter
                 {
                     ProposalId = proposalId,
                     IsOpen = true,
                     ReviewerGroupId = replyingGroupId,
                     RequestingReviewerGroupId = requestingGroupId
-                };
+                }))
+                .FirstOrDefault();
 
-                var requestedInfos = (await _capitalRequestServices.GetAllRequestedInfos(filter)).FirstOrDefault();
-                if (requestedInfos != null)
+            if (replyingGroupId.HasValue && requestingGroupId.HasValue)
+            {
+                if (requestedInfo != null)
                 {
-                    requestedInfo = requestedInfos.RequestedInformation;
+                    requestedInformation = requestedInfo.RequestedInformation;
+                    requestedInfoId = requestedInfo.Id;
                 }
 
                 requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId.Value);
                 replyingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(replyingGroupId.Value);
-                returnedInfo = $"{replyingGroup.Name} replying to request for more information from {requestingGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
+                returnedInformation = $"{replyingGroup.Name} replying to request for more information from {requestingGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
             }
             else if(requestingGroupId.HasValue)
             {
@@ -163,7 +167,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
                 if (requestingGroupId.HasValue && targetGroupId.HasValue)
                 {
-                    requestedInfo = $"{requestingGroup.Name} requesting more information from {targetGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
+                    requestedInformation = $"{requestingGroup.Name} requesting more information from {targetGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
                 }
 
             }
@@ -171,10 +175,11 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
             return Json(new
             {
-                reviewerEmail = reviewer.Email,
-                reviewerUserId = reviewer.UserId,
-                requestedInformation = requestedInfo,
-                returnedInformation = returnedInfo
+                reviewerEmail,
+                reviewerUserId,
+                requestedInformation,
+                returnedInformation,
+                requestedInfoId
             });
         }
 

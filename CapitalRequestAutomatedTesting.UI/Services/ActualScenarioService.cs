@@ -189,23 +189,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-            var requestedInfo = new vm.RequestedInfo();
+            var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
 
 
             proposal.ReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo = requestedInfo ?? new vm.RequestedInfo();
+            proposal.RequestedInfo = requestedInfo;
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
                         .Where(x => !x.IsComplete)
                         .FirstOrDefault();
 
             proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
-                        .Where(x => x.IsComplete == false && x.IsTerminate == false)
                         .ToList();
+
 
             if (scenarioId == "SCN001")
             {
-
+                var optionType = Constants.OPTION_TYPE_VERIFY;
                 actualMethods.Add(
                     new ActualMethod
                     {
@@ -230,8 +230,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     new ActualMethod
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
-                        MethodName = "GetRequestTypeClosedWorkflowStepOptionAsync",
-                        Parameters = new List<object> { proposal },
+                        MethodName = "GetClosedWorkflowStepOptionsAsync",
+                        Parameters = new List<object> { proposal, optionType },
                         Operation = CrudOperationType.Update
                     }
                 );
@@ -261,6 +261,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 string fileName = null;
                 var fileType = UploadFileType.Attachment;
+                var requestedInfoId = detail.RequestedInfoId;
+                var optionType = Constants.OPTION_TYPE_ADD_INFO;
 
                 actualMethods.Add(
                     new ActualMethod
@@ -296,8 +298,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     new ActualMethod
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
-                        MethodName = "GetReplyTypeClosedWorkflowStepOptionAsync",
-                        Parameters = new List<object> { proposal },
+                        MethodName = "GetClosedWorkflowStepOptionsAsync",
+                        Parameters = new List<object> { proposal, optionType, requestedInfoId },
                         Operation = CrudOperationType.Update
                     }
                 );
@@ -309,16 +311,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         MethodName = "GetReOpenedOptionsAsync",
                         Parameters = new List<object> {Constants.OPTION_TYPE_VERIFY, proposal },
                         Operation = CrudOperationType.Update
-                    }
-                );
-                //TODO change to reply
-                actualMethods.Add(
-                    new ActualMethod
-                    {
-                        ServiceName = "IActualWorkflowStepOptionService",
-                        MethodName = "GetRequestTypeWorkflowStepOptionsAsync",
-                        Parameters = new List<object> { proposal },
-                        Operation = CrudOperationType.Insert
                     }
                 );
 

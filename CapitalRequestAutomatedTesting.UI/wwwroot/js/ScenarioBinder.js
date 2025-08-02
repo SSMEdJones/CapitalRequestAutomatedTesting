@@ -338,15 +338,39 @@ export const ScenarioBinder = {
 
             fetch(`/Scenario/GetReviewerDetails?${params}`)
                 .then(res => res.json())
-                .then(data => {  // Fixed: added parentheses around parameter
-                    [this.getField(partial, "reviewerEmail"),
-                    this.getField(partial, "reviewerUserId"),
-                    this.getField(partial, "requestedInformation"),
-                    this.getField(partial, "returnedInformation")]
-                        .forEach((field, i) => {
-                            if (field) field.value = [data.reviewerEmail, data.reviewerUserId, data.requestedInformation, data.returnedInformation][i];
-                        });
+                .then(data => {
+                    [
+                        this.getField(partial, "reviewerEmail"),
+                        this.getField(partial, "reviewerUserId"),
+                        this.getField(partial, "requestedInformation"),
+                        this.getField(partial, "returnedInformation"),
+                        this.getField(partial, "requestedInfoId")  // Add this line
+                    ].forEach((field, i) => {
+                        if (field) field.value = [
+                            data.reviewerEmail,
+                            data.reviewerUserId,
+                            data.requestedInformation,
+                            data.returnedInformation,
+                            data.requestedInfoId  // Add this line
+                        ][i];
+                    });
+
+                    DevLogger.info("Fields populated from reviewer data", {
+                        email: data.reviewerEmail,
+                        requestedInfoId: data.requestedInfoId
+                    });
                 });
+            //fetch(`/Scenario/GetReviewerDetails?${params}`)
+            //    .then(res => res.json())
+            //    .then(data => {  // Fixed: added parentheses around parameter
+            //        [this.getField(partial, "reviewerEmail"),
+            //        this.getField(partial, "reviewerUserId"),
+            //        this.getField(partial, "requestedInformation"),
+            //        this.getField(partial, "returnedInformation")]
+            //            .forEach((field, i) => {
+            //                if (field) field.value = [data.reviewerEmail, data.reviewerUserId, data.requestedInformation, data.returnedInformation][i];
+            //            });
+            //    });
         });
     },
     
