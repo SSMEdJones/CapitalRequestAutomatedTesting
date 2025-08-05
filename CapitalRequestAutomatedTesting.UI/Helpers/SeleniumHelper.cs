@@ -682,7 +682,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
 
                             if (cells.Count >= 5)
                             {
-                                var requestedInfo = cells[4].GetAttribute("innerText")?.Trim();
+                                var requestedInfo = cells[4].GetAttribute("textContent")?.Trim();
 
                                 Debug.WriteLine($"Cell[0]: '{cells[0].Text.Trim()}', Cell[4] (raw): '{requestedInfo}'");
 

@@ -9,5 +9,8 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         //public List<object> Records { get; set; } = new List<object>(); // Stores multiple rows
         public List<RecordEntry> Records { get; set; } = new List<RecordEntry>(); // Now stores structured entries
 
+        // Key: Row ID, Value: RowData
+        public Dictionary<string, RowData> Rows { get; set; } = new();
+
     }
 }

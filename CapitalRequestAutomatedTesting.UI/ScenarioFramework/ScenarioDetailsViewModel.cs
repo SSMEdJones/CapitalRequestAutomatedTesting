@@ -77,6 +77,9 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public ScenarioDataViewModel PredictiveData { get; set; } = new();
 
         [ValidateNever]
+        public ScenarioDataViewModel OriginalData { get; set; } = new();
+
+        [ValidateNever]
         public ScenarioDataViewModel ActualData { get; set; } = new();
 
         public int PredictiveCompletionStep { get; set; }

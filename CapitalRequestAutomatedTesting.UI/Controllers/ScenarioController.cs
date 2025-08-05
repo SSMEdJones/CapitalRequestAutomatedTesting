@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -131,32 +132,48 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             var requestedInfoId = 0;
             var requestedInformation = string.Empty;
             var returnedInformation = string.Empty;
-            var requestingGroup = new ReviewerGroup();
-            var targetGroup = new ReviewerGroup();
-            var replyingGroup = new ReviewerGroup();
+            var requestingGroup = new CapitalRequest.API.Models.ReviewerGroup();
+            var targetGroup = new CapitalRequest.API.Models.ReviewerGroup();
+            var replyingGroup = new CapitalRequest.API.Models.ReviewerGroup();
 
-            var requestedInfo = (await _capitalRequestServices.GetAllRequestedInfos(
-                new CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter
-                {
-                    ProposalId = proposalId,
-                    IsOpen = true,
-                    ReviewerGroupId = replyingGroupId,
-                    RequestingReviewerGroupId = requestingGroupId
-                }))
-                .FirstOrDefault();
-
-            if (replyingGroupId.HasValue && requestingGroupId.HasValue)
+            var requestedInfos = await _capitalRequestServices.GetAllRequestedInfos(
+            new RequestedInfoSearchFilter
             {
+                ProposalId = proposalId,
+                IsOpen = true,
+                ReviewerGroupId = replyingGroupId
+            });
+
+            CapitalRequest.API.Models.RequestedInfo requestedInfo = null;
+
+            if (requestingGroupId.HasValue)
+            {
+                requestedInfo = requestedInfos
+                    .FirstOrDefault(r => r.RequestingReviewerGroupId == requestingGroupId.Value);
+            }
+            else
+            {
+                requestedInfo = requestedInfos.FirstOrDefault(); // fallback to first open request
+            }
+
+            if (replyingGroupId.HasValue )
+            {
+
                 if (requestedInfo != null)
                 {
                     requestedInformation = requestedInfo.RequestedInformation;
                     requestedInfoId = requestedInfo.Id;
                 }
 
+                if (!requestingGroupId.HasValue)
+                {
+                    requestingGroupId = requestedInfo.RequestingReviewerGroupId;
+                }
+
                 requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId.Value);
                 replyingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(replyingGroupId.Value);
                 returnedInformation = $"{replyingGroup.Name} replying to request for more information from {requestingGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
-            }
+            }            
             else if(requestingGroupId.HasValue)
             {
                 requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId.Value);
@@ -179,7 +196,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 reviewerUserId,
                 requestedInformation,
                 returnedInformation,
-                requestedInfoId
+                requestedInfoId,
+                requestingGroupId
             });
         }
 

@@ -301,7 +301,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     Action = new SeleniumDsl()
                     .BeginWith(Execute.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries))
                     .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
-                    .Build("Clicked Request and confirmed page transition"),
+                    .Build("Clicked Reply and confirmed page transition"),
                     Retryable = true
 
                 });

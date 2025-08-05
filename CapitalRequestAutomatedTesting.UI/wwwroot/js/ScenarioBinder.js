@@ -134,14 +134,18 @@ export const ScenarioBinder = {
 
                         if (data.targetGroups?.length > 1) {
 
-                            this.toggleFormGroupByFieldId(requestingGroup, true, partial);
+                            //this.toggleFormGroupByFieldId(requestingGroup, true, partial);
                             
-                            DevLogger.info("Multiple target groups found", data.targetGroups.length);
+                            //DevLogger.info("Multiple target groups found", data.targetGroups.length);
                             populateDropdown(select, data.targetGroups, "-- Select One --");
                             select.value = "";
                         } else {
-                            this.toggleFormGroupByFieldId(requestingGroup, false, partial);
-                            populateDropdown(select, [], "-- Select One --");
+                            //this.toggleFormGroupByFieldId(requestingGroup, false, partial);
+                            populateDropdown(select, data.targetGroups, "-- Select One --");
+                            // ✅ Auto-select the only available group
+                            if (data.targetGroups.length === 1) {
+                                select.selectedIndex = 1;
+                            }
                         }
                     }
 
@@ -319,7 +323,8 @@ export const ScenarioBinder = {
 
         reviewerSelect.addEventListener("change", () => {
             const reviewerId = reviewerSelect.value;
-            const requestingGroupId = this.getField(partial, "requestingGroupId")?.value;
+            const requestingGroupField = this.getField(partial, "requestingGroupId");
+            const requestingGroupId = requestingGroupField?.value;
             const targetGroupId = this.getField(partial, "targetGroupId")?.value || null;
             const replyingGroupId = this.getField(partial, "replyingGroupId")?.value || null;
 
@@ -339,40 +344,57 @@ export const ScenarioBinder = {
             fetch(`/Scenario/GetReviewerDetails?${params}`)
                 .then(res => res.json())
                 .then(data => {
-                    [
+                    const fields = [
                         this.getField(partial, "reviewerEmail"),
                         this.getField(partial, "reviewerUserId"),
                         this.getField(partial, "requestedInformation"),
                         this.getField(partial, "returnedInformation"),
-                        this.getField(partial, "requestedInfoId")  // Add this line
-                    ].forEach((field, i) => {
-                        if (field) field.value = [
-                            data.reviewerEmail,
-                            data.reviewerUserId,
-                            data.requestedInformation,
-                            data.returnedInformation,
-                            data.requestedInfoId  // Add this line
-                        ][i];
+                        this.getField(partial, "requestedInfoId"),
+                        requestingGroupField
+                    ];
+
+                    const values = [
+                        data.reviewerEmail,
+                        data.reviewerUserId,
+                        data.requestedInformation,
+                        data.returnedInformation,
+                        data.requestedInfoId,
+                        data.requestingGroupId
+                    ];
+
+                    fields.forEach((field, i) => {
+                        if (!field) return;
+
+                        // Only assign requestingGroupId if it's non-empty
+                        if (field === requestingGroupField) {
+                            if (data.requestingGroupId) {
+                                field.value = data.requestingGroupId;
+                            }
+                        } else {
+                            field.value = values[i];
+                        }
                     });
+
+                    // 🔹 Auto-select requesting group only if not already selected
+                    if (
+                        requestingGroupField &&
+                        requestingGroupField.options.length === 2 &&
+                        requestingGroupField.value === ""
+                    ) {
+                        requestingGroupField.selectedIndex = 1;
+                    }
 
                     DevLogger.info("Fields populated from reviewer data", {
                         email: data.reviewerEmail,
-                        requestedInfoId: data.requestedInfoId
+                        requestedInfoId: data.requestedInfoId,
+                        requestedInformation: data.requestedInformation,
+                        returnedInformation: data.returnedInformation,
+                        requestingGroupId: data.requestingGroupId
                     });
                 });
-            //fetch(`/Scenario/GetReviewerDetails?${params}`)
-            //    .then(res => res.json())
-            //    .then(data => {  // Fixed: added parentheses around parameter
-            //        [this.getField(partial, "reviewerEmail"),
-            //        this.getField(partial, "reviewerUserId"),
-            //        this.getField(partial, "requestedInformation"),
-            //        this.getField(partial, "returnedInformation")]
-            //            .forEach((field, i) => {
-            //                if (field) field.value = [data.reviewerEmail, data.reviewerUserId, data.requestedInformation, data.returnedInformation][i];
-            //            });
-            //    });
         });
-    },
+    }
+,
     
     bindSelectedGroupEvents(partial) {
         console.log("🧠 bindSelectedGroupEvents loaded");
