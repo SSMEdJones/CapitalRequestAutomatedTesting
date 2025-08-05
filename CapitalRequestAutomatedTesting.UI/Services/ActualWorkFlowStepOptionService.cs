@@ -59,7 +59,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 allOptionsQuery = allOptionsQuery.Where(x =>
                     !x.IsComplete &&
-                    !x.IsTerminate &&
+                    x.IsTerminate &&
                     x.RequestedInfoId == requestedInfoId.Value);
             }
 
@@ -75,7 +75,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 .ToList();
 
             var relevantOptions = deduplicated
-                .Where(x => x.Updated.HasValue && x.Updated.Value.ToShortDateString() == DateTime.Now.ToShortDateString() &&
+                .Where(x => x.Updated.HasValue &&
                 x.IsTerminate && !x.IsComplete ||
                 (!x.Updated.HasValue && !x.IsTerminate && !x.IsComplete &&
                 x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower()))
@@ -190,6 +190,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return actual;
 
         }
+        
 
         //public async Task<List<WorkflowStepOption>> GetReOpenedOptionsAsync(string optionType, vm.Proposal proposal)
         //{

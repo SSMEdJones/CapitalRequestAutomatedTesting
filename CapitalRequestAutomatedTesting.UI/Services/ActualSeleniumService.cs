@@ -88,35 +88,52 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 scenarioDetail.SelectedProperties["Target Group"] = targetGroup.Name;
 
-                var steps = await GenerateSeleniumSteps(scenarioDetail);
-                var options = GetChromeOptions();
-                var driver = new ChromeDriver(options);
-                driver.Manage().Window.Maximize();
-                try
-                {
-                    seleniumScenarioOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail, driver);
-                }
-                finally
-                {
-                    driver.Quit(); // Always clean up
-                }
+                //var steps = await GenerateSeleniumSteps(scenarioDetail);
+                //var options = GetChromeOptions();
+                //var driver = new ChromeDriver(options);
+                //driver.Manage().Window.Maximize();
+                //try
+                //{
+                //    seleniumScenarioOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail, driver);
+                //}
+                //finally
+                //{
+                //    driver.Quit(); // Always clean up
+                //}
             }
             else if (scenarioId == "SCN002")
             {
+                proposal.ReplyingGroupId = detail.ReplyingGroupId;
+                proposal.ReplyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
+                scenarioDetail.SelectedProperties["Replying Group"] = proposal.ReplyingGroup.Name;
 
-                var steps = await GenerateSeleniumSteps(scenarioDetail);
-                var options = GetChromeOptions();
-                var driver = new ChromeDriver(options);
-                driver.Manage().Window.Maximize();
-                try
-                {
-                    seleniumScenarioOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail, driver);
-                }
-                finally
-                {
-                    driver.Quit(); // Always clean up
-                }
+                //var steps = await GenerateSeleniumSteps(scenarioDetail);
+                //var options = GetChromeOptions();
+                //var driver = new ChromeDriver(options);
+                //driver.Manage().Window.Maximize();
+                //try
+                //{
+                //    seleniumScenarioOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail, driver);
+                //}
+                //finally
+                //{
+                //    driver.Quit(); // Always clean up
+                //}
             }
+
+            var steps = await GenerateSeleniumSteps(scenarioDetail);
+            var options = GetChromeOptions();
+            var driver = new ChromeDriver(options);
+            driver.Manage().Window.Maximize();
+            try
+            {
+                seleniumScenarioOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail, driver);
+            }
+            finally
+            {
+                driver.Quit(); // Always clean up
+            }
+
             seleniumScenarioOutcome.ScenarioId = scenarioId;
 
             return seleniumScenarioOutcome;
@@ -141,11 +158,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         {
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
 
+            var proposalId = scenarioDetail.ProposalId;
+            var proposal = await _capitalRequestServices.GetProposal(proposalId);
+            proposal.RequestedInfoId = detail.RequestedInfoId;
+
             var actualSteps = new List<SeleniumScenarioStep>();
 
             var scenarioId = scenarioDetail.ScenarioId;
             var baseUrl = _workflowControllerService.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
-            var proposalId = scenarioDetail.ProposalId;
+            
             var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
             var workflowPortion = $"{reviewerGroup.StepNumber} -{reviewerGroup.Name}";
             var workflowButtonId = "btnWorkflowActions";
@@ -198,7 +219,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
                         .Then(Validate.ButtonById(requestButtonId, requestMoreInformationButton))
                         .Build("Clicked Request and confirmed page transition")
-
                 });
 
                 actualSteps.Add(new SeleniumScenarioStep
@@ -252,8 +272,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 //var WorkflowDashboardButtonText = Constants.ACTION_TYPE_VERIFY;
                 var replyButton = Constants.RESPONSE_RETURN_MORE_INFORMATION;
-                var replyButtonText = Constants.ACTION_TYPE_REPLY;
+                var buttonText = Constants.ACTION_TYPE_REPLY;
                 var replyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
+                var requestedInfoId = proposal.RequestedInfoId.ToString();
+                var description = $"Replying to Request Id {requestedInfoId}";
+                workflowPortion = $"{replyingGroup.StepNumber} -{replyingGroup.Name}";
+                maxRetries = 3;
+
 
                 actualSteps.Add(new SeleniumScenarioStep
                 {
@@ -264,7 +289,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     .Then(Validate.ElementById(workflowButtonId, $"{workflowButtonText} button"))
                     .Then(Execute.RobustClickById(workflowButtonId, workflowButtonText, maxRetries))
                     .Then(Validate.Text(workflowPortion))
-                    .Then(Validate.ButtonInRowWithText(workflowPortion, replyButtonText))
+                    .Then(Validate.ButtonInRowWithText(workflowPortion, buttonText))
                     .Build("Reached Workflow DashBoard page")
 
                 });
@@ -272,11 +297,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 actualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = ++stepNumber,
-                    Description = $"Click '{replyButtonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
+                    Description = $"Click '{buttonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
                     Action = new SeleniumDsl()
-                        .BeginWith(Execute.ClickButtonInRow(workflowPortion, replyButtonText))
-                        .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
-                        .Build("Clicked Request and confirmed page transition")
+                    .BeginWith(Execute.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries))
+                    .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
+                    .Build("Clicked Request and confirmed page transition"),
+                    Retryable = true
 
                 });
 
@@ -285,12 +311,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     StepNumber = ++stepNumber,
                     Description = $"Enter returned information press submit and verify success message",
                     Action = new SeleniumDsl()
-                        .BeginWith(Execute.EnterReturnedInformation(scenarioDetail.ReturnedInformation))
-                        .Then(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
-                        .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
-                        .Build("Entered requested information and clicked Submit button")
+                    .BeginWith(Execute.EnterReturnedInformation(scenarioDetail.ReturnedInformation))
+                    .Then(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
+                    .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
+                    .Build("Entered requested information and clicked Submit button")
 
                 });
+
 
                 var conditionalDashboardSteps = new SeleniumDsl()
                     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
@@ -311,6 +338,46 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     Action = conditionalDashboardSteps,
                     Retryable = true
                 });
+
+                //actualSteps.Add(new SeleniumScenarioStep
+                //{
+                //    StepNumber = ++stepNumber,
+                //    Description = $"Enter returned information press submit and verify success message",
+                //    Action = new SeleniumDsl()
+                //        .BeginWith(Execute.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries))
+                //        .Then(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
+                //        .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
+                //        .Build("Entered requested information and clicked Submit button"),
+                //    Retryable = true
+
+                //});
+                //actualSteps.Add(new SeleniumScenarioStep
+                //{
+                //    StepNumber = ++stepNumber,
+                //    Description = $"Click '{buttonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
+                //    Action = new SeleniumDsl()
+                //        .BeginWith(Execute.ClickButtonInRow(workflowPortion, buttonText))
+                //        .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
+                //        .Build("Clicked Request and confirmed page transition")
+
+                //});
+
+                //.Then(Execute.RobustClickById(workflowButtonId, workflowButtonText, maxRetries))
+                //BeginWith(Execute.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries);
+                //actualSteps.Add(new SeleniumScenarioStep
+                //{
+                //    StepNumber = ++stepNumber,
+                //    Description = $"Enter returned information press submit and verify success message",
+                //    Action = new SeleniumDsl()
+                //        .BeginWith(Execute.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries))
+                //        .Then(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
+                //        .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
+                //        .Build("Entered requested information and clicked Submit button"),
+                //    Retryable = true
+
+                //});
+
+
 
             }
 

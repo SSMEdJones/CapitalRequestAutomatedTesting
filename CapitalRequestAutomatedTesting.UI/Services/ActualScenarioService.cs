@@ -263,6 +263,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var fileType = UploadFileType.Attachment;
                 var requestedInfoId = detail.RequestedInfoId;
                 var optionType = Constants.OPTION_TYPE_ADD_INFO;
+                proposal.RequestedInfoId = proposal.RequestedInfo.Id;
 
                 actualMethods.Add(
                     new ActualMethod
@@ -321,6 +322,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         MethodName = "GetRequestEmailNotificationsAsync",
                         Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION },
                         Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualRequestedInfoService",
+                        MethodName = "GetRequestedInfoAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Update
                     }
                 );
 

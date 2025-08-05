@@ -5,6 +5,7 @@ using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
 using System.Diagnostics;
+using System.Linq.Expressions;
 
 namespace CapitalRequestAutomatedTesting.UI.Helpers
 {
@@ -657,6 +658,205 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> RobustClickReplyInRow(
+    string workflowPortion,
+    string requestedInfoId,
+    string description,
+    string buttonText = "Reply",
+    int maxRetries = 3)
+        {
+            return async driver =>
+            {
+                var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+                for (int attempt = 1; attempt <= maxRetries; attempt++)
+                {
+                    try
+                    {
+                        var rows = driver.FindElements(By.XPath("//tbody/tr"));
+
+                        foreach (var row in rows)
+                        {
+                            var cells = row.FindElements(By.TagName("td"));
+                            Debug.WriteLine($"Row has {cells.Count} cells.");
+
+                            if (cells.Count >= 5)
+                            {
+                                var requestedInfo = cells[4].GetAttribute("innerText")?.Trim();
+
+                                Debug.WriteLine($"Cell[0]: '{cells[0].Text.Trim()}', Cell[4] (raw): '{requestedInfo}'");
+
+                                if (cells[0].Text.Trim() == workflowPortion && requestedInfo == requestedInfoId)
+                                {
+                                    Debug.WriteLine("✅ Match found. Attempting to locate button...");
+                                    var button = row.FindElement(By.XPath($".//button[contains(text(),'{buttonText}')]"));
+
+                                    ((IJavaScriptExecutor)driver)
+                                        .ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", button);
+
+                                    await Task.Delay(500);
+                                    button.Click();
+
+                                    return new SeleniumStepResult
+                                    {
+                                        Success = true,
+                                        Message = $"✅ Clicked '{description}' in row with WorkflowPortion '{workflowPortion}' and RequestedInfoId '{requestedInfoId}'."
+                                    };
+                                }
+                            }
+                            else
+                            {
+                                Debug.WriteLine("❌ Row skipped due to insufficient cells.");
+                            }
+                        }
+
+                        //foreach (var row in rows)
+                        //{
+                        //    var cells = row.FindElements(By.TagName("td"));
+                        //    if (cells.Count >= 5 &&
+                        //        cells[0].Text.Trim() == workflowPortion &&
+                        //        cells[4].Text.Trim() == requestedInfoId)
+                        //    {
+                        //        var button = row.FindElement(By.XPath($".//button[contains(text(),'{buttonText}')]"));
+
+                        //        ((IJavaScriptExecutor)driver)
+                        //            .ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", button);
+
+                        //        await Task.Delay(500);
+                        //        button.Click();
+
+                        //        return new SeleniumStepResult
+                        //        {
+                        //            Success = true,
+                        //            Message = $"✅ Clicked '{description}' in row with WorkflowPortion '{workflowPortion}' and RequestedInfoId '{requestedInfoId}' on attempt #{attempt}."
+                        //        };
+                        //    }
+                        //}
+
+                        throw new NoSuchElementException($"No matching row found for WorkflowPortion '{workflowPortion}' and RequestedInfoId '{requestedInfoId}'.");
+                    }
+                    catch (Exception ex) when (attempt < maxRetries)
+                    {
+                        Debug.WriteLine($"Retry #{attempt} failed: {ex.Message}");
+                        await Task.Delay(700);
+                    }
+                    catch (Exception finalEx)
+                    {
+                        var screenshotPath = CaptureScreenshot(driver, $"{description}_ClickFailed");
+
+                        return new SeleniumStepResult
+                        {
+                            Success = false,
+                            Message = $"❌ Failed to click '{description}' after {maxRetries} attempts.\nError: {finalEx.Message}\nScreenshot: {screenshotPath}",
+                            ScreenshotPath = screenshotPath
+                        };
+                    }
+                }
+
+                var fallbackScreenshot = CaptureScreenshot(driver, $"{description}_ClickExceeded");
+                return new SeleniumStepResult
+                {
+                    Success = false,
+                    Message = $"❌ Exceeded max attempts clicking '{description}'. Screenshot saved: {fallbackScreenshot}",
+                    ScreenshotPath = fallbackScreenshot
+                };
+            };
+        }
+
+        //public static Func<IWebDriver, Task<SeleniumStepResult>> RobustClickReplyInRow(string workflowPortion,string requestedInfoId,string description,string buttonText = "Reply",int maxRetries = 3)
+        //{
+        //    return async driver =>
+        //    {
+        //        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+
+        //        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        //        {
+        //            try
+        //            {
+        //                var rows = driver.FindElements(By.XPath($"//tr[td[1][normalize-space(text())='{workflowPortion}']]"));
+
+        //                foreach (var row in rows)
+        //                {
+        //                    var cells = row.FindElements(By.TagName("td"));
+        //                    if (cells.Count >= 5 && cells[4].Text.Trim() == requestedInfoId)
+        //                    {
+        //                        var button = row.FindElement(By.XPath($".//button[contains(text(),'{buttonText}')]"));
+
+        //                        ((IJavaScriptExecutor)driver)
+        //                            .ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", button);
+
+        //                        await Task.Delay(500);
+        //                        button.Click();
+
+        //                        return new SeleniumStepResult
+        //                        {
+        //                            Success = true,
+        //                            Message = $"✅ Clicked '{description}' in row with WorkflowPortion '{workflowPortion}' and RequestedInfoId '{requestedInfoId}' on attempt #{attempt}."
+        //                        };
+        //                    }
+        //                }
+
+        //                throw new NoSuchElementException($"No matching row found for WorkflowPortion '{workflowPortion}' and RequestedInfoId '{requestedInfoId}'.");
+        //            }
+        //            catch (Exception ex) when (attempt < maxRetries)
+        //            {
+        //                Debug.WriteLine($"Retry #{attempt} failed: {ex.Message}");
+        //                await Task.Delay(700);
+        //            }
+        //            catch (Exception finalEx)
+        //            {
+        //                var screenshotPath = CaptureScreenshot(driver, $"{description}_ClickFailed");
+
+        //                return new SeleniumStepResult
+        //                {
+        //                    Success = false,
+        //                    Message = $"❌ Failed to click '{description}' after {maxRetries} attempts.\nError: {finalEx.Message}\nScreenshot: {screenshotPath}",
+        //                    ScreenshotPath = screenshotPath
+        //                };
+        //            }
+        //        }
+
+        //        var fallbackScreenshot = CaptureScreenshot(driver, $"{description}_ClickExceeded");
+        //        return new SeleniumStepResult
+        //        {
+        //            Success = false,
+        //            Message = $"❌ Exceeded max attempts clicking '{description}'. Screenshot saved: {fallbackScreenshot}",
+        //            ScreenshotPath = fallbackScreenshot
+        //        };
+        //    };
+        //}
+
+        //public static Func<IWebDriver, Task<SeleniumStepResult>> ClickReplyButtonByWorkflowPortionAndRequestedInfoId(IWebDriver driver, string workflowPortion, string requestedInfoId)
+        //{
+        //    return async driver =>
+        //    {
+        //        try
+        //        {
+        //            var rows = driver.FindElements(By.XPath("//tr[td[1][normalize-space(text())='" + workflowPortion + "']]"));
+
+        //            foreach (var row in rows)
+        //            {
+        //                var cells = row.FindElements(By.TagName("td"));
+        //                if (cells.Count >= 5 && cells[4].Text.Trim() == requestedInfoId)
+        //                {
+        //                    var replyButton = row.FindElement(By.XPath(".//button[contains(text(),'Reply')]"));
+        //                    replyButton.Click();
+        //                    break;
+        //                }
+        //            }
+        //        catch (Exception ex)
+        //        {
+        //            return new SeleniumStepResult
+        //            {
+        //                Success = false,
+        //                Message = $"No row found with WorkflowPortion '{{workflowPortion}}' and RequestedInfoId '{{requestedInfoId}}'.\": {ex.Message}"
+        //            };
+        //        }
+
+        //    };
+
+        //        throw new NoSuchElementException($"No row found with WorkflowPortion '{workflowPortion}' and RequestedInfoId '{requestedInfoId}'.");
+        //}
         public static Func<IWebDriver, Task<SeleniumStepResult>> NoRequestsMessage()
         {
             return driver =>
@@ -699,6 +899,8 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
 
             return null;
         }
+
+       
 
         //public static Func<IWebDriver, SeleniumStepResult> NoRequestsMessage()
         //{

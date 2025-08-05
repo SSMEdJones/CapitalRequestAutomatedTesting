@@ -396,15 +396,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     }
                 );
 
-                predictiveMethods.Add(
-                    new PredictiveMethod
-                    {
-                        StepNumber = ++stepNumber,
-                        ServiceName = "IScenarioControllerService",
-                        MethodName = "ValidateRequestingGroupForReplyIdAsync",
-                        Parameters = new List<object> { proposal, requestingGroupId, replyingGroupId }
-                    }
-                );
+                //predictiveMethods.Add(
+                //    new PredictiveMethod
+                //    {
+                //        StepNumber = ++stepNumber,
+                //        ServiceName = "IScenarioControllerService",
+                //        MethodName = "ValidateRequestingGroupForReplyIdAsync",
+                //        Parameters = new List<object> { proposal, requestingGroupId, replyingGroupId }
+                //    }
+                //);
 
                 predictiveMethods.Add(
                    new PredictiveMethod

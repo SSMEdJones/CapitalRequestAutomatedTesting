@@ -33,5 +33,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
             return _mapper.Map<dto.RequestedInfo>(requestedInfo);
         }
+
+        public async Task<dto.RequestedInfo> GetRequestedInfoByIdAsync(vm.Proposal proposal)
+        {
+            var requestedInfo = await _capitalRequestServices.GetRequestedInfo(proposal.RequestedInfoId);
+
+            return _mapper.Map<dto.RequestedInfo>(requestedInfo);
+        }
     }
 }

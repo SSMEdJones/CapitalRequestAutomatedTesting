@@ -34,6 +34,12 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             => SeleniumHelper.EnterDashboardSearch(proposalId);
 
 
+        //RobustClickReplyInRow(string workflowPortion, string requestedInfoId, string description, string buttonText = "Reply", int maxRetries = 3)
+        public static Func<IWebDriver, Task<SeleniumStepResult>> RobustClickReplyInRow(string workflowPortion, string requestedInfoId, string description, string buttonText = "Reply", int maxRetries = 3)
+            => SeleniumHelper.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries);
+
+
+       
         // You could later add:
         // TypeTextIntoField(...)
         // SelectDropdownOption(...)
