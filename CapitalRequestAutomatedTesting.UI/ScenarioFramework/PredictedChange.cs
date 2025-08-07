@@ -8,8 +8,13 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public string RowId { get; set; }
         public string FieldName { get; set; }
         public object OriginalValue { get; set; }
-        public object NewValue { get; set; } // Optional if you're only tracking original
-        public CrudOperationType Type { get; set; } = CrudOperationType.Update;
+        public object NewValue { get; set; }
+        public CrudOperationType Type { get; set; }
+
+        // New fields for API routing
+        public string TargetApi { get; set; } // "SSMWorkflow" or "CapitalRequest"
+        public string Endpoint { get; set; }  // e.g., "/api/scenario/update"
     }
+
 
 }

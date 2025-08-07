@@ -22,10 +22,6 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [Range(1, int.MaxValue, ErrorMessage = "Please select a valid requesting group.")]
         public int? RequestingGroupId { get; set; }
 
-        //[DisplayName("Requesting Group:")]
-        //[Range(1, int.MaxValue, ErrorMessage = "Please select a valid requesting group.")]
-        //public int? SecondaryRequestingGroupId { get; set; }
-
         [DisplayName("Replying Group:")]
         [Range(1, int.MaxValue, ErrorMessage = "Please select a valid replying group.")]
         public int? ReplyingGroupId { get; set; }
