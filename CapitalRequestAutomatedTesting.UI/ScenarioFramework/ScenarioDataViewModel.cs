@@ -75,5 +75,49 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
             }
         }
 
+        public void ApplyChanges(IEnumerable<PredictedChange> changes)
+        {
+            foreach (var change in changes)
+            {
+                if (!Tables.ContainsKey(change.TableName))
+                    Tables[change.TableName] = new TableData { TableName = change.TableName };
+
+                var table = Tables[change.TableName];
+
+                if (!table.Rows.ContainsKey(change.RowId))
+                    table.Rows[change.RowId] = new RowData { RowId = change.RowId };
+
+                var row = table.Rows[change.RowId];
+
+                row.Fields[change.FieldName] = new FieldData
+                {
+                    OriginalValue = change.OriginalValue,
+                    NewValue = change.NewValue,
+                    Operation = change.Type
+                };
+            }
+        }
+
+        public IEnumerable<PredictedChange> Diff(ScenarioDataViewModel other)
+        {
+            foreach (var change in GetChanges())
+            {
+                var actualValue = other.GetValue(change.TableName, change.RowId, change.FieldName);
+                if (!Equals(change.OriginalValue, actualValue))
+                {
+                    yield return new PredictedChange
+                    {
+                        TableName = change.TableName,
+                        RowId = change.RowId,
+                        FieldName = change.FieldName,
+                        OriginalValue = change.OriginalValue,
+                        NewValue = actualValue,
+                        Type = CrudOperationType.Update
+                    };
+                }
+            }
+        }
+
+
     }
 }

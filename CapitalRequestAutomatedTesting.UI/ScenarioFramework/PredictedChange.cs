@@ -9,7 +9,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public string FieldName { get; set; }
         public object OriginalValue { get; set; }
         public object NewValue { get; set; } // Optional if you're only tracking original
-        public ChangeType Type { get; set; } = ChangeType.Update;
+        public CrudOperationType Type { get; set; } = CrudOperationType.Update;
     }
 
 }

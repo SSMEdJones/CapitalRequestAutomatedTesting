@@ -8,12 +8,14 @@ using DinkToPdf;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft.Json;
+using NLog;
 using System.Diagnostics;
 
 namespace CapitalRequestAutomatedTesting.UI.Controllers
 {
     public class ScenarioController : Controller
     {
+        private readonly ILogger<HomeController> _logger;
         private readonly IScenarioControllerService _scenarioControllerService;
         private readonly IWorkflowControllerService _workflowControllerService;
         private readonly ICapitalRequestServices _capitalRequestServices;
@@ -27,7 +29,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly IMapper _mapper;
         private readonly ScenarioViewModelBuilder _viewModelBuilder;
 
-        public ScenarioController(
+        public ScenarioController(ILogger<HomeController> logger,
             IScenarioControllerService scenarioControllerService,
             IWorkflowControllerService workflowControllerService,
             ICapitalRequestServices capitalRequestServices,
@@ -41,6 +43,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             IScenarioComparer scenarioComparer,
             IMapper mapper)
         {
+            _logger = logger;
             _scenarioControllerService = scenarioControllerService;
             _workflowControllerService = workflowControllerService;
             _capitalRequestServices = capitalRequestServices;
@@ -57,6 +60,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
         public async Task<IActionResult> Index()
         {
+            _logger.LogInformation("Basic log test at {Time}", DateTime.UtcNow);
+
             var formModel = await _scenarioControllerService.GenerateScenarioFormViewModel(null);
 
             return View(formModel);
@@ -76,6 +81,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             if (actionType == "RunSelected")
             {
                 // Handle the selected scenarios
+
                 var selectedIds = model.SelectedScenarioIds;
 
                 model.ScenarioDetails.ForEach(x =>
@@ -225,6 +231,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             // Now you have full access to each selected scenario's form data
             foreach (var scenario in selectedScenarios)
             {
+
                 scenarioDetail = await ProcessScenario(scenario);
                 scenarioDetails.Add(scenarioDetail);
 
@@ -268,6 +275,12 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
         {
             // Step 1: Predictive Selenium
+            var scenarioId = scenario.ScenarioId;
+            using (ScopeContext.PushProperty("ScenarioId", scenarioId))
+            {
+                _logger.LogInformation("Process started for scenario {ScenarioId}", scenarioId);
+            }
+
             scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
             var completionStep = scenario.PredictiveCompletionStep;

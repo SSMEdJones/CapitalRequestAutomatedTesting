@@ -15,6 +15,7 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
+        _logger.LogInformation("UI loaded at {Time}", DateTime.UtcNow);
 
         var name = HttpContext.User.Identity?.Name;
         var authenticated =  Content($"User: {name ?? "Not Authenticated"}");
