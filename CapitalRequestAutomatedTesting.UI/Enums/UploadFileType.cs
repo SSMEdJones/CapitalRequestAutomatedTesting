@@ -1,4 +1,4 @@
-﻿namespace CapitalRequest.UI.Enum
+﻿namespace CapitalRequestAutomatedTesting.UI.Enums
 {
     public enum UploadFileType
     {

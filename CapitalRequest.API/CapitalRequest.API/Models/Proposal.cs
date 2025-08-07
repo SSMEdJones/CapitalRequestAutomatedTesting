@@ -1,8 +1,5 @@
-﻿using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.Enums;
+﻿using CapitalRequest.API.Enums;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using SSMWorkflow.API.Models;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;

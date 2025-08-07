@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using CapitalRequest.UI.Enum;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Models;

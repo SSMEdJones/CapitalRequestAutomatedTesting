@@ -7,12 +7,9 @@ using CapitalRequestAutomatedTesting.UI.Models;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
-using SSMAuthenticationCore;
-using SSMAuthenticationCore.Models;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
 using System.Diagnostics;
-using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 using WorkflowAction = CapitalRequestAutomatedTesting.UI.Models.WorkflowAction;
 
@@ -48,18 +45,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IUserContextService _userContextService;
         private readonly IMapper _mapper;
+        private readonly IAppConfigurationService _appConfigService;
 
 
         public WorkflowControllerService(
          ISSMWorkflowServices ssmWorkflowServices,
          ICapitalRequestServices capitalRequestServices,
          IUserContextService userContextService,
-         IMapper mapper)
+         IMapper mapper,
+         IAppConfigurationService appConfigService)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
             _userContextService = userContextService;
             _mapper = mapper;
+            _appConfigService = appConfigService;
         }
 
 
@@ -542,10 +542,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public AppKeyValues GetAppKeyValueByKey(string AppName, string LookupKey)
         {
-            ConfigurationSettings configuration = new ConfigurationSettings();
-            var appKeyValue = configuration.GetAppKeyValues(AppName).Where(kv => kv.LookupKey == LookupKey).FirstOrDefault();
-
-            return appKeyValue;
+            return _appConfigService.GetAppKeyValueByKey(AppName, LookupKey);
         }
 
         private WorkflowTestResult FillOutVerifyForm(IWebDriver driver, WebDriverWait wait)

@@ -1,16 +1,12 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.Models;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Flurl;
 using Flurl.Http;
-using CapitalRequest.API.DataAccess.Models;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using Proposal = CapitalRequest.API.Models.Proposal;
-using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
-using Newtonsoft.Json.Linq;
-using static Dapper.SqlMapper;
 
 namespace CapitalRequest.API.DataAccess.Services.Api
 {

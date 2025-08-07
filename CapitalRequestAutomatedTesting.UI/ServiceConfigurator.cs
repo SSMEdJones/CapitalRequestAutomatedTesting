@@ -5,7 +5,6 @@ using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Services;
 using DinkToPdf.Contracts;
 using DinkToPdf;
-using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Services;
@@ -25,18 +24,26 @@ namespace CapitalRequestAutomatedTesting.UI
             services.Configure<SSMWorkFlowSettings>(configuration.GetSection("ssmWorkFlowAPISettings"));
             services.Configure<CapitalRequestSettings>(configuration.GetSection("capitalRequestAPISettings"));
 
-            var customConfig = new ConfigurationSettings();
+            // Create and register the AppConfiguration service
+            services.AddSingleton<IAppConfigurationService>(provider =>
+            {
+                var logger = provider.GetRequiredService<ILogger<AppConfigurationService>>();
+                return new AppConfigurationService(configuration, logger);
+            });
+
+            // Get the service for configuration lookups
+            var serviceProvider = services.BuildServiceProvider();
+            var appConfigService = serviceProvider.GetRequiredService<IAppConfigurationService>();
 
             services.PostConfigureAll<SSMWorkFlowSettings>(options =>
             {
-                options.BaseApiUrl = customConfig.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI")?.LookupValue?.ToString();
-                options.ProjectReviewLink = customConfig.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink")?.LookupValue?.ToString();
+                options.BaseApiUrl = appConfigService.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI").LookupValue;
+                options.ProjectReviewLink = appConfigService.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink").LookupValue;
             });
-
 
             services.PostConfigureAll<CapitalRequestSettings>(options =>
             {
-                options.BaseApiUrl = customConfig.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestApiUrl")?.LookupValue?.ToString();
+                options.BaseApiUrl = appConfigService.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestApiUrl").LookupValue;
             });
 
             services.AddAutoMapper(typeof(WorkflowProfile), typeof(CapitalRequestProfile),typeof(AutomatedTestingProfile) );
@@ -44,6 +51,8 @@ namespace CapitalRequestAutomatedTesting.UI
 
             #region UI
             services.AddScoped<IWorkflowControllerService, WorkflowControllerService>();
+            // Register the AppConfiguration service
+            services.AddSingleton<IAppConfigurationService, AppConfigurationService>();
             #endregion
 
             #region Workflow API

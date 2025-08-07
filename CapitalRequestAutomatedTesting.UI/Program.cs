@@ -1,11 +1,14 @@
 using CapitalRequestAutomatedTesting.UI;
-using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.StaticFiles;
 using NLog;
 using NLog.Web;
-using SSMAuthenticationCore;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authentication.Negotiate;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
+using Microsoft.Data.SqlClient;
+
+AppContext.SetSwitch("Microsoft.Data.SqlClient.DisableSqlConnectionPoolPerformanceCounters", true);
+AppContext.SetSwitch("Microsoft.Data.SqlClient.DisablePermissionDemand", true);
 
 //TODO Remove when debugging complete
 AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
@@ -13,12 +16,15 @@ AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
     Debug.WriteLine($"Unhandled Exception: {args.ExceptionObject}");
 };
 
+
 var logger = LogManager.Setup()
     .LoadConfigurationFromFile("NLog.config")
     .GetCurrentClassLogger();
 try
 {
     logger.Info("Starting application");
+    logger = NLog.LogManager.GetCurrentClassLogger();
+    logger.Error("Testing SQL logging — this should go to the database.");
 
     var builder = WebApplication.CreateBuilder(args);
 
@@ -64,9 +70,6 @@ try
         : Environment.GetEnvironmentVariable("WEB_SQL_ENV", EnvironmentVariableTarget.Machine);
 
     builder.Configuration.GetConnectionString($"CapitalRequest_{sqlEnv}");
-
-    ConfigurationSettings _configuration = new ConfigurationSettings();
-
     builder.Services.AddHttpContextAccessor();
 
     var app = builder.Build();
@@ -146,3 +149,4 @@ finally
 {
     LogManager.Shutdown(); // Flush and close log files
 }
+

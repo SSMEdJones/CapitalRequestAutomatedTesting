@@ -18,15 +18,14 @@
 		<PackageReference Include="DinkToPdf" Version="1.0.8" />
 		<PackageReference Include="DotNetSeleniumExtras.WaitHelpers" Version="3.11.0" />
 		<PackageReference Include="HtmlAgilityPack" Version="1.12.1" />
-		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
+		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.7" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="NLog.Database" Version="6.0.2" />
 		<PackageReference Include="NLog.Web.AspNetCore" Version="6.0.2" />
 		<PackageReference Include="Selenium.Support" Version="4.32.0" />
 		<PackageReference Include="Selenium.WebDriver" Version="4.32.0" />
-		<PackageReference Include="SSMAuthenticationCore" Version="1.45797.0" />
-		<PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
-
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="6.0.0" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="9.0.8" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -35,7 +34,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="nlog.config">
+		<None Update="NLog.config">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
@@ -47,5 +46,5 @@
 		<PackageReference Include="System.IO.FileSystem" Version="4.3.0" />
 		<PackageReference Include="System.Net.Sockets" Version="4.3.0" />
 	</ItemGroup>
-	
+
 </Project>

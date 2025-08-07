@@ -1,6 +1,4 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
-using SSMAuthenticationCore;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
 
@@ -56,48 +54,8 @@ namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
             CreateMap<Models.Dashboard, API.Models.Dashboard>();
         }
 
-        private string GetUserId()
-        {
-            var userId = string.Empty;
-            var httpContext = new HttpContextAccessor().HttpContext;
+        
 
-
-            var currentUser = httpContext.User;
-
-
-            if (currentUser != null &&
-                currentUser.Identity != null &&
-                currentUser.Identity.Name != null)
-            {
-                string? user = currentUser.Identity.Name.ToString();
-                if (user != null)
-                {
-                    var userInfo = user.Split('\\');
-                    if (userInfo.Count() > 0)
-                    {
-                        userId = userInfo[1];
-                    }
-                    else
-                    {
-                        userId = userInfo[0];
-                    }
-                }
-            }
-            return userId;
-        }
-
-        private string GetUserName()
-        {
-            var userName = ActiveDirectory.GetDisplayName(GetUserId());
-            if (userName.Contains(','))
-            {
-                string[] UserDisplayName = userName.Split(',');
-                return $"{UserDisplayName[1].Trim()} {UserDisplayName[0].Trim()} ";
-            }
-            else
-            {
-                return string.Empty;
-            }
-        }
+        
     }
 }

@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
-using CapitalRequest.UI.Enum;
 using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.Utilities;
