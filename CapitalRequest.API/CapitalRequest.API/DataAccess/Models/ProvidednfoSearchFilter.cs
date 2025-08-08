@@ -2,9 +2,9 @@
 {
     public class ProvidedInfoSearchFilter
     {
+        public int? Id { get; set; }
         public int? RequestedInfoId { get; set; }
         public int? ReviewerGroupId { get; set; }
-        public int? ReviewerId { get; set; }
-
+        public int? ReviewerId { get; set; }        
     }
 }

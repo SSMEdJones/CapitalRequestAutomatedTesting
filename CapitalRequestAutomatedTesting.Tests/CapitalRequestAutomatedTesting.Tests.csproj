@@ -28,4 +28,10 @@
     <ProjectReference Include="..\CapitalRequestAutomatedTesting.UI\CapitalRequestAutomatedTesting.UI.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="NativeBinaries\libwkhtmltox.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

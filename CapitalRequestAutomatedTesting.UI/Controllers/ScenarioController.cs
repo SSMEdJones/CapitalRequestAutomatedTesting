@@ -4,6 +4,8 @@ using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
+using CapitalRequestAutomatedTesting.UI.Services.Actual;
+using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using DinkToPdf;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -15,7 +17,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 {
     public class ScenarioController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ILogger<ScenarioController> _logger;
         private readonly IScenarioControllerService _scenarioControllerService;
         private readonly IWorkflowControllerService _workflowControllerService;
         private readonly ICapitalRequestServices _capitalRequestServices;
@@ -29,7 +31,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly IMapper _mapper;
         private readonly ScenarioViewModelBuilder _viewModelBuilder;
 
-        public ScenarioController(ILogger<HomeController> logger,
+        public ScenarioController(ILogger<ScenarioController> logger,
             IScenarioControllerService scenarioControllerService,
             IWorkflowControllerService workflowControllerService,
             ICapitalRequestServices capitalRequestServices,
@@ -274,6 +276,14 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
         private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
         {
+
+            var scenarioJson = JsonConvert.SerializeObject(scenario, Formatting.Indented,
+            new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            });
+            Debug.WriteLine($"Scenario Contents:\n{scenarioJson}");
+
             // Step 1: Predictive Selenium
             var scenarioId = scenario.ScenarioId;
             using (ScopeContext.PushProperty("ScenarioId", scenarioId))

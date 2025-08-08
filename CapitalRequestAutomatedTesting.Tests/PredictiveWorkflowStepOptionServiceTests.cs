@@ -2,7 +2,7 @@ using AutoMapper;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.Tests;
 using CapitalRequestAutomatedTesting.UI.Models;
-using CapitalRequestAutomatedTesting.UI.Services;
+using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 

@@ -118,6 +118,37 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
             }
         }
 
+        public IEnumerable<PredictedChange> GetRollbackChanges()
+        {
+            foreach (var table in Tables.Values)
+            {
+                foreach (var row in table.Rows.Values)
+                {
+                    foreach (var field in row.Fields)
+                    {
+                        var operation = field.Value.Operation switch
+                        {
+                            CrudOperationType.Insert => CrudOperationType.Delete,
+                            CrudOperationType.Update => CrudOperationType.Update,
+                            CrudOperationType.Delete => CrudOperationType.Insert,
+                            _ => CrudOperationType.Update
+                        };
+
+                        yield return new PredictedChange
+                        {
+                            TableName = table.TableName,
+                            RowId = row.RowId,
+                            FieldName = field.Key,
+                            OriginalValue = field.Value.NewValue, // reverse direction
+                            NewValue = field.Value.OriginalValue,
+                            Type = operation
+                        };
+                    }
+                }
+            }
+        }
+
+        
 
     }
 }

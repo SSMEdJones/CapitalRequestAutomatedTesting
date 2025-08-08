@@ -20,8 +20,9 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public string StepType { get; set; }          // e.g., "Navigation", "Validation", "Click"
         public string ExpectedCondition { get; set; } // "Button 'Verify' should exist"
         public string DataSource { get; set; }        // e.g., "proposal.ReviewerGroupId"
-
-
+        
+        // ✅ New property to flag commit/mutation steps
+        public bool IsCommitStep { get; set; } = false;
 
     }
 

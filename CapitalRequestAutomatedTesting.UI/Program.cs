@@ -22,9 +22,9 @@ var logger = LogManager.Setup()
     .GetCurrentClassLogger();
 try
 {
-    logger.Info("Starting application");
-    logger = NLog.LogManager.GetCurrentClassLogger();
-    logger.Error("Testing SQL logging — this should go to the database.");
+    //logger.Info("Starting application");
+    //logger = NLog.LogManager.GetCurrentClassLogger();
+    //logger.Error("Testing SQL logging — this should go to the database.");
 
     var builder = WebApplication.CreateBuilder(args);
 

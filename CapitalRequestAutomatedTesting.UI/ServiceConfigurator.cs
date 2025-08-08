@@ -2,16 +2,19 @@
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.UI.AutoMapper.MappingProfile;
+using CapitalRequestAutomatedTesting.UI.Helpers;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
-using DinkToPdf.Contracts;
+using CapitalRequestAutomatedTesting.UI.Services.Actual;
+using CapitalRequestAutomatedTesting.UI.Services.Predictive;
+using CapitalRequestAutomatedTesting.UI.Services.Rollback;
 using DinkToPdf;
+using DinkToPdf.Contracts;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
 using SSMWorkflow.API.DataAccess.Services;
 using SSMWorkflow.API.DataAccess.Services.Api;
-using CapitalRequestAutomatedTesting.UI.Helpers;
-using CapitalRequestAutomatedTesting.UI.AutoMapper.MappingProfile;
-using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 
 namespace CapitalRequestAutomatedTesting.UI
 {
@@ -25,16 +28,23 @@ namespace CapitalRequestAutomatedTesting.UI
             services.Configure<CapitalRequestSettings>(configuration.GetSection("capitalRequestAPISettings"));
 
             // Create and register the AppConfiguration service
-            services.AddSingleton<IAppConfigurationService>(provider =>
-            {
-                var logger = provider.GetRequiredService<ILogger<AppConfigurationService>>();
-                return new AppConfigurationService(configuration, logger);
-            });
+            //services.AddSingleton<IAppConfigurationService>(provider =>
+            //{
+            //    var logger = provider.GetRequiredService<ILogger<AppConfigurationService>>();
+            //    return new AppConfigurationService(configuration, logger);
+            //});
 
-            // Get the service for configuration lookups
-            var serviceProvider = services.BuildServiceProvider();
-            var appConfigService = serviceProvider.GetRequiredService<IAppConfigurationService>();
+            //// Get the service for configuration lookups
+            //var serviceProvider = services.BuildServiceProvider();
+            //var appConfigService = serviceProvider.GetRequiredService<IAppConfigurationService>();
 
+            var appConfigService = new AppConfigurationService(
+                        configuration,
+                        LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<AppConfigurationService>()
+                    );
+
+            // Register the existing instance as a singleton
+            services.AddSingleton<IAppConfigurationService>(appConfigService);
             services.PostConfigureAll<SSMWorkFlowSettings>(options =>
             {
                 options.BaseApiUrl = appConfigService.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI").LookupValue;
@@ -117,6 +127,10 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualScenarioService, ActualScenarioService>();
             services.AddScoped<IActualSeleniumService, ActualSeleniumService>();
             services.AddScoped<IActualProvidedInfoService, ActualProvidedInfoService>();
+            #endregion
+            #region Rollback Services
+            services.AddScoped<IRollbackProvidedInfoService, RollbackProvidedInfoService>();
+            
             #endregion
 
             #region Scenario Framework

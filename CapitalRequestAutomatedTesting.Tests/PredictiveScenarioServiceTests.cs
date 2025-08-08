@@ -4,6 +4,7 @@ using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
+using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Diagnostics;
@@ -96,6 +97,34 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
     public async Task Should_Invoke_ReturnInfo_Methods_Dynamically_And_Return_Valid_Results()
     {
 
+    }
+
+    [Fact]
+    public async Task GenerateScenarioDataAsync_ReturnsPredictiveData()
+    {
+        // Arrange
+        var scenario = new ScenarioDetailsViewModel
+        {
+            ProposalId = 2936,
+            ScenarioId = "SCN002",
+            PartialViewName = "_ReplyToRequest",
+            DisplayText = "Reply to Request",
+            RequestingGroupId = 4,
+            ReplyingGroupId = 5,
+            ReviewerId = 37807,
+            RequestedInformation = "Supply Chain requesting more information from EPMO as Pam Shumway via Workflow Automated Testing - Request More Information Scenario.",
+            ReturnedInformation = "EPMO replying to request for more information from Supply Chain as Gavin Harrell via Workflow Automated Testing - Reply to Request Scenario.",
+            RequestedInfoId = 691,
+            PredictiveCompletionStep = 0,
+            CanExecuteActualSteps = true
+        };
+        
+        // Act
+        var result = await _service.GenerateScenarioDataAsync(scenario);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(scenario.ScenarioId, result.ScenarioId);
     }
 
 }

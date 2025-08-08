@@ -95,6 +95,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                         .AppendPathSegment("ProvidedInfo")
                         .SetQueryParams(new
                         {
+                            filter.Id,
                             filter.RequestedInfoId,
                             filter.ReviewerGroupId,
                             filter.ReviewerId
@@ -107,5 +108,6 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                 throw new Exception($"Failed attempting to send delete all request to CapitalRequest. {exceptionResponse}");
             }
         }
+        
     }
 }

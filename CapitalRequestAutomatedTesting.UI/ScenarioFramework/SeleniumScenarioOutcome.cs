@@ -12,6 +12,9 @@
 
         public bool Success { get; set; } = false; // Default to false
 
+        // ✅ New properties
+        public bool RollbackRequired { get; set; } = false;
+        public List<RollbackCandidate> RollbackCandidates { get; set; } = new();
 
     }
 
