@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
@@ -77,6 +77,9 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         [ValidateNever]
         public ScenarioDataViewModel ActualData { get; set; } = new();
+
+        // ✅ New property to store predictive methods
+        public List<PredictiveMethod> PredictiveMethods { get; set; } = new();
 
         public int PredictiveCompletionStep { get; set; }
         public string PredictiveStopReason { get; set; }

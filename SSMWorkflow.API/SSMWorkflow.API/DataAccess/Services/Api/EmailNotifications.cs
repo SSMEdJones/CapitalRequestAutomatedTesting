@@ -15,6 +15,7 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
     {
         Task<EmailNotification> Get(int id);
         Task<List<EmailNotification>> GetAll(EmailNotificationSearchFilter filter);
+        Task Delete(EmailNotification emailNotification);
 
     }
 
@@ -31,6 +32,15 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
             _ssmWorkFlowSettings = ssmWorkFlowSettings.CurrentValue;
             _mapper = mapper;
 
+        }
+
+        public async Task Delete(EmailNotification emailNotification)
+        {
+            var id = emailNotification.Id;
+            await _ssmWorkFlowSettings.BaseApiUrl
+                        .AppendPathSegment("Notification")
+                        .AppendPathSegment($"{id}")
+                        .DeleteAsync();
         }
 
         public async Task<EmailNotification> Get(int id)

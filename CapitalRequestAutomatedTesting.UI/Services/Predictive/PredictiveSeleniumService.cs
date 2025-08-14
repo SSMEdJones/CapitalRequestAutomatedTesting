@@ -2,7 +2,6 @@
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data;
-using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;

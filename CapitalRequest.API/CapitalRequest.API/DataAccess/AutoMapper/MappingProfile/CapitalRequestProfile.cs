@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Utilities;
+using CapitalRequest.API.Models;
 using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
 
@@ -31,6 +32,7 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
                            .ForMember(dest => dest.IncludePurchasingGroup, o => o.MapFrom(src => src.IncludePurchasingGroup == null ? true : src.IncludePurchasingGroup));
 
             CreateMap<dto.RequestedInfo, vm.RequestedInfo>();
+            CreateMap<vm.RequestedInfo, CreateUpdateRequestedInfo>();
             CreateMap<dto.ProvidedInfo, vm.ProvidedInfo>();
             CreateMap<vm.ProvidedInfo, dto.ProvidedInfo>();
             CreateMap<dto.ReviewerGroup, vm.ReviewerGroup>();

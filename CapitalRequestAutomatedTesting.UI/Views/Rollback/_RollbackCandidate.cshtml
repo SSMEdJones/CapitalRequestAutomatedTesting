@@ -1,0 +1,52 @@
+﻿@model RollbackCandidateViewModel
+
+<div class="rollback-preview">
+    <h2>Rollback Candidate: Step @Model.StepNumber</h2>
+    <p><strong>Method:</strong> @Model.MethodName</p>
+    <p><strong>Rollback Method:</strong> @Model.RollbackMethodName</p>
+    <p><strong>Description:</strong> @Model.Description</p>
+
+    <label>
+        <input type="checkbox" asp-for="IsSelectedForRollback" />
+        Selected for Rollback
+    </label>
+
+    <h3>Predictive Data</h3>
+    <table>
+        @foreach (var item in Model.PredictiveData)
+        {
+            <tr>
+                <td>@item.Key</td>
+                <td>@item.Value</td>
+            </tr>
+        }
+    </table>
+
+    <h3>Actual Data</h3>
+    <table>
+        @foreach (var item in Model.ActualData)
+        {
+            <tr>
+                <td>@item.Key</td>
+                <td>@item.Value</td>
+                <td>
+                    @if (Model.PredictiveData.ContainsKey(item.Key) && Model.PredictiveData[item.Key] != item.Value)
+                    {
+                        <span class="changed">Changed</span>
+                    }
+                </td>
+            </tr>
+        }
+    </table>
+
+    <h3>Rollback Parameters</h3>
+    <table>
+        @foreach (var param in Model.RollbackParameters)
+        {
+            <tr>
+                <td>@param.Key</td>
+                <td>@param.Value</td>
+            </tr>
+        }
+    </table>
+</div>

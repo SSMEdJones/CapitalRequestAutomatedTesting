@@ -1,0 +1,38 @@
+﻿@model RollbackPreviewViewModel
+
+<h2>Rollback Preview for @Model.ScenarioName</h2>
+
+@if (!Model.CanRollback)
+{
+    <p>This scenario cannot be rolled back.</p>
+}
+else
+{
+    <form asp-action="Execute" method="post">
+        <input type="hidden" name="scenarioId" value="@Model.ScenarioId" />
+        <table>
+            <thead>
+                <tr>
+                    <th>Step</th>
+                    <th>Method</th>
+                    <th>Description</th>
+                    <th>Select</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var candidate in Model.Candidates)
+                {
+                    <tr>
+                        <td>@candidate.StepNumber</td>
+                        <td>@candidate.MethodName</td>
+                        <td>@candidate.Description</td>
+                        <td>
+                            <input type="checkbox" name="selectedSteps" value="@candidate.StepNumber" checked="@candidate.IsSelectedForRollback" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <button type="submit">Confirm Rollback</button>
+    </form>
+}

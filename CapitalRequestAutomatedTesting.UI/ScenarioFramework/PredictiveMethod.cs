@@ -1,6 +1,6 @@
 ﻿using CapitalRequestAutomatedTesting.UI.Enums;
 
-namespace CapitalRequestAutomatedTesting.UI.Models
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class PredictiveMethod
     {
@@ -16,11 +16,9 @@ namespace CapitalRequestAutomatedTesting.UI.Models
         public List<object>? Parameters { get; set; }
         public CrudOperationType Operation { get; set; }
 
-        // Rollback execution
-        public string? RollbackServiceName { get; set; }
-        public string? RollbackMethodName { get; set; }
-        public List<object>? RollbackParameters { get; set; }
-        public CrudOperationType? RollbackOperation { get; set; }
+        // ✅ Refactored rollback
+        public RollbackMethod? Rollback { get; set; }
     }
+
 
 }

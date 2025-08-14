@@ -1,4 +1,5 @@
 ﻿using CapitalRequestAutomatedTesting.UI.Enums;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
@@ -7,6 +8,8 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public string ScenarioId { get; internal set; }
         public int? ActualExecutionDurationMinutes { get; set; }
         public TimeSpan? ActualExecutionDuration { get; set; }
+        public List<PredictiveMethod> PredictiveMethods { get; set; } = new();
+
         public Dictionary<string, TableData> Tables { get; internal set; } = new Dictionary<string, TableData>();
 
         // Stores field-level data grouped by table and row

@@ -29,6 +29,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private readonly IActualDashboardService _actualDashboardService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IRollbackService _rollbackService;
         private readonly ILogger<ActualSeleniumService> _logger;
         private readonly IMapper _mapper;
 
@@ -42,6 +43,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             IActualDashboardService actualDashboardService,
             IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
+            IRollbackService rollbackService,
             ILogger<ActualSeleniumService> logger,
             IMapper mapper)
         {
@@ -55,6 +57,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _actualDashboardService = actualDashboardService;
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
+            _rollbackService = rollbackService;
             _logger = logger;
             _mapper = mapper;
         }
@@ -466,7 +469,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     if (commitStepReached)
                     {
                         outcome.RollbackRequired = true;
-                        outcome.RollbackCandidates = await _rollbackService.ExecuteRollback(scenarioDetail.PredictiveMethods);
+                        outcome.RollbackCandidates = await _rollbackService.ExecuteRollbackAsync(scenarioDetail.PredictiveMethods);
                     }
 
                     // Stop execution after failure

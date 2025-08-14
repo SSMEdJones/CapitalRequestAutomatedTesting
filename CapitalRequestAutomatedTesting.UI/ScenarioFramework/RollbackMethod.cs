@@ -1,6 +1,6 @@
 ﻿using CapitalRequestAutomatedTesting.UI.Enums;
 
-namespace CapitalRequestAutomatedTesting.UI.Models
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class RollbackMethod
     {

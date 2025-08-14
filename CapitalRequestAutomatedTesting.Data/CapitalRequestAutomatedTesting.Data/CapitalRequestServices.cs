@@ -39,6 +39,7 @@ namespace CapitalRequestAutomatedTesting.Data
         Task<CapitalRequest.API.Models.RequestedInfo> GetRequestedInfo(int id);
         Task<List<CapitalRequest.API.Models.RequestedInfo>> GetAllRequestedInfos(RequestedInfoSearchFilter filter);
         Task DeleteAllRequestedInfos(RequestedInfoSearchFilter filter);
+        Task<CapitalRequest.API.Models.RequestedInfo> UpdateRequestedInfos(CapitalRequest.API.Models.RequestedInfo requestedInfo);
 
         //// ReviewerGroups
         Task<CapitalRequest.API.Models.ReviewerGroup> GetReviewerGroup(int id);
@@ -233,14 +234,20 @@ namespace CapitalRequestAutomatedTesting.Data
             return _requestedInfos.Get(id);
         }
 
-        public Task<List<CapitalRequest.API.Models.RequestedInfo>> GetAllRequestedInfos(RequestedInfoSearchFilter filter)
+        public async Task<List<CapitalRequest.API.Models.RequestedInfo>> GetAllRequestedInfos(RequestedInfoSearchFilter filter)
         {
-            return _requestedInfos.GetAll(filter);
+            return await _requestedInfos.GetAll(filter);
         }
 
         public async Task DeleteAllRequestedInfos(RequestedInfoSearchFilter filter)
         {
             await _requestedInfos.DeleteAll(filter);
+
+        }
+
+        public async Task<CapitalRequest.API.Models.RequestedInfo> UpdateRequestedInfos(CapitalRequest.API.Models.RequestedInfo requestedInfo)
+        {
+            return await _requestedInfos.Update(requestedInfo);
 
         }
         #endregion

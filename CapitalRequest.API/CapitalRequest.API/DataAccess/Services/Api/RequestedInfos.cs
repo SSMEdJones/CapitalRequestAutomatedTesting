@@ -6,6 +6,9 @@ using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using SSMWorkflow.API.DataAccess.Models;
+using SSMWorkflow.API.Models;
 using RequestedInfo = CapitalRequest.API.Models.RequestedInfo;
 
 namespace CapitalRequest.API.DataAccess.Services.Api
@@ -13,6 +16,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
     public interface IRequestedInfos
     {
         Task<RequestedInfo> Get(int id);
+        Task<RequestedInfo> Update(RequestedInfo requestedInfo);
         Task<List<RequestedInfo>> GetAll(RequestedInfoSearchFilter filter);
         Task DeleteAll(RequestedInfoSearchFilter filter);
     }
@@ -37,7 +41,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                 var response = await _capitalRequestSettings.BaseApiUrl
                     .AppendPathSegment("RequestedInfo")
                     .AppendPathSegment($"{id}")
-                    .GetJsonAsync<Response<dynamic>>();
+                    .GetJsonAsync<API.Models.Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
                 var result = JsonConvert.DeserializeObject<RequestedInfo>(responseObject);
@@ -68,7 +72,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                         filter.WorkflowStepOptionId,
                         filter.IsOpen
                     })
-                    .GetJsonAsync<Response<dynamic>>();
+                    .GetJsonAsync<API.Models.Response<dynamic>>();
 
                 var responseObject = JsonConvert.SerializeObject(response.Result);
                 var results = JsonConvert.DeserializeObject<List<RequestedInfo>>(responseObject);
@@ -111,6 +115,30 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             {
                 var exceptionResponse = await ex.GetResponseStringAsync();
                 throw new Exception($"Failed attempting to send delete all request to CapitalRequest. {exceptionResponse}");
+            }
+        }
+
+        public async Task<RequestedInfo> Update(RequestedInfo requestedInfo)
+        {
+
+            var createRequestedInfo = _mapper.Map<CreateUpdateRequestedInfo>(requestedInfo);
+            try
+            {
+                var response = await _capitalRequestSettings.BaseApiUrl
+                        .AppendPathSegment("RequestedInfo")
+                        .AppendPathSegment($"{requestedInfo.Id}")
+                        .PutJsonAsync(createRequestedInfo)
+                        .ReceiveJson<API.Models.Response<RequestedInfo>>();
+
+                var responseObject = JsonConvert.SerializeObject(response.Result);
+                var results = JsonConvert.DeserializeObject<RequestedInfo>(responseObject);
+
+                return results;
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send update to SSMWorkFlow. {exceptionResponse}");
             }
         }
     }

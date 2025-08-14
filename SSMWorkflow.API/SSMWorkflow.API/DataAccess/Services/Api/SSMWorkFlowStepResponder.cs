@@ -13,7 +13,7 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
     {
         Task<Guid> Add(CreateUpdateWorkFlowStepResponder workFlowStepResponder);
 
-        Task Delete(Guid workflowId);
+        Task Delete(Guid responderID);
 
         Task<WorkFlowStepResponderViewModel> Get(Guid responderID);
 

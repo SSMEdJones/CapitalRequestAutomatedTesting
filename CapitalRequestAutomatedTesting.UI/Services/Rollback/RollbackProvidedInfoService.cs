@@ -13,7 +13,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Rollback
     }
     public class RollbackProvidedInfoService : IRollbackProvidedInfoService, IRollbackHandler
     {
-    {
         private ICapitalRequestServices _capitalRequestServices;
         private IMapper _mapper;
 

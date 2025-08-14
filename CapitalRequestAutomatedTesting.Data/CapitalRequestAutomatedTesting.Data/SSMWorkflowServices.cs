@@ -24,7 +24,8 @@ namespace CapitalRequestAutomatedTesting.Data
 
         Task<WorkFlowStepOptionViewModel> GetWorkFlowStepOption(Guid optionId);
 
-        public Task<List<WorkFlowStepResponderViewModel>> GetAllAddWorkFlowStepResponder(Guid workFlowStepId);
+        Task<List<WorkFlowStepResponderViewModel>> GetAllAddWorkFlowStepResponder(Guid workFlowStepId);
+        Task DeleteWorkflowStepResponder(Guid responderId);
 
         Task<List<WorkFlowStakeholderViewModel>> GetAllWorkFlowStakeholders(Guid workflowID);
 
@@ -39,7 +40,7 @@ namespace CapitalRequestAutomatedTesting.Data
         Task<List<WorkFlowInstanceActionHistoryViewModel>> GetAllWorkflowInstanceActionHistory(WorkFlowInstanceActionHistorySearchFilter filter);
 
         Task<SSMWorkflow.API.Models.EmailNotification> GeEmailNotification(int id);
-
+        Task DeleteEmailNotification(SSMWorkflow.API.Models.EmailNotification emailNotification);
         Task<List<SSMWorkflow.API.Models.EmailNotification>> GetAllEmailNotifications(EmailNotificationSearchFilter filter);
         Task<List<SSMWorkflow.API.Models.Dashboard>> GetAllDashboards(DashboardSearchFilter filter);
     }
@@ -117,6 +118,11 @@ namespace CapitalRequestAutomatedTesting.Data
             return await _ssmMWorkFlowStepResponder.GetAll(workFlowStepId);
         }
 
+        public async Task DeleteWorkflowStepResponder(Guid responderId)
+        {
+            await _ssmMWorkFlowStepResponder.Delete(responderId);
+        }
+
         public async Task SendCapitalRequestGroupNotificationsAsync(NotificationSearchFilter notificationSearchFilter)
         {
             await _ssmMNotification.SendCapitalRequestGroupNotificationsAsync(notificationSearchFilter);
@@ -160,6 +166,11 @@ namespace CapitalRequestAutomatedTesting.Data
         public async Task<List<SSMWorkflow.API.Models.EmailNotification>> GetAllEmailNotifications(EmailNotificationSearchFilter filter)
         {
             return await _emailNotification.GetAll(filter);
+        }
+
+        public async Task DeleteEmailNotification(SSMWorkflow.API.Models.EmailNotification emailNotification)
+        {
+             await _emailNotification.Delete(emailNotification);
         }
 
         public async Task<List<SSMWorkflow.API.Models.Dashboard>> GetAllDashboards(DashboardSearchFilter filter)

@@ -128,9 +128,17 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualSeleniumService, ActualSeleniumService>();
             services.AddScoped<IActualProvidedInfoService, ActualProvidedInfoService>();
             #endregion
+
             #region Rollback Services
             services.AddScoped<IRollbackProvidedInfoService, RollbackProvidedInfoService>();
-            
+            services.AddScoped<IRollbackServiceFactory, RollbackServiceFactory>();
+            services.AddScoped<IRollbackService, RollbackService>();
+            services.AddScoped<IRollbackFileService, RollbackFileService>();
+            services.AddScoped<IRollbackWorkflowStepOptionService, RollbackWorkflowStepOptionService>();
+            services.AddScoped<IRollbackRequestedInfoService, RollbackRequestedInfoService>();
+            services.AddScoped<IRollbackEmailNotificationService, RollbackEmailNotificationService>();
+
+
             #endregion
 
             #region Scenario Framework
