@@ -9,7 +9,8 @@ using System.Threading.Tasks;
 
 public interface IRollbackService
 {
-    Task<List<RollbackCandidate>> ExecuteRollbackAsync(IEnumerable<PredictiveMethod> methods);
+    //Task<List<RollbackCandidate>> ExecuteRollbackAsync(IEnumerable<PredictiveMethod> methods);
+    Task<RollbackCandidate> ExecuteRollbackAsync(ScenarioDetailsViewModel detail);
 }
 
 public class RollbackService : IRollbackService
@@ -21,36 +22,46 @@ public class RollbackService : IRollbackService
         _serviceFactory = serviceFactory;
     }
 
-    public async Task<List<RollbackCandidate>> ExecuteRollbackAsync(IEnumerable<PredictiveMethod> methods)
+    public async Task<RollbackCandidate> ExecuteRollbackAsync(ScenarioDetailsViewModel detail)
     {
-        var candidates = new List<RollbackCandidate>();
-
-        foreach (var method in methods.Where(m => m.Rollback != null))
-        {
-            var rollback = method.Rollback;
-
-            var candidate = new RollbackCandidate
-            {
-                StepNumber = method.StepNumber,
-                MethodName = method.MethodName,
-                Description = $"Rollback for step {method.StepNumber}: {method.MethodName}",
-                RollbackServiceName = rollback.ServiceName,
-                RollbackMethodName = rollback.MethodName,
-                PredictiveData = ConvertToDictionary(method.Parameters),
-                RollbackParameters = ConvertToDictionary(rollback.Parameters),
-                IsSelectedForRollback = true
-            };
-
-            // Optional: Execute rollback and capture actual data
-            //var actualResult = await ExecuteRollbackMethodAsync(rollback);
-            //candidate.ActualData = ConvertToDictionary(actualResult);
-
-            candidates.Add(candidate);
-        }
-
-        return candidates;
+        var candidate = new RollbackCandidate
+        { 
+            OriginalData = detail.OriginalData,
+            CurrentData = detail.ActualData,
+        };
+        
+        return candidate;
     }
 
+    //public async Task<List<RollbackCandidate>> ExecuteRollbackAsync(IEnumerable<PredictiveMethod> methods)
+    //{
+    //    var candidates = new List<RollbackCandidate>();
+
+    //    foreach (var method in methods.Where(m => m.Rollback != null))
+    //    {
+    //        var rollback = method.Rollback;
+
+    //        var candidate = new RollbackCandidate
+    //        {
+    //            StepNumber = method.StepNumber,
+    //            MethodName = method.MethodName,
+    //            Description = $"Rollback for step {method.StepNumber}: {method.MethodName}",
+    //            RollbackServiceName = rollback.ServiceName,
+    //            RollbackMethodName = rollback.MethodName,
+    //            PredictiveData = ConvertToDictionary(method.Parameters),
+    //            RollbackParameters = ConvertToDictionary(rollback.Parameters),
+    //            IsSelectedForRollback = true
+    //        };
+
+    //        // Optional: Execute rollback and capture actual data
+    //        //var actualResult = await ExecuteRollbackMethodAsync(rollback);
+    //        //candidate.ActualData = ConvertToDictionary(actualResult);
+
+    //        candidates.Add(candidate);
+    //    }
+
+    //    return candidates;
+    //}
     private Dictionary<string, string> ConvertToDictionary(object data, string prefix = "")
     {
         var dict = new Dictionary<string, string>();

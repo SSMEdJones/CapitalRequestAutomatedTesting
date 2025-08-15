@@ -1,8 +1,14 @@
-﻿namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class RollbackCandidate
     {
         public int StepNumber { get; set; }
+
+        public ScenarioDataViewModel OriginalData { get; set; } = new();
+
+        public ScenarioDataViewModel CurrentData { get; set; } = new();
 
         public string MethodName { get; set; }
         public string Description { get; set; }
@@ -11,14 +17,14 @@
         public string RollbackMethodName { get; set; }
         public Dictionary<string, string> RollbackParameters { get; set; }
 
-        public Dictionary<string, string> PredictiveData { get; set; } = new();
-        public Dictionary<string, string> ActualData { get; set; } = new();
+        //public Dictionary<string, string> PredictiveData { get; set; } = new();
+        //public Dictionary<string, string> ActualData { get; set; } = new();
 
-        public List<string> ChangedFields => PredictiveData.Keys
-            .Where(k => ActualData.ContainsKey(k) && PredictiveData[k] != ActualData[k])
-            .ToList();
+        //public List<string> ChangedFields => PredictiveData.Keys
+        //    .Where(k => ActualData.ContainsKey(k) && PredictiveData[k] != ActualData[k])
+        //    .ToList();
 
-        public bool IsSelectedForRollback { get; set; } = true;
+        //public bool IsSelectedForRollback { get; set; } = true;
     }
 
 }

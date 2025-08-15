@@ -1,63 +1,48 @@
-﻿@model RollbackPreviewViewModel
+﻿@using CapitalRequestAutomatedTesting.UI.ScenarioFramework
+@using CapitalRequestAutomatedTesting.UI.Services
+@using CapitalRequestAutomatedTesting.UI.Enums
 
-<h2>Rollback Preview for Scenario @Model.ScenarioName</h2>
+@model ScenarioComparisonResult
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Step</th>
-            <th>Method</th>
-            <th>Description</th>
-            <th>Details</th>
-        </tr>
-    </thead>
-    <tbody>
-        @for (int i = 0; i < Model.Candidates.Count; i++)
-        {
-            var candidate = Model.Candidates[i];
-            var collapseId = $"collapseStep{i}";
-            var isFirst = i == 0;
+<style media="print">
+    .no-print {
+        display: none;
+    }
 
-            <tr>
-                <td>@candidate.StepNumber</td>
-                <td>@candidate.MethodName</td>
-                <td>@candidate.Description</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary" type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#@collapseId"
-                            aria-expanded="false"
-                            aria-controls="@collapseId">
-                        +
-                    </button>
-                </td>
-            </tr>
-            <tr class="collapse" id="@collapseId">
-                <td colspan="4">
-                    <div class="card card-body">
-                        <strong>Predictive Data:</strong>
-                        <pre>@Json.Serialize(candidate.PredictiveData)</pre>
+    table {
+        page-break-inside: avoid;
+    }
 
-                        @if (candidate.ActualData != null && candidate.ActualData.Any())
-                        {
-                            <strong>Actual Data:</strong>
-                            <pre>@Json.Serialize(candidate.ActualData)</pre>
-                        }
+    .section {
+        page-break-after: always;
+    }
 
-                        @if (candidate.RollbackParameters != null && candidate.RollbackParameters.Any())
-                        {
-                            <strong>Rollback Parameters:</strong>
-                            <pre>@Json.Serialize(candidate.RollbackParameters)</pre>
-                        }
-                    </div>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+    .table-warning td {
+        background-color: #ff6961;
+    }
 
-<form asp-action="ConfirmRollback" method="post">
-    <input type="hidden" asp-for="ScenarioId" />
-    <button type="submit" class="btn btn-danger">Confirm Full Rollback</button>
-</form>
+    .table-warning td {
+        background-color: #ff6961;
+    }
+</style>
+
+
+<style>
+    .table-warning td {
+        background-color: #ff6961;
+    }
+</style>
+@Html.Partial("_RollbackComparison", Model)
+
+@* <div id="scenario-action-bar">
+    <a href="/Scenario/PrintScenarioPdf?id=@Model.Id"
+       target="_blank"
+       title="Print PDF Report">
+        🖨️
+    </a>
+    <button disabled title="Save (Coming Soon)">💾</button>
+</div> *@
+
+
+
 

@@ -85,6 +85,9 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public string PredictiveStopReason { get; set; }
 
         public bool CanExecuteActualSteps { get; set; } = true;
-        public int RequestedInfoId { get; set; } 
+        public int RequestedInfoId { get; set; }
+
+        public bool PredictiveSeleniumFailed => !PredictedSeleniumOutcome?.Success ?? true;
+
     }
 }

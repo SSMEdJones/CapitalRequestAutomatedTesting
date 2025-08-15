@@ -262,9 +262,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                     new OriginalMethod
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
-                        MethodName = "GetClosedWorkflowStepOptionsAsync",
+                        MethodName = "GetExpectedClosedWorkflowStepOptionsAsync",
                         Parameters = new List<object> { proposal, optionType, requestedInfoId },
                         Operation = CrudOperationType.Select
+                    }
+                );
+
+                originalMethods.Add(
+                    new OriginalMethod
+                    {
+                        ServiceName = "IActualWorkflowStepOptionService",
+                        MethodName = "GetExpectedReOpenedOptionsAsync",
+                        Parameters = new List<object> { Constants.OPTION_TYPE_VERIFY, proposal },
+                        Operation = CrudOperationType.Update
                     }
                 );
 

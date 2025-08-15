@@ -238,8 +238,17 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             foreach (var scenario in selectedScenarios)
             {
 
-                scenarioDetail = await ProcessScenario(scenario);
-                scenarioDetails.Add(scenarioDetail);
+                var detail = await ProcessScenario(scenario);
+
+                if (detail.PredictiveSeleniumFailed)
+                {
+                    //TempData["Error"] = $"Predictive Selenium failed for scenario {detail.ScenarioId}.";
+                    TempData["ScenarioDetail"] = JsonConvert.SerializeObject(detail);
+
+                    return RedirectToAction("Preview", "Rollback", new { scenarioId = detail.ScenarioId });
+                }
+
+                scenarioDetails.Add(detail);
 
                 // etc.
             }
@@ -309,20 +318,20 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             }
 
             ////todo remove
-            return scenario;
+            //return scenario;
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
             scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
             // Step 4: Actual Data (only if prediction succeeded)
-            if (scenario.PredictedSeleniumOutcome.Success)
-            {
+            //if (scenario.PredictedSeleniumOutcome.Success)
+            //{
                 scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
                 stopwatch.Stop();
 
                 scenario.ActualData.ActualExecutionDuration = stopwatch.Elapsed;
                 scenario.ActualData.ActualExecutionDurationMinutes = (int)Math.Ceiling(stopwatch.Elapsed.TotalMinutes);
-            }
+            //}
 
             return scenario;
         }

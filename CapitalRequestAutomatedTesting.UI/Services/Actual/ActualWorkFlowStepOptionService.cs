@@ -88,6 +88,58 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return actual;
         }
 
+        public async Task<List<WorkflowStepOption>> GetExpectedClosedWorkflowStepOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId = null)
+        {
+            var workflowStep = proposal.WorkflowStep;
+
+            var useRequestedInfoReviewerGroup = requestedInfoId == null ? false : true;
+            if (workflowStep == null)
+            {
+                throw new Exception("No workflow steps found for the given proposal.");
+            }
+
+            // Determine which reviewer group to use
+            var reviewerGroupId = useRequestedInfoReviewerGroup && proposal.RequestedInfo != null
+                ? proposal.RequestedInfo.ReviewerGroupId
+                : proposal.ReviewerGroupId;
+
+            // Get all workflow step options with appropriate filtering
+            var allOptionsQuery = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                .Where(x => x.ReviewerGroupId == reviewerGroupId && x.OptionType == optionType);
+
+            // Apply additional filters for RequestedInfo mode
+            if (requestedInfoId.HasValue)
+            {
+                allOptionsQuery = allOptionsQuery.Where(x =>
+                    !x.IsComplete &&
+                    !x.IsTerminate &&
+                    x.RequestedInfoId == requestedInfoId.Value);
+            }
+
+            var allOptions = allOptionsQuery.ToList();
+
+            var deduplicated = allOptions
+                .GroupBy(x => new { x.OptionName, x.ReviewerGroupId, x.WorkflowStepID })
+                .Select(g =>
+                    g.OrderBy(x => x.IsTerminate) // false (active) comes before true
+                     .ThenByDescending(x => x.Updated ?? x.Created)
+                     .First()
+                )
+                .ToList();
+
+            var relevantOptions = deduplicated
+                .Where(x => x.Updated.HasValue &&
+                x.IsTerminate && !x.IsComplete ||
+                !x.Updated.HasValue && !x.IsTerminate && !x.IsComplete &&
+                x.OptionName.ToLower() != proposal.Reviewer.Email.ToLower())
+                .ToList();
+
+            var actual = relevantOptions
+                .Select(x => _mapper.Map<WorkflowStepOption>(x))
+                .ToList();
+
+            return actual;
+        }
         //public async Task<List<WorkflowStepOption>> GetRequestTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal)
         //{
         //    var workflowStep = proposal.WorkflowStep;
@@ -251,6 +303,38 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return unlockedOptions;
         }
 
+        public async Task<List<WorkflowStepOption>> GetExpectedReOpenedOptionsAsync(string optionType, vm.Proposal proposal)
+        {
+            // unlock verify rows for requesting group
+            var reviewer = await _capitalRequestServices.GetReviewer(proposal.RequestedInfo.RequestingReviewerId);
+            var reviewerGroupId = reviewer.ReviewerGroupId;
+
+            // Identify the current reviewer’s OptionID
+            var currentOptionId = proposal.WorkflowStepOptions
+                .Where(x =>
+                    x.ReviewerGroupId == reviewerGroupId &&
+                    x.OptionType == optionType &&
+                    x.IsTerminate == false &&
+                    x.OptionName?.ToLower() == proposal.Reviewer.Email.ToLower()
+                )
+                .OrderByDescending(x => x.Created)
+                .Select(x => x.OptionID)
+                .FirstOrDefault();
+
+            // Find all other unlocked options in the same group and step
+            var unlockedOptions = proposal.WorkflowStepOptions
+                .Where(x =>
+                    x.OptionType == optionType &&
+                    x.ReviewerGroupId == reviewerGroupId &&
+                    x.IsTerminate == true &&
+                    x.OptionID != currentOptionId
+                )
+                .Select(x => _mapper.Map<WorkflowStepOption>(x))
+                .ToList();
+
+            return unlockedOptions;
+        }
+        
 
     }
 }
