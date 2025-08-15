@@ -5,6 +5,7 @@ using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
+using CapitalRequestAutomatedTesting.UI.Services.Original;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using DinkToPdf;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IPredictiveScenarioService _predictiveScenarioService;
         private readonly IActualScenarioService _actualScenarioService;
+        private readonly IOriginalScenarioService _originalScenarioService;
         private readonly IPredictiveSeleniumService _predictiveSeleniumService;
         private readonly IActualSeleniumService _actualSeleniumService;
         private readonly IViewRenderService _viewRenderService;
@@ -37,6 +39,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             ICapitalRequestServices capitalRequestServices,
             IPredictiveScenarioService predictiveScenarioService,
             IActualScenarioService actualScenarioService,
+            IOriginalScenarioService originalScenarioService,
             IPredictiveSeleniumService predictiveSeleniumService,
             IActualSeleniumService actualSeleniumService,
             IViewRenderService viewRenderService,
@@ -51,6 +54,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             _capitalRequestServices = capitalRequestServices;
             _predictiveScenarioService = predictiveScenarioService;
             _actualScenarioService = actualScenarioService;
+            _originalScenarioService = originalScenarioService;
             _predictiveSeleniumService = predictiveSeleniumService;
             _actualSeleniumService = actualSeleniumService;
             _viewRenderService = viewRenderService;
@@ -301,10 +305,11 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             if (scenario.PredictedSeleniumOutcome.Success)
             {
                 scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
+                scenario.OriginalData = await _originalScenarioService.GenerateScenarioDataAsync(scenario);
             }
 
             ////todo remove
-            //return scenario;
+            return scenario;
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
             scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);

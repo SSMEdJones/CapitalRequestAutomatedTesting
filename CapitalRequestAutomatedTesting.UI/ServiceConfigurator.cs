@@ -7,6 +7,7 @@ using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
+using CapitalRequestAutomatedTesting.UI.Services.Original;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using CapitalRequestAutomatedTesting.UI.Services.Rollback;
 using DinkToPdf;
@@ -128,7 +129,8 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualSeleniumService, ActualSeleniumService>();
             services.AddScoped<IActualProvidedInfoService, ActualProvidedInfoService>();
             #endregion
-
+            services.AddScoped<IOriginalScenarioService, OriginalScenarioService>();
+            
             #region Rollback Services
             services.AddScoped<IRollbackProvidedInfoService, RollbackProvidedInfoService>();
             services.AddScoped<IRollbackServiceFactory, RollbackServiceFactory>();

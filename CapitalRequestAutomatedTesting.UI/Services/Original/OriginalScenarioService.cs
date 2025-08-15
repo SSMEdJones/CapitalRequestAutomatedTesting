@@ -1,34 +1,36 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequestAutomatedTesting.Data;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using SSMWorkflow.API.DataAccess.Models;
 using System.Reflection;
 using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
 using vm = CapitalRequest.API.Models;
 
-namespace CapitalRequestAutomatedTesting.UI.Services.Actual
+namespace CapitalRequestAutomatedTesting.UI.Services.Original
 {
-    public interface IActualScenarioService
+    public interface IOriginalScenarioService
     {
         Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail);
-        Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(List<ActualMethod> methods, ScenarioDetailsViewModel scenarioDetail);
+        Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(List<OriginalMethod> methods, ScenarioDetailsViewModel scenarioDetail);
     }
-    public class ActualScenarioService : IActualScenarioService
+    
+    public class OriginalScenarioService : IOriginalScenarioService
     {
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly IWorkflowControllerService _workflowControllerService;
         private readonly IActualRequestedInfoService _actualRequestedInfoService;
-        private IActualWorkflowStepResponderService _actualWorkflowStepResponderService;
-        private IActualWorkflowStepOptionService _actualWorkflowStepOptionService;
-        private IActualEmailNotificationService _actualEmailNotificationService;
+        private readonly IActualWorkflowStepResponderService _actualWorkflowStepResponderService;
+        private readonly IActualWorkflowStepOptionService _actualWorkflowStepOptionService;
+        private readonly IActualEmailNotificationService _actualEmailNotificationService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IMapper _mapper;
 
-        public ActualScenarioService(ICapitalRequestServices capitalRequestServices,
+        public OriginalScenarioService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
             IWorkflowControllerService workflowControllerService,
             IActualRequestedInfoService actualRequestedInfoService,
@@ -49,7 +51,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
             _mapper = mapper;
-
         }
 
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
@@ -57,24 +58,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
 
-            //if (scenarioId == "SCN001")
-            //{
-            //    var methods = await GetScenarioMethodsAsync(scenarioDetail);
-            //    scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
-            //}
-
             var methods = await GetScenarioMethodsAsync(scenarioDetail);
             scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
 
             scenarioDataViewModel.ScenarioId = scenarioId;
+            scenarioDataViewModel.IsOriginalData = true;
 
             return scenarioDataViewModel;
         }
 
-        public async Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(List<ActualMethod> methods, ScenarioDetailsViewModel scenarioDetail)
+        public async Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(List<OriginalMethod> methods, ScenarioDetailsViewModel scenarioDetail)
         {
             var scenarioData = new ScenarioDataViewModel();
-
             var scenarioDataViewModel = new ScenarioDataViewModel();
 
             foreach (var method in methods)
@@ -85,10 +80,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return scenarioDataViewModel;
         }
 
-
-        public async Task<ScenarioDataViewModel> ExecuteScenarioMethodAsync(ActualMethod method, ScenarioDetailsViewModel scenarioDetail, ScenarioDataViewModel scenarioDataViewModel)
+        public async Task<ScenarioDataViewModel> ExecuteScenarioMethodAsync(OriginalMethod method, ScenarioDetailsViewModel scenarioDetail, ScenarioDataViewModel scenarioDataViewModel)
         {
-
             var nameSpace = "CapitalRequestAutomatedTesting.UI.Services.";
             object serviceInstance = null;
             Type serviceType = null;
@@ -112,7 +105,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             using var scope = _scopeFactory.CreateScope();
             serviceInstance = scope.ServiceProvider.GetRequiredService(serviceType);
 
-            //serviceInstance = _serviceProvider.GetService(serviceType);
             if (serviceInstance == null) return scenarioDataViewModel;
 
             // Get method info
@@ -125,8 +117,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             if (result is Task taskResult) // If method returns a Task
             {
                 await taskResult.ConfigureAwait(false); // Await task completion
-                await Task.Delay(200); // Temporary delay to test execution timing
-
+                
                 // If Task<T>, retrieve the actual result
                 var resultProperty = taskResult.GetType().GetProperty("Result");
                 result = resultProperty?.GetValue(taskResult);
@@ -135,7 +126,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             // Ensure inner async methods are awaited properly
             if (result is Task innerTaskResult)
             {
-                //await innerTaskResult.ConfigureAwait(false);
                 var innerResultProperty = innerTaskResult.GetType().GetProperty("Result");
                 result = innerResultProperty?.GetValue(innerTaskResult);
             }
@@ -148,13 +138,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
         private string DetermineTableName(string serviceName)
         {
-
             return serviceName switch
             {
                 "IActualRequestedInfoService" => "RequestedInfo",
                 "IActualWorkflowStepResponderService" => "WorkflowStepResponder",
                 "IActualWorkflowStepOptionService" => "WorkflowStepOption",
                 "IActualEmailNotificationService" => "EmailNotification",
+                "IActualProvidedInfoService" => "ProvidedInfo",
+                "IActualFileService" => "File",
                 _ => "UnknownTable"
             };
         }
@@ -178,20 +169,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             scenarioDataViewModel.Tables[tableName].Records.Add(new RecordEntry
             {
                 Operation = operationType,
-                Data = result
+                Data = result,
+                IsOriginal = true
             });
         }
 
-        private async Task<List<ActualMethod>> GetScenarioMethodsAsync(ScenarioDetailsViewModel scenarioDetail)
+        private async Task<List<OriginalMethod>> GetScenarioMethodsAsync(ScenarioDetailsViewModel scenarioDetail)
         {
-            var actualMethods = new List<ActualMethod>();
+            var originalMethods = new List<OriginalMethod>();
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
             var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
 
-
+            //TODO Map
             proposal.ReviewerGroupId = detail.RequestingGroupId;
+            proposal.ReviewerId = detail.ReviewerId;
             proposal.RequestedInfo = requestedInfo;
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
@@ -200,146 +193,94 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
                         .ToList();
-
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 
             if (scenarioId == "SCN001")
             {
+                // For "Request More Information" scenario
                 var optionType = Constants.OPTION_TYPE_VERIFY;
-                actualMethods.Add(
-                    new ActualMethod
+                originalMethods.Add(
+                    new OriginalMethod
                     {
                         ServiceName = "IActualRequestedInfoService",
                         MethodName = "GetRequestedInfoAsync",
                         Parameters = new List<object> { proposal },
-                        Operation = CrudOperationType.Insert
+                        Operation = CrudOperationType.Select
                     }
                 );
 
-                actualMethods.Add(
-                    new ActualMethod
+                originalMethods.Add(
+                    new OriginalMethod
                     {
                         ServiceName = "IActualWorkflowStepResponderService",
                         MethodName = "GetWorkflowStepResponderAsync",
-                        Parameters = new List<object> { proposal, Constants.RESPONDER_REQUEST, optionType },
-                        Operation = CrudOperationType.Insert
+                        Parameters = new List<object> { proposal, Constants.RESPONDER_REQUEST },
+                        Operation = CrudOperationType.Select
                     }
                 );
 
-                actualMethods.Add(
-                    new ActualMethod
+                originalMethods.Add(
+                    new OriginalMethod
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
                         MethodName = "GetClosedWorkflowStepOptionsAsync",
                         Parameters = new List<object> { proposal, optionType },
-                        Operation = CrudOperationType.Update
+                        Operation = CrudOperationType.Select
                     }
                 );
-
-                actualMethods.Add(
-                    new ActualMethod
-                    {
-                        ServiceName = "IActualWorkflowStepOptionService",
-                        MethodName = "GetRequestTypeWorkflowStepOptionsAsync",
-                        Parameters = new List<object> { proposal },
-                        Operation = CrudOperationType.Insert
-                    }
-                );
-
-                actualMethods.Add(
-                    new ActualMethod
-                    {
-                        ServiceName = "IActualEmailNotificationService",
-                        MethodName = "GetRequestEmailNotificationsAsync",
-                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION },
-                        Operation = CrudOperationType.Insert
-                    }
-                );
-
             }
             else if (scenarioId == "SCN002")
             {
+                // For "Reply to Request" scenario
                 string fileName = null;
                 var fileType = UploadFileType.Attachment;
                 var requestedInfoId = detail.RequestedInfoId;
                 var optionType = Constants.OPTION_TYPE_ADD_INFO;
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
-
-                actualMethods.Add(
-                    new ActualMethod
+                proposal.ReviewerGroupId = detail.ReplyingGroupId;
+                originalMethods.Add(
+                    new OriginalMethod
                     {
                         ServiceName = "IActualProvidedInfoService",
                         MethodName = "GetProvidedInfoAsync",
                         Parameters = new List<object> { proposal },
-                        Operation = CrudOperationType.Insert
+                        Operation = CrudOperationType.Select
                     }
                 );
 
-                actualMethods.Add(
-                    new ActualMethod
-                    {
-                        ServiceName = "IActualFileService",
-                        MethodName = "DownloadFile",
-                        Parameters = new List<object> { fileName, proposal.Id, fileType },
-                        Operation = CrudOperationType.Insert
-                    }
-                );
-
-                actualMethods.Add(
-                    new ActualMethod
+                originalMethods.Add(
+                    new OriginalMethod
                     {
                         ServiceName = "IActualWorkflowStepResponderService",
                         MethodName = "GetWorkflowStepResponderAsync",
                         Parameters = new List<object> { proposal, Constants.RESPONDER_REPLY, optionType },
-                        Operation = CrudOperationType.Insert
+                        Operation = CrudOperationType.Select
                     }
                 );
 
-                actualMethods.Add(
-                    new ActualMethod
+                originalMethods.Add(
+                    new OriginalMethod
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
                         MethodName = "GetClosedWorkflowStepOptionsAsync",
                         Parameters = new List<object> { proposal, optionType, requestedInfoId },
-                        Operation = CrudOperationType.Update
+                        Operation = CrudOperationType.Select
                     }
                 );
 
-                actualMethods.Add(
-                    new ActualMethod
-                    {
-                        ServiceName = "IActualWorkflowStepOptionService",
-                        MethodName = "GetReOpenedOptionsAsync",
-                        Parameters = new List<object> {Constants.OPTION_TYPE_VERIFY, proposal },
-                        Operation = CrudOperationType.Update
-                    }
-                );
-
-                actualMethods.Add(
-                    new ActualMethod
-                    {
-                        ServiceName = "IActualEmailNotificationService",
-                        MethodName = "GetRequestEmailNotificationsAsync",
-                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION },
-                        Operation = CrudOperationType.Insert
-                    }
-                );
-
-                actualMethods.Add(
-                    new ActualMethod
+                originalMethods.Add(
+                    new OriginalMethod
                     {
                         ServiceName = "IActualRequestedInfoService",
-                        MethodName = "GetRequestedInfoAsync",
+                        MethodName = "GetRequestedInfoByIdAsync",
                         Parameters = new List<object> { proposal },
-                        Operation = CrudOperationType.Update
+                        Operation = CrudOperationType.Select
                     }
                 );
-
             }
 
-            _mapper.Map(detail, scenarioDetail); 
-
-            return actualMethods;
+            _mapper.Map(detail, scenarioDetail);
+            return originalMethods;
         }
-       
     }
 }

@@ -34,15 +34,24 @@ namespace CapitalRequestAutomatedTesting.Tests
             // Arrange
             var proposalId = 2936; // Example proposal ID
             var responderType = "AddInfo"; // Example responder type
-            var workflowStepId = Guid.Parse("53E451AC-8057-F011-A31B-0050569736FD");
             var expectedResponderEmail = "edward.jones@ssmhealth.com";
 
             var proposal = await _capitalRequestservices.GetProposal(proposalId);
-            proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStepId);
             proposal.Reviewer = new vm.Reviewer { Email = expectedResponderEmail };
 
+            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                     .Where(x => !x.IsComplete)
+                     .FirstOrDefault();
+
+            var workflowStepId = proposal.WorkflowStep.WorkflowStepID;
+
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
+                        .ToList();
+            proposal.RequestingGroupId = 4;
+            proposal.ReplyingGroupId = 5;
+            proposal.ReviewerGroupId = 5;
             // Act
-            var result = await _service.GetWorkflowStepResponderAsync(proposal, responderType);
+            var result = await _service.GetWorkflowStepResponderAsync(proposal, responderType, Constants.OPTION_TYPE_ADD_INFO);
 
             // Assert
             Assert.NotNull(result);

@@ -10,7 +10,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Rollback
 {
     public interface IRollbackWorkflowStepResponderService
     {
-        Task<WorkflowStepResponder> DeleteWorkflowStepResponderAsync(vm.Proposal proposal, string responderType);
+        Task<WorkflowStepResponder> DeleteWorkflowStepResponderAsync(vm.Proposal proposal, string responderType, string optionType);
     }
     public class RollbackWorkflowStepResponderService : IRollbackWorkflowStepResponderService
     {
@@ -34,7 +34,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Rollback
             _mapper = mapper;
         }
 
-        public async Task<WorkflowStepResponder> DeleteWorkflowStepResponderAsync(vm.Proposal proposal, string responderType)
+        public async Task<WorkflowStepResponder> DeleteWorkflowStepResponderAsync(vm.Proposal proposal, string responderType, string optionType)
         {
             // Resolve WorkflowStepOptionId
             var reviewerGroupId = proposal.ReviewerGroupId;
@@ -43,7 +43,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Rollback
             var workflowStepOption = proposal.WorkflowStepOptions
                 .FirstOrDefault(x => x.IsComplete == true && x.IsTerminate == false && x.ReviewerGroupId == reviewerGroupId);
 
-            var workflowStepResponder = await _actualWorkflowStepResponderService.GetWorkflowStepResponderAsync(proposal, responderType);
+            var workflowStepResponder = await _actualWorkflowStepResponderService.GetWorkflowStepResponderAsync(proposal, responderType, optionType);
 
             _ssmWorkflowServices.DeleteWorkflowStepResponder(workflowStepResponder.ResponderID);
 

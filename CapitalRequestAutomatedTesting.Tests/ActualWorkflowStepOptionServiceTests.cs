@@ -101,16 +101,26 @@ namespace CapitalRequestAutomatedTesting.Tests
         public async Task GetClosedOptionsAsync_ReturnsCorrectOptions()
         {
             // Arrange
-            var proposalId = 2935; // Example proposal ID
+            var proposalId = 2936; // Example proposal ID
             var optionType = "AddInfo";
             var reviewerEmail = "edward.jones@ssmhealth.com";
-            var requestedInfoId = 685;
-            var workflowStepId = Guid.Parse("53E451AC-8057-F011-A31B-0050569736FD");
+            var requestedInfoId = 691;
+            //var workflowStepId = Guid.Parse("53E451AC-8057-F011-A31B-0050569736FD");
 
             var proposal = await _capitalRequestservices.GetProposal(proposalId);
+            proposal.RequestedInfo = await _capitalRequestservices.GetRequestedInfo(requestedInfoId);
+            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                     .Where(x => !x.IsComplete)
+                     .FirstOrDefault();
+
+            var workflowStepId = proposal.WorkflowStep.WorkflowStepID;
+
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
+                        .ToList();
+            proposal.RequestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
+            proposal.ReplyingGroupId = proposal.RequestedInfo.ReviewerGroupId;
+            proposal.ReviewerGroupId = proposal.ReplyingGroupId;
             proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStepId);
-            //proposal.ReviewerGroupId = 3;
-            proposal.RequestedInfo.ReviewerGroupId = 3;
 
             //};
             // Act

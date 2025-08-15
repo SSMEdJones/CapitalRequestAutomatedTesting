@@ -1,38 +1,63 @@
 ﻿@model RollbackPreviewViewModel
 
-<h2>Rollback Preview for @Model.ScenarioName</h2>
+<h2>Rollback Preview for Scenario @Model.ScenarioName</h2>
 
-@if (!Model.CanRollback)
-{
-    <p>This scenario cannot be rolled back.</p>
-}
-else
-{
-    <form asp-action="Execute" method="post">
-        <input type="hidden" name="scenarioId" value="@Model.ScenarioId" />
-        <table>
-            <thead>
-                <tr>
-                    <th>Step</th>
-                    <th>Method</th>
-                    <th>Description</th>
-                    <th>Select</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var candidate in Model.Candidates)
-                {
-                    <tr>
-                        <td>@candidate.StepNumber</td>
-                        <td>@candidate.MethodName</td>
-                        <td>@candidate.Description</td>
-                        <td>
-                            <input type="checkbox" name="selectedSteps" value="@candidate.StepNumber" checked="@candidate.IsSelectedForRollback" />
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-        <button type="submit">Confirm Rollback</button>
-    </form>
-}
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Step</th>
+            <th>Method</th>
+            <th>Description</th>
+            <th>Details</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Model.Candidates.Count; i++)
+        {
+            var candidate = Model.Candidates[i];
+            var collapseId = $"collapseStep{i}";
+            var isFirst = i == 0;
+
+            <tr>
+                <td>@candidate.StepNumber</td>
+                <td>@candidate.MethodName</td>
+                <td>@candidate.Description</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#@collapseId"
+                            aria-expanded="false"
+                            aria-controls="@collapseId">
+                        +
+                    </button>
+                </td>
+            </tr>
+            <tr class="collapse" id="@collapseId">
+                <td colspan="4">
+                    <div class="card card-body">
+                        <strong>Predictive Data:</strong>
+                        <pre>@Json.Serialize(candidate.PredictiveData)</pre>
+
+                        @if (candidate.ActualData != null && candidate.ActualData.Any())
+                        {
+                            <strong>Actual Data:</strong>
+                            <pre>@Json.Serialize(candidate.ActualData)</pre>
+                        }
+
+                        @if (candidate.RollbackParameters != null && candidate.RollbackParameters.Any())
+                        {
+                            <strong>Rollback Parameters:</strong>
+                            <pre>@Json.Serialize(candidate.RollbackParameters)</pre>
+                        }
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<form asp-action="ConfirmRollback" method="post">
+    <input type="hidden" asp-for="ScenarioId" />
+    <button type="submit" class="btn btn-danger">Confirm Full Rollback</button>
+</form>
+

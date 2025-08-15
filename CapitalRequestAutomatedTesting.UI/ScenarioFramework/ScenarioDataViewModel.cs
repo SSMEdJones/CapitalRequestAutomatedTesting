@@ -11,6 +11,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public List<PredictiveMethod> PredictiveMethods { get; set; } = new();
 
         public Dictionary<string, TableData> Tables { get; internal set; } = new Dictionary<string, TableData>();
+        public bool IsOriginalData { get; internal set; }
 
         // Stores field-level data grouped by table and row
         //public Dictionary<string, Dictionary<string, Dictionary<string, object>>> Data { get; set; } = new();

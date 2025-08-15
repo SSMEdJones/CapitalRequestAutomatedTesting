@@ -6,5 +6,6 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
     {
         public CrudOperationType Operation { get; set; } // Tracks Insert, Update, etc.
         public object Data { get; set; } // Holds actual row data
+        public bool IsOriginal { get; internal set; }
     }
 }

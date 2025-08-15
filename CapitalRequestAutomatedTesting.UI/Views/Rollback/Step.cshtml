@@ -1,0 +1,25 @@
+﻿@model RollbackCandidateViewModel
+@{
+    var stepIndex = (int)ViewBag.StepIndex;
+    var totalSteps = (int)ViewBag.TotalSteps;
+    var scenarioId = (Guid)ViewBag.ScenarioId;
+}
+
+<h2>Step @stepIndex + 1 of @totalSteps</h2>
+
+<form asp-action="ConfirmStep" method="post">
+    <input type="hidden" name="scenarioId" value="@scenarioId" />
+    <input type="hidden" name="stepIndex" value="@stepIndex" />
+
+    <partial name="_RollbackCandidate" model="Model" />
+
+    <button type="submit">Next</button>
+</form>
+
+@if (stepIndex == totalSteps - 1)
+{
+    <form asp-action="Execute" method="post">
+        <input type="hidden" name="scenarioId" value="@scenarioId" />
+        <button type="submit">Execute Rollback</button>
+    </form>
+}

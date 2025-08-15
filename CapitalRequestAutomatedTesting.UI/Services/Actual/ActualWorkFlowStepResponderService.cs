@@ -9,7 +9,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 {
     public interface IActualWorkflowStepResponderService
     {
-        Task<WorkflowStepResponder> GetWorkflowStepResponderAsync(vm.Proposal proposal, string responderType);
+        Task<WorkflowStepResponder> GetWorkflowStepResponderAsync(vm.Proposal proposal, string responderType, string optionType);
     }
     public class ActualWorkflowStepResponderService : IActualWorkflowStepResponderService
     {
@@ -24,7 +24,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _mapper = mapper;
         }
 
-        public async Task<WorkflowStepResponder> GetWorkflowStepResponderAsync(vm.Proposal proposal, string responderType)
+        public async Task<WorkflowStepResponder> GetWorkflowStepResponderAsync(vm.Proposal proposal, string responderType, string optionType)
         {
 
             var workflowStep = proposal.WorkflowStep;
@@ -34,7 +34,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
 
             var workflowStepResponders = await _ssmWorkflowServices.GetAllAddWorkFlowStepResponder(workflowStep.WorkflowStepID);
-            var workflowStepOption = GetWorkflowStepOption(proposal);
+            var workflowStepOption = GetWorkflowStepOption(proposal, optionType);
 
             if (workflowStepOption == null)
             {
@@ -49,10 +49,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     x.CreatedBy == proposal.Reviewer.UserId)
                 .FirstOrDefault();
 
+            if (actual == null)
+            {
+                actual = new WorkFlowStepResponderViewModel();
+            }
+                
             return _mapper.Map<WorkflowStepResponder>(actual);
         }
 
-        private WorkFlowStepOptionViewModel GetWorkflowStepOption(vm.Proposal proposal)
+        private WorkFlowStepOptionViewModel GetWorkflowStepOption(vm.Proposal proposal, string optionType)
         {
             var workflowStepOptions = proposal.WorkflowStepOptions;
 
@@ -64,7 +69,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                 if (optionsByGroup.Any())
                 {
-                    workflowStepOption = optionsByGroup.Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
+                    workflowStepOption = optionsByGroup.Where(x => x.OptionType == optionType &&
                                          x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                                          .First();
 

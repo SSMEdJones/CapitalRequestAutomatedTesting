@@ -424,7 +424,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         {
                             ServiceName = "IRollbackWorkflowStepResponderService",
                             MethodName = "DeleteWorkflowStepResponderAsync",
-                            Parameters = new List<object> { proposal, Constants.RESPONDER_REPLY },
+                            Parameters = new List<object> { proposal, Constants.RESPONDER_REPLY, Constants.OPTION_TYPE_ADD_INFO },
                             Operation = CrudOperationType.Delete
                         }
                     }
