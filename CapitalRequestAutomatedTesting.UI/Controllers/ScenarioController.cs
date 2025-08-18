@@ -321,7 +321,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             //return scenario;
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
-            scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+            //scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
             // Step 4: Actual Data (only if prediction succeeded)
             //if (scenario.PredictedSeleniumOutcome.Success)
@@ -331,6 +331,9 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
                 scenario.ActualData.ActualExecutionDuration = stopwatch.Elapsed;
                 scenario.ActualData.ActualExecutionDurationMinutes = (int)Math.Ceiling(stopwatch.Elapsed.TotalMinutes);
+
+            //TODO remove
+            scenario.PredictedSeleniumOutcome.Success = false;
             //}
 
             return scenario;

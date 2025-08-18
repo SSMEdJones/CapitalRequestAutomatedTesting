@@ -469,7 +469,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     if (commitStepReached)
                     {
                         outcome.RollbackRequired = true;
-                        outcome.RollbackCandidates = await _rollbackService.ExecuteRollbackAsync(scenarioDetail.PredictiveMethods);
+                        //outcome.RollbackCandidates = await _rollbackService.ExecuteRollbackAsync(scenarioDetail);
                     }
 
                     // Stop execution after failure
