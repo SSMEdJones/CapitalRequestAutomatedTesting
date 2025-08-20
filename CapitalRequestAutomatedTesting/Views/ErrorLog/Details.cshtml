@@ -1,0 +1,97 @@
+@model ErrorLogViewModel
+@{
+    ViewData["Title"] = "Error Log Details";
+}
+
+    <h1>Error Log Details</h1>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Error ID: @Model.Id</span>
+            <span class="badge @(Model.Level == "Error" ? "bg-danger" : Model.Level == "Warning" ? "bg-warning" : "bg-info")">
+                @Model.Level
+            </span>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Timestamp</dt>
+                <dd class="col-sm-9">@Model.Logged.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+
+                <dt class="col-sm-3">Message</dt>
+                <dd class="col-sm-9">@Model.Message</dd>
+
+                <dt class="col-sm-3">Logger</dt>
+                <dd class="col-sm-9">@Model.Logger</dd>
+
+                @if (!string.IsNullOrEmpty(Model.ScenarioId))
+                {
+                    <dt class="col-sm-3">Scenario ID</dt>
+                    <dd class="col-sm-9">@Model.ScenarioId</dd>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.RollbackStatus))
+                {
+                    <dt class="col-sm-3">Rollback Status</dt>
+                    <dd class="col-sm-9">@Model.RollbackStatus</dd>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.Url))
+                {
+                    <dt class="col-sm-3">URL</dt>
+                    <dd class="col-sm-9">@Model.Url</dd>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.UserName))
+                {
+                    <dt class="col-sm-3">User</dt>
+                    <dd class="col-sm-9">@Model.UserName</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Exception))
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">Exception Details</div>
+            <div class="card-body">
+                <pre class="exception-details">@Model.Exception</pre>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.StackTrace))
+    {
+        <div class="card mb-4">
+            <div class="card-header">Stack Trace</div>
+            <div class="card-body">
+                <pre class="stack-trace">@Model.StackTrace</pre>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.AdditionalInfo) && Model.AdditionalInfo != Model.StackTrace)
+    {
+        <div class="card mb-4">
+            <div class="card-header">Additional Information</div>
+            <div class="card-body">
+                <pre class="additional-info">@Model.AdditionalInfo</pre>
+            </div>
+        </div>
+    }
+
+    <div>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+
+    <style>
+        pre.exception-details, pre.stack-trace, pre.additional-info {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 0.25rem;
+        }
+    </style>

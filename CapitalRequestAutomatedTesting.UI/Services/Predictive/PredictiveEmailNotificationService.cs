@@ -253,7 +253,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         {
             var requestingGroupName = requestingGroup.Name;
             var requestedGroup = reviewerGroup.Name;
-            var replyingGroupName = reviewerGroup.Name;
+            var reviewerGroupName = reviewerGroup.Name;
 
             var requestDate = DateTime.Now.ToShortDateString();
 
@@ -261,7 +261,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             {
                 ["fullName"] = fullName,
                 ["requestingGroupName"] = requestingGroupName,
-                ["replyingGroupName"] = replyingGroupName,
+                ["reviewerGroupName"] = reviewerGroupName,
                 ["requestingUser"] = requestingUser,
                 ["requestedGroup"] = requestedGroup,
                 ["requestDate"] = requestDate

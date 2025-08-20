@@ -117,11 +117,5 @@ namespace SSMWorkflow.API.DataAccess.Services.Api
                 throw new Exception($"Failed attempting to send get all request to SSMWorkFlow. {exceptionResponse}");
             }
         }
-
-        
-
-
-
-
     }
 }

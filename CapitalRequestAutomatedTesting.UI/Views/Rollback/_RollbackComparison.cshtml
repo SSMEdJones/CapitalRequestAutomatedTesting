@@ -1,0 +1,80 @@
+﻿@using CapitalRequestAutomatedTesting.UI.ScenarioFramework
+@using CapitalRequestAutomatedTesting.UI.Services
+@using CapitalRequestAutomatedTesting.UI.Enums
+@model ScenarioComparisonResult
+
+@foreach (var table in Model.DifferingTables)
+{
+    <h3>@table.TableName</h3>
+
+    @if (!table.OperationGroups.Any())
+    {
+        <p><em>No operation groups found for this table.</em></p>
+    }
+
+    @foreach (var group in table.OperationGroups)
+    {
+        <h4>@((CrudOperationType)group.Operation) Rows</h4>
+
+        // Always render the table, even if there are no records
+        <table class="table table-sm table-bordered mb-4">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Predictive</th>
+                    <th>Actual</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!group.Records.Any())
+                {
+                    <tr>
+                        <td colspan="3"><em>No records available for this operation group.</em></td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var record in group.Records.OrderBy(r => r.RowKey))
+                    {
+                        var reference = record.RecordPredictive ?? record.RecordActual;
+
+                        if (reference == null)
+                        {
+                            <tr>
+                                <td colspan="3"><em>Record has no predictive or actual data.</em></td>
+                            </tr>
+                            continue;
+                        }
+
+                        var props = reference.GetType().GetProperties();
+
+                        if (!props.Any())
+                        {
+                            <tr>
+                                <td colspan="3"><em>No properties found on record.</em></td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var prop in props)
+                            {
+                                var isDifferent = record.FieldDifferences.Any(f => f.FieldName == prop.Name);
+                                var predictiveValue = record.RecordPredictive != null ? prop.GetValue(record.RecordPredictive) : null;
+                                var actualValue = record.RecordActual != null ? prop.GetValue(record.RecordActual) : null;
+                                var isHtml = prop.Name.Equals("EmailMessage", StringComparison.OrdinalIgnoreCase);
+
+                                <tr class="@(isDifferent ? "table-warning" : "")">
+                                    <td>@prop.Name</td>
+                                    <td>@(isHtml ? Html.Raw(predictiveValue?.ToString() ?? "—") : predictiveValue ?? Html.Raw("—"))</td>
+                                    <td>@(isHtml ? Html.Raw(actualValue?.ToString() ?? "—") : actualValue ?? Html.Raw("—"))</td>
+                                </tr>
+                            }
+                        }
+                    }
+                }
+            </tbody>
+        </table>
+    }
+
+    
+}

@@ -245,7 +245,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                     //TempData["Error"] = $"Predictive Selenium failed for scenario {detail.ScenarioId}.";
                     TempData["ScenarioDetail"] = JsonConvert.SerializeObject(detail);
 
-                    return RedirectToAction("Preview", "Rollback", new { scenarioId = detail.ScenarioId });
+                    return RedirectToAction("Preview", "Rollback");
+                    //return RedirectToAction("Preview", "Rollback", new { scenarioId = detail.ScenarioId });
                 }
 
                 scenarioDetails.Add(detail);
@@ -318,23 +319,26 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             }
 
             ////todo remove
-            //return scenario;
+            scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+            stopwatch.Stop();
+            scenario.PredictedSeleniumOutcome.Success = false;
+
+            return scenario;
+
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
-            //scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+            scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
-            // Step 4: Actual Data (only if prediction succeeded)
-            //if (scenario.PredictedSeleniumOutcome.Success)
-            //{
+            //Step 4: Actual Data(only if prediction succeeded)
+            if (scenario.PredictedSeleniumOutcome.Success)
+            {
                 scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
                 stopwatch.Stop();
 
                 scenario.ActualData.ActualExecutionDuration = stopwatch.Elapsed;
                 scenario.ActualData.ActualExecutionDurationMinutes = (int)Math.Ceiling(stopwatch.Elapsed.TotalMinutes);
 
-            //TODO remove
-            scenario.PredictedSeleniumOutcome.Success = false;
-            //}
+            }
 
             return scenario;
         }

@@ -1,5 +1,6 @@
 ﻿using CapitalRequestAutomatedTesting.Tests.Models;
 using CapitalRequestAutomatedTesting.UI;
+using CapitalRequestAutomatedTesting.UI.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -25,6 +26,10 @@ namespace CapitalRequestAutomatedTesting.Tests
 
             var services = new ServiceCollection();
 
+            services.AddSingleton<DiagnosticSource>(new DiagnosticListener("TestDiagnosticListener"));
+            services.AddSingleton<DiagnosticListener>(new DiagnosticListener("TestDiagnosticListener"));
+
+            // Other service registrations...
             // Register logging so ILogger<T> can be injected
             services.AddLogging(builder =>
             {
@@ -34,6 +39,13 @@ namespace CapitalRequestAutomatedTesting.Tests
 
             var builder = WebApplication.CreateBuilder();
 
+            // Register necessary services for MVC
+            services.AddControllersWithViews();
+            services.AddRazorPages();
+            
+            // Register our mock view render service instead of the real one
+            services.AddScoped<IViewRenderService, MockViewRenderService>();
+            
             services.AddApplicationServices(configuration, builder.Environment);
 
             // Use default test user if none provided
@@ -63,9 +75,6 @@ namespace CapitalRequestAutomatedTesting.Tests
 
             var settings = _provider.GetRequiredService<IOptionsMonitor<SSMWorkFlowSettings>>();
             Debug.WriteLine($"✅ Test loaded BaseApiUrl: {settings.CurrentValue.BaseApiUrl}");
-
-            // Build the service provider
-            _provider = services.BuildServiceProvider();
         }
     }
 }

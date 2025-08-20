@@ -1,5 +1,6 @@
 ﻿using CapitalRequestAutomatedTesting.UI.Models;
 using HtmlAgilityPack;
+using Microsoft.VisualBasic;
 using Scriban;
 using SSMWorkflow.API.Models;
 using System.Text.RegularExpressions;
@@ -74,16 +75,17 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             }
         }
 
-        public static string GenerateActionString(string  reviewerGroupName, string requestingGroupName, string emailActionTemplate, string fullName)
+        public static string GenerateActionString(string reviewerGroupName, string requestingGroupName, string emailActionTemplate, string fullName, string requestingUser = null)
         {
             var requestDate = DateTime.Now.ToString("MM/dd/yyyy");
-
             var model = new Dictionary<string, object>
             {
                 ["fullName"] = fullName,
                 ["requestingGroupName"] = requestingGroupName,
-                ["requestedGroup"] = reviewerGroupName,
-                ["requestDate"] = requestDate
+                ["reviewerGroupName"] = reviewerGroupName,
+                ["requestDate"] = requestDate,
+                ["requestingUser"] = requestingUser,
+
             };
 
             var actionTemplate = Template.Parse(emailActionTemplate);
@@ -92,6 +94,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
 
             return action;
         }
+               
 
         public static EmailActionData ParseActionString(string actionString)
         {

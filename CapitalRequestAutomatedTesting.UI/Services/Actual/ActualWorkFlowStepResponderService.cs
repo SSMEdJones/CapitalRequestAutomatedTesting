@@ -71,7 +71,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 {
                     workflowStepOption = optionsByGroup.Where(x => x.OptionType == optionType &&
                                          x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
-                                         .First();
+                                         .FirstOrDefault();
 
                 }
             }

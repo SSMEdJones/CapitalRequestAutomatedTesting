@@ -165,6 +165,8 @@ namespace CapitalRequestAutomatedTesting.UI
 
             #endregion
 
+            // Register the ErrorLogService
+            services.AddScoped<IErrorLogService, ErrorLogService>();
             return services;
         }
     }

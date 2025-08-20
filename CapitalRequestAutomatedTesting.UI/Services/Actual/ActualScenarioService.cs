@@ -197,6 +197,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                         .Where(x => !x.IsComplete)
                         .FirstOrDefault();
+            proposal.ReviewerId = detail.ReviewerId;
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 
             proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
                         .ToList();
@@ -263,6 +265,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 var requestedInfoId = detail.RequestedInfoId;
                 var optionType = Constants.OPTION_TYPE_ADD_INFO;
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
+                proposal.ReviewerGroupId = detail.ReplyingGroupId;
+
 
                 actualMethods.Add(
                     new ActualMethod
@@ -318,8 +322,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     new ActualMethod
                     {
                         ServiceName = "IActualEmailNotificationService",
-                        MethodName = "GetRequestEmailNotificationsAsync",
-                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION },
+                        MethodName = "GetEmailNotificationsAsync",
+                        Parameters = new List<object> { proposal, Constants.EMAIL_PROVIDE_MORE_INFORMATION },
                         Operation = CrudOperationType.Insert
                     }
                 );
