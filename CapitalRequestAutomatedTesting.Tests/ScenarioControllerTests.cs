@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Controllers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;

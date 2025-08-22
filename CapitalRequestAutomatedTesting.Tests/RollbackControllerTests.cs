@@ -1,7 +1,4 @@
-﻿using AutoMapper;
-using CapitalRequestAutomatedTesting.Data;
-using CapitalRequestAutomatedTesting.UI.Controllers;
-using CapitalRequestAutomatedTesting.UI.Models;
+﻿using CapitalRequestAutomatedTesting.UI.Controllers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
@@ -13,14 +10,13 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
 
 namespace CapitalRequestAutomatedTesting.Tests
 {
     public class RollbackControllerTests : IntegrationTestBase
     {
+        private readonly ILogger<RollbackController> _logger;
+
         private readonly IRollbackService _rollbackService;
         private readonly IPredictiveScenarioService _predictiveScenarioService;
         private readonly IScenarioComparer _scenarioComparer;
@@ -32,25 +28,26 @@ namespace CapitalRequestAutomatedTesting.Tests
         private readonly IActualSeleniumService _actualSeleniumService;
 
         private readonly RollbackController _controller;
-
+        
         public RollbackControllerTests()
         {
+            _logger = _provider.GetRequiredService<ILogger<RollbackController>>();
             _rollbackService = _provider.GetRequiredService<IRollbackService>();
             _predictiveScenarioService = _provider.GetRequiredService<IPredictiveScenarioService>();
             _scenarioComparer = _provider.GetRequiredService<IScenarioComparer>();
+
             _actualScenarioService = _provider.GetRequiredService<IActualScenarioService>();
-            _predictiveSeleniumService = _provider.GetRequiredService<IPredictiveSeleniumService>();
-            _actualSeleniumService = _provider.GetRequiredService<IActualSeleniumService>();
             _originalScenarioService = _provider.GetRequiredService<IOriginalScenarioService>();
+            _predictiveSeleniumService = _provider.GetRequiredService<IPredictiveSeleniumService>();
 
             _controller = new RollbackController(
+                _logger,
                 _rollbackService,
                 _predictiveScenarioService,
                 _scenarioComparer,
                 _actualScenarioService,
                 _originalScenarioService,
-                _predictiveSeleniumService,
-                _actualSeleniumService 
+                _predictiveSeleniumService
             );
 
             var tempData = new TempDataDictionary(new DefaultHttpContext(), MockTempDataProvider());

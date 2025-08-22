@@ -1,5 +1,5 @@
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.Tests;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Microsoft.Extensions.DependencyInjection;

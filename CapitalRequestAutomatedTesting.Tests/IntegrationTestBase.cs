@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using SSMWorkflow.API.DataAccess.ConfigurationSettings;
 using System.Diagnostics;
 using System.Security.Claims;
 
