@@ -7,7 +7,7 @@ using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using CapitalRequestAutomatedTesting.UI.Services.Original;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using DinkToPdf;
-using Infrastructure.Context;
+using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;

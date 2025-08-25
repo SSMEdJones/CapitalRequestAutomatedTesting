@@ -4,6 +4,7 @@ using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
 using Flurl;
 using Flurl.Http;
+using Infrastructure.ApiDiagnostics;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using ReviewerGroup = CapitalRequest.API.Models.ReviewerGroup;

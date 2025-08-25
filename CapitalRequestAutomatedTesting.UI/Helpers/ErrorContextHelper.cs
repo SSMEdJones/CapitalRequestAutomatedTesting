@@ -1,4 +1,5 @@
 ﻿using System.Xml.Linq;
+using Infrastructure.Utilities.Xml;
 
 namespace CapitalRequestAutomatedTesting.UI.Helpers
 {
@@ -36,12 +37,12 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
 
         public static Dictionary<string, string> ParseFormXml(string xml)
         {
-            var doc = XDocument.Parse(xml);
-            return doc.Descendants("item")
-                      .ToDictionary(
-                          x => x.Attribute("name")?.Value,
-                          x => x.Element("value")?.Attribute("string")?.Value
-                      );
+            return FormDataXmlBuilder.Parse(xml);
+        }
+
+        private static string BuildFormXml(Dictionary<string, string> properties)
+        {
+            return FormDataXmlBuilder.Build(properties);
         }
     }
 

@@ -157,8 +157,8 @@ namespace CapitalRequestAutomatedTesting.UI
 
             // Register the ErrorLogService
             services.AddScoped<IErrorLogService, ErrorLogService>();
-            services.AddScoped<IApiDiagnosticsSender, ApiDiagnosticsSender>();
-            services.AddScoped<IFormDataContext, FormDataContext>();
+            services.AddScoped<Infrastructure.ApiDiagnostics.IApiDiagnosticsSender, Infrastructure.ApiDiagnostics.ApiDiagnosticsSender>();
+            services.AddSingleton<Infrastructure.ApiDiagnostics.IFormDataContext, CapitalRequestAutomatedTesting.UI.Services.FormDataContext>();
 
             return services;
         }

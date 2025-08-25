@@ -125,7 +125,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 using var cmd = new SqlCommand(
                     @"SELECT TOP 100 Id, Logged, Level, Message, Logger, ExceptionType, ExceptionMessage, 
-                      Url, UserName, StackTrace, ScenarioId, RollbackStatus
+                      Url, UserName, StackTrace, ScenarioId, RollbackStatus, FormData
                       FROM LogEntries 
                       WHERE Id = @Id", connection);
 
@@ -164,7 +164,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                             : null,
                         RollbackStatus = !reader.IsDBNull(reader.GetOrdinal("RollbackStatus"))
                             ? reader.GetString(reader.GetOrdinal("RollbackStatus"))
+                            : null,
+                        FormData = !reader.IsDBNull(reader.GetOrdinal("FormData"))
+                            ? reader.GetString(reader.GetOrdinal("FormData"))
                             : null
+
                     };
                 }
             }

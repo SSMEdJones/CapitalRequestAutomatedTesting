@@ -1,25 +1,13 @@
-﻿using CapitalRequestAutomatedTesting.Data.Services;
 using Flurl;
-using Infrastructure.ApiDiagnostics;
-using Microsoft.AspNetCore.Http;
 using NLog;
+using System;
+using System.Net.Http;
 using System.Net.Http.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace CapitalRequestAutomatedTesting.Data.Helpers
+namespace Infrastructure.ApiDiagnostics
 {
-    public interface IApiDiagnosticsSender
-    {
-        Task<T> SendWithDiagnosticsAsync<T>(HttpMethod method, Url fullUrl, object payload = null, object formContext = null, CancellationToken cancellationToken = default);
-
-        Task<T> GetWithDiagnosticsAsync<T>(Url fullUrl, CancellationToken cancellationToken = default);
-
-        Task<T> PostWithDiagnosticsAsync<T>(Url fullUrl, object payload, CancellationToken cancellationToken = default);
-
-        Task<T> PutWithDiagnosticsAsync<T>(Url fullUrl, object payload, CancellationToken cancellationToken = default);
-
-        Task<T> DeleteWithDiagnosticsAsync<T>(Url fullUrl, CancellationToken cancellationToken = default);
-    }
-
     public class ApiDiagnosticsSender : IApiDiagnosticsSender
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -34,9 +22,7 @@ namespace CapitalRequestAutomatedTesting.Data.Helpers
 
         public async Task<T> SendWithDiagnosticsAsync<T>(HttpMethod method, Url fullUrl, object payload = null, object formContext = null, CancellationToken cancellationToken = default)
         {
-
             var client = _httpClientFactory.CreateClient();
-
             var request = new HttpRequestMessage(method, fullUrl.ToString());
 
             if (payload != null && method != HttpMethod.Get)
@@ -60,7 +46,6 @@ namespace CapitalRequestAutomatedTesting.Data.Helpers
             }
         }
 
-        // Convenience GET wrapper
         public Task<T> GetWithDiagnosticsAsync<T>(Url fullUrl, CancellationToken cancellationToken = default)
         {
             return SendWithDiagnosticsAsync<T>(HttpMethod.Get, fullUrl, null, null, cancellationToken);
@@ -80,7 +65,5 @@ namespace CapitalRequestAutomatedTesting.Data.Helpers
         {
             return SendWithDiagnosticsAsync<T>(HttpMethod.Delete, fullUrl, null, null, cancellationToken);
         }
-
     }
-
 }

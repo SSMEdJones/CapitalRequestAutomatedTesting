@@ -29,6 +29,26 @@ namespace Infrastructure.Utilities.Xml
             doc.Save(writer);
             return sb.ToString();
         }
+
+        public static Dictionary<string, string> Parse(string xml)
+        {
+            if (string.IsNullOrEmpty(xml))
+                return new Dictionary<string, string>();
+                
+            try
+            {
+                var doc = XDocument.Parse(xml);
+                return doc.Descendants("field")
+                    .ToDictionary(
+                        x => x.Attribute("name")?.Value,
+                        x => x.Value
+                    );
+            }
+            catch
+            {
+                return new Dictionary<string, string>();
+            }
+        }
     }
 
 }

@@ -1,21 +1,19 @@
 ﻿using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Controllers;
-using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using CapitalRequestAutomatedTesting.UI.Services.Original;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
+using Infrastructure.ApiDiagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Xunit;
+
 
 namespace CapitalRequestAutomatedTesting.Tests
 {
@@ -34,6 +32,7 @@ namespace CapitalRequestAutomatedTesting.Tests
         private readonly IScenarioMemoryCache _scenarioMemoryCache;
         private readonly ScenarioViewModelBuilder _viewModelBuilder;
         private readonly IScenarioComparer _scenarioComparer;
+        private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
 
         private readonly ScenarioController _controller;
@@ -53,7 +52,10 @@ namespace CapitalRequestAutomatedTesting.Tests
             _scenarioMemoryCache = _provider.GetRequiredService<IScenarioMemoryCache>();
             _viewModelBuilder = _provider.GetRequiredService<ScenarioViewModelBuilder>();
             _scenarioComparer = _provider.GetRequiredService<IScenarioComparer>();
+            _formDataContext = _provider.GetRequiredService<IFormDataContext>();
             _mapper = _provider.GetRequiredService<IMapper>();
+
+
 
             _controller = new ScenarioController(
                 _logger,
@@ -69,6 +71,7 @@ namespace CapitalRequestAutomatedTesting.Tests
                 _scenarioMemoryCache,
                 _viewModelBuilder,
                 _scenarioComparer,
+                _formDataContext,
                 _mapper
             );
 

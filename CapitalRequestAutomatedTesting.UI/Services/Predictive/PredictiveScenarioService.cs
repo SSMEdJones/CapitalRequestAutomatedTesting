@@ -261,7 +261,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             proposal.ReplyingGroupId = detail.ReplyingGroupId;
             proposal.RequestingGroupId = detail.RequestingGroupId;
             proposal.RequestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
-            proposal.ReplyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
             proposal.ReviewerId = detail.ReviewerId;
@@ -345,6 +344,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             else if (scenarioId == "SCN002")
             {
+                proposal.ReplyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
                 var workflowStepId = proposal.WorkflowStep.WorkflowStepID;
                 var filter = new RequestedInfoSearchFilter
                 {
