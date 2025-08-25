@@ -5,14 +5,18 @@ using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using CapitalRequestAutomatedTesting.UI.Services.Original;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using NLog;
 using System.Diagnostics;
+using System.Xml.Linq;
 
 namespace CapitalRequestAutomatedTesting.UI.Controllers
 {
     public class RollbackController : Controller
     {
+        private readonly ILogger<RollbackController> _logger;
+
         private readonly IRollbackService _rollbackService;
         private readonly IPredictiveScenarioService _predictiveScenarioService;
         private readonly IScenarioComparer _scenarioComparer;
@@ -24,13 +28,14 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
 
 
-        public RollbackController(IRollbackService rollbackService, IPredictiveScenarioService predictiveScenarioService, IScenarioComparer scenarioComparer
+        public RollbackController(ILogger<RollbackController> logger,
+            IRollbackService rollbackService, IPredictiveScenarioService predictiveScenarioService, IScenarioComparer scenarioComparer
             ,IActualScenarioService actualScenarioService,
             IOriginalScenarioService originalScenarioService,
-            IPredictiveSeleniumService predictiveSeleniumService,
-            IActualSeleniumService actualSeleniumService
+            IPredictiveSeleniumService predictiveSeleniumService
 )
         {
+            _logger = logger;
             _rollbackService = rollbackService;
             _scenarioComparer = scenarioComparer;
             _predictiveScenarioService = predictiveScenarioService;
@@ -150,13 +155,12 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 // Handle missing data
                 return RedirectToAction("Index", "Home");
             }
-
+            
             var scenario = JsonConvert.DeserializeObject<ScenarioDetailsViewModel>(scenarioJson);
             
             // Make sure we have the required data
             if (scenario == null || scenario.OriginalData == null || scenario.PredictiveData == null)
-            {
-                // Log the error - missing data
+            {                // Log the error - missing data
                 return RedirectToAction("Index", "Home");
             }
 
@@ -184,10 +188,37 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 scenarioComparisonResult.SeleniumComparisons = new List<SeleniumStepComparison>();
             }
 
+            var formData = Request.Form.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString());
+            var formXml = BuildFormXml(formData); // your helper method
+
+            var logEvent = new LogEventInfo(NLog.LogLevel.Info, "", "Form submitted");
+
+            logEvent.Properties["FormData"] = formXml;
+           
+            _logger.LogError("This is a test error log with form data: {FormData}", formXml);
+
             //left off here not loading view
+
             return View("Preview");
             //return View("Preview",scenarioComparisonResult);
 
+        }
+
+        private string BuildFormXml(Dictionary<string, string> properties)
+        {
+            var formElement = new XElement("form");
+
+            foreach (var kvp in properties)
+            {
+                var item = new XElement("item",
+                    new XAttribute("name", kvp.Key),
+                    new XElement("value", new XAttribute("string", kvp.Value ?? string.Empty))
+                );
+
+                formElement.Add(item);
+            }
+
+            return formElement.ToString();
         }
         //[HttpGet]
         //public async Task<IActionResult> Preview(string scenarioId)

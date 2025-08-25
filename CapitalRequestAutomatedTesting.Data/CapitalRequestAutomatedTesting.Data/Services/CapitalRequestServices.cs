@@ -2,7 +2,7 @@
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Models;
 
-namespace CapitalRequestAutomatedTesting.Data
+namespace CapitalRequestAutomatedTesting.Data.Services
 {
 
     public interface ICapitalRequestServices

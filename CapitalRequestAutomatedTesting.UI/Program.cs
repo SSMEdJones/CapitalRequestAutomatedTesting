@@ -1,11 +1,15 @@
 using CapitalRequestAutomatedTesting.UI;
+using CapitalRequestAutomatedTesting.UI.Helpers;
+using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.StaticFiles;
 using NLog;
+using NLog.Extensions.Logging;
 using NLog.Web;
 using System.Diagnostics;
-using Microsoft.AspNetCore.Authentication.Negotiate;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
-using Microsoft.Data.SqlClient;
+using NLogLevel = NLog.LogLevel;
+
 
 AppContext.SetSwitch("Microsoft.Data.SqlClient.DisableSqlConnectionPoolPerformanceCounters", true);
 AppContext.SetSwitch("Microsoft.Data.SqlClient.DisablePermissionDemand", true);
@@ -30,9 +34,10 @@ try
 
     // Clear default providers and use NLog
 
-
+    
     builder.Logging.ClearProviders();
     builder.Logging.SetMinimumLevel(LogLevel.Trace);
+    builder.Logging.AddNLog();
     builder.Host.UseNLog();
 
     // Add services to the container.
@@ -71,8 +76,34 @@ try
 
     builder.Configuration.GetConnectionString($"CapitalRequest_{sqlEnv}");
     builder.Services.AddHttpContextAccessor();
+    builder.Services.AddHttpClient();
 
     var app = builder.Build();
+
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            var exceptionFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+            var exception = exceptionFeature?.Error;
+
+            var formData = ErrorContextHelper.CaptureFormData(context.Request);
+            var formXml = ErrorContextHelper.SerializeFormData(formData);
+
+            var logEvent = new LogEventInfo(NLogLevel.Error, "", exception?.Message ?? "Unhandled exception");
+            logEvent.Exception = exception;
+            logEvent.Properties["FormData"] = formXml;
+            logEvent.Properties["ScenarioId"] = "SCN002"; // example
+            logEvent.Properties["RollbackStatus"] = "Failed"; // example
+
+            var logger = LogManager.GetCurrentClassLogger();
+            logger.Log(logEvent);
+
+            context.Response.StatusCode = 500;
+            await context.Response.WriteAsync("An unexpected error occurred.");
+        });
+    });
+
 
     var owasp = builder.Configuration.GetSection("OWASP");
 

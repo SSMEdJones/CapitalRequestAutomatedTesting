@@ -30,6 +30,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\CapitalRequestAutomatedTesting.Data\CapitalRequestAutomatedTesting.Data\CapitalRequestAutomatedTesting.Data.csproj" />
+		<ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
 		<ProjectReference Include="..\SSMWorkflow.API\SSMWorkflow.API\SSMWorkflow.API.csproj" />
 	</ItemGroup>
 

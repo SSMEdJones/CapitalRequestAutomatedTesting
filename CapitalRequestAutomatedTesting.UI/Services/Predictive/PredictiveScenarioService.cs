@@ -2,7 +2,7 @@
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Models;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Microsoft.AspNetCore.Mvc;

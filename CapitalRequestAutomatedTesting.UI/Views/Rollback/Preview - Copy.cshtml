@@ -38,7 +38,7 @@
                         <strong>Predictive Data:</strong>
                         <pre>@Json.Serialize(candidate.PredictiveData)</pre>
 
-                        @if (candidate.ActualData != null && candidate.ActualData.Any())
+                        @if (candidate.ActualData != null )
                         {
                             <strong>Actual Data:</strong>
                             <pre>@Json.Serialize(candidate.ActualData)</pre>

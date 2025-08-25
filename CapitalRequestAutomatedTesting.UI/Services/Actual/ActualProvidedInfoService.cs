@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
 

@@ -3,7 +3,7 @@ using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using SSMWorkflow.API.DataAccess.ConfigurationSettings;
 using SSMWorkflow.API.Models;
 using SSMWorkflow.API.DataAccess.Models;
 

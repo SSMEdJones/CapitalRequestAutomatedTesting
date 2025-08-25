@@ -44,13 +44,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // Adjust the SQL query based on your actual NLog table structure[Logged]
+                // Adjusted query to include both ExceptionType and ExceptionMessage
                 using var command = new SqlCommand(
-                    @"SELECT TOP (@Count) Id, Logged, Level, Message, Logger, Exception, Url, UserName, StackTrace, ScenarioId, RollbackStatus
+                    @"SELECT TOP (@Count) Id, Logged, Level, Message, Logger, ExceptionType, ExceptionMessage, 
+                      Url, UserName, StackTrace, ScenarioId, RollbackStatus
                       FROM LogEntries 
                       WHERE Level IN ('ERROR', 'FATAL') 
                       ORDER BY Id DESC", connection);
-                
+
                 command.Parameters.Add("@Count", SqlDbType.Int).Value = count;
 
                 using var reader = await command.ExecuteReaderAsync();
@@ -63,9 +64,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         Level = reader.GetString(reader.GetOrdinal("Level")),
                         Message = reader.GetString(reader.GetOrdinal("Message")),
                         Logger = reader.GetString(reader.GetOrdinal("Logger")),
-                        Exception = !reader.IsDBNull(reader.GetOrdinal("Exception")) 
-                            ? reader.GetString(reader.GetOrdinal("Exception"))
+                        ExceptionType = !reader.IsDBNull(reader.GetOrdinal("ExceptionType")) 
+                            ? reader.GetString(reader.GetOrdinal("ExceptionType"))
                             : null,
+                        ExceptionMessage = !reader.IsDBNull(reader.GetOrdinal("ExceptionMessage")) 
+                            ? reader.GetString(reader.GetOrdinal("ExceptionMessage"))
+                            : null,
+                        // Combine ExceptionType and ExceptionMessage for backward compatibility
+                        Exception = CombineException(
+                            !reader.IsDBNull(reader.GetOrdinal("ExceptionType")) ? reader.GetString(reader.GetOrdinal("ExceptionType")) : null,
+                            !reader.IsDBNull(reader.GetOrdinal("ExceptionMessage")) ? reader.GetString(reader.GetOrdinal("ExceptionMessage")) : null),
                         Url = !reader.IsDBNull(reader.GetOrdinal("Url"))
                             ? reader.GetString(reader.GetOrdinal("Url"))
                             : null,
@@ -93,6 +101,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return logs;
         }
 
+        // Helper method to combine exception type and message for backward compatibility
+        private string CombineException(string exceptionType, string exceptionMessage)
+        {
+            if (string.IsNullOrEmpty(exceptionType) && string.IsNullOrEmpty(exceptionMessage))
+                return null;
+            
+            if (string.IsNullOrEmpty(exceptionType))
+                return exceptionMessage;
+                
+            if (string.IsNullOrEmpty(exceptionMessage))
+                return exceptionType;
+                
+            return $"{exceptionType}: {exceptionMessage}";
+        }
+
         public async Task<ErrorLogViewModel> GetErrorLogByIdAsync(int id)
         {
             try
@@ -101,8 +124,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 await connection.OpenAsync();
 
                 using var cmd = new SqlCommand(
-                    @"SELECT TOP 100 Id, Logged, Level, Message, Logger, Exception, Url, UserName, StackTrace, ScenarioId, RollbackStatus,
-                      StackTrace AS AdditionalInfo
+                    @"SELECT TOP 100 Id, Logged, Level, Message, Logger, ExceptionType, ExceptionMessage, 
+                      Url, UserName, StackTrace, ScenarioId, RollbackStatus
                       FROM LogEntries 
                       WHERE Id = @Id", connection);
 
@@ -114,15 +137,33 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     return new ErrorLogViewModel
                     {
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                        Logged = reader.GetDateTime(reader.GetOrdinal("Logged")), // Changed from TimeStamp to Logged
+                        Logged = reader.GetDateTime(reader.GetOrdinal("Logged")),
                         Level = reader.GetString(reader.GetOrdinal("Level")),
                         Logger = reader.GetString(reader.GetOrdinal("Logger")),
                         Message = reader.GetString(reader.GetOrdinal("Message")),
-                        Exception = !reader.IsDBNull(reader.GetOrdinal("Exception")) 
-                            ? reader.GetString(reader.GetOrdinal("Exception"))
+                        ExceptionType = !reader.IsDBNull(reader.GetOrdinal("ExceptionType")) 
+                            ? reader.GetString(reader.GetOrdinal("ExceptionType"))
                             : null,
-                        AdditionalInfo = !reader.IsDBNull(reader.GetOrdinal("AdditionalInfo"))
-                            ? reader.GetString(reader.GetOrdinal("AdditionalInfo"))
+                        ExceptionMessage = !reader.IsDBNull(reader.GetOrdinal("ExceptionMessage")) 
+                            ? reader.GetString(reader.GetOrdinal("ExceptionMessage"))
+                            : null,
+                        Exception = CombineException(
+                            !reader.IsDBNull(reader.GetOrdinal("ExceptionType")) ? reader.GetString(reader.GetOrdinal("ExceptionType")) : null,
+                            !reader.IsDBNull(reader.GetOrdinal("ExceptionMessage")) ? reader.GetString(reader.GetOrdinal("ExceptionMessage")) : null),
+                        Url = !reader.IsDBNull(reader.GetOrdinal("Url"))
+                            ? reader.GetString(reader.GetOrdinal("Url"))
+                            : null,
+                        UserName = !reader.IsDBNull(reader.GetOrdinal("UserName"))
+                            ? reader.GetString(reader.GetOrdinal("UserName"))
+                            : null,
+                        StackTrace = !reader.IsDBNull(reader.GetOrdinal("StackTrace"))
+                            ? reader.GetString(reader.GetOrdinal("StackTrace"))
+                            : null,
+                        ScenarioId = !reader.IsDBNull(reader.GetOrdinal("ScenarioId"))
+                            ? reader.GetString(reader.GetOrdinal("ScenarioId"))
+                            : null,
+                        RollbackStatus = !reader.IsDBNull(reader.GetOrdinal("RollbackStatus"))
+                            ? reader.GetString(reader.GetOrdinal("RollbackStatus"))
                             : null
                     };
                 }
@@ -165,21 +206,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 await connection.OpenAsync();
 
                 using var command = new SqlCommand(
-                    @"SELECT TOP 100 Id, Logged, Level, Message, Logger, Exception, Url, UserName, StackTrace, ScenarioId, RollbackStatus,
-                      StackTrace AS AdditionalInfo
+                    @"SELECT TOP 100 Id, Logged, Level, Message, Logger, ExceptionType, ExceptionMessage, 
+                      Url, UserName, StackTrace, ScenarioId, RollbackStatus
                       FROM LogEntries 
-                      WHERE (Message LIKE @Query OR Exception LIKE @Query) 
+                      WHERE (Message LIKE @Query OR ExceptionType LIKE @Query OR ExceptionMessage LIKE @Query) 
                       AND Level IN ('ERROR', 'FATAL')
                       ORDER BY Logged DESC", connection);
-
-
-                //using var command = new SqlCommand(
-                //    @"SELECT TOP 100 Id, TimeStamp, Level, Logger, Message, Exception, 
-                //      Properties AS AdditionalInfo
-                //      FROM NLog 
-                //      WHERE (Message LIKE @Query OR Exception LIKE @Query) 
-                //      AND Level IN ('ERROR', 'FATAL')
-                //      ORDER BY TimeStamp DESC", connection);
                 
                 command.Parameters.Add("@Query", SqlDbType.NVarChar).Value = $"%{query}%";
 
@@ -189,15 +221,33 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     logs.Add(new ErrorLogViewModel
                     {
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                        Logged = reader.GetDateTime(reader.GetOrdinal("Logged")), // Changed from TimeStamp to Logged
+                        Logged = reader.GetDateTime(reader.GetOrdinal("Logged")),
                         Level = reader.GetString(reader.GetOrdinal("Level")),
                         Logger = reader.GetString(reader.GetOrdinal("Logger")),
                         Message = reader.GetString(reader.GetOrdinal("Message")),
-                        Exception = !reader.IsDBNull(reader.GetOrdinal("Exception")) 
-                            ? reader.GetString(reader.GetOrdinal("Exception"))
+                        ExceptionType = !reader.IsDBNull(reader.GetOrdinal("ExceptionType")) 
+                            ? reader.GetString(reader.GetOrdinal("ExceptionType"))
                             : null,
-                        AdditionalInfo = !reader.IsDBNull(reader.GetOrdinal("AdditionalInfo"))
-                            ? reader.GetString(reader.GetOrdinal("AdditionalInfo"))
+                        ExceptionMessage = !reader.IsDBNull(reader.GetOrdinal("ExceptionMessage")) 
+                            ? reader.GetString(reader.GetOrdinal("ExceptionMessage"))
+                            : null,
+                        Exception = CombineException(
+                            !reader.IsDBNull(reader.GetOrdinal("ExceptionType")) ? reader.GetString(reader.GetOrdinal("ExceptionType")) : null,
+                            !reader.IsDBNull(reader.GetOrdinal("ExceptionMessage")) ? reader.GetString(reader.GetOrdinal("ExceptionMessage")) : null),
+                        Url = !reader.IsDBNull(reader.GetOrdinal("Url"))
+                            ? reader.GetString(reader.GetOrdinal("Url"))
+                            : null,
+                        UserName = !reader.IsDBNull(reader.GetOrdinal("UserName"))
+                            ? reader.GetString(reader.GetOrdinal("UserName"))
+                            : null,
+                        StackTrace = !reader.IsDBNull(reader.GetOrdinal("StackTrace"))
+                            ? reader.GetString(reader.GetOrdinal("StackTrace"))
+                            : null,
+                        ScenarioId = !reader.IsDBNull(reader.GetOrdinal("ScenarioId"))
+                            ? reader.GetString(reader.GetOrdinal("ScenarioId"))
+                            : null,
+                        RollbackStatus = !reader.IsDBNull(reader.GetOrdinal("RollbackStatus"))
+                            ? reader.GetString(reader.GetOrdinal("RollbackStatus"))
                             : null
                     });
                 }

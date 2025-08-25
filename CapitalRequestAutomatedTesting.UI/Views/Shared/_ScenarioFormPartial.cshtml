@@ -41,8 +41,13 @@
             </div>
         }
 
-        <button type="submit" onclick="document.getElementById('actionType').value='RunSelected';">
-            Run Selected
-        </button>
+        <!-- Injected into #scenarioContainer -->
+        <div class="scenario-actions">
+            <button type="submit" class="btn btn-primary"
+                    onclick="document.getElementById('actionType').value='RunSelected';">
+                Run Selected
+            </button>
+        </div>
+
     </div>
 }

@@ -1,13 +1,14 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.Models;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using CapitalRequestAutomatedTesting.UI.Services.Original;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using DinkToPdf;
+using Infrastructure.Context;
+using Infrastructure.Utilities.Xml;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft.Json;
@@ -30,6 +31,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly IViewRenderService _viewRenderService;
         private readonly IScenarioMemoryCache _scenarioMemoryCache;
         private readonly IScenarioComparer _scenarioComparer;
+        private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
         private readonly ScenarioViewModelBuilder _viewModelBuilder;
 
@@ -46,6 +48,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             IScenarioMemoryCache scenarioMemoryCache,
             ScenarioViewModelBuilder viewModelBuilder,
             IScenarioComparer scenarioComparer,
+            IFormDataContext formDataContext,
             IMapper mapper)
         {
             _logger = logger;
@@ -61,6 +64,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             _scenarioMemoryCache = scenarioMemoryCache;
             _viewModelBuilder = viewModelBuilder;
             _scenarioComparer = scenarioComparer;
+            _formDataContext = formDataContext;
             _mapper = mapper;
         }
 
@@ -84,6 +88,12 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         public async Task<IActionResult> Index([FromForm] ScenarioFormViewModel model, string actionType)
         {
 
+            var formData = Request.Form.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString());
+
+            var formDataXml= FormDataXmlBuilder.Build(formData);
+            _formDataContext.Set(formDataXml);
+
+
             if (actionType == "RunSelected")
             {
                 // Handle the selected scenarios
@@ -95,7 +105,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                     x.ProposalId = model.RequestId ?? 0;
                 });
 
-                TempData["ScenarioModel"] = JsonConvert.SerializeObject(model);
+
+                TempData["ScenarioModel"] = JsonConvert.SerializeObject(model); ;
 
                 return RedirectToAction("RunSelected", new { ids = selectedIds });
             }
@@ -201,7 +212,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
             }
              
-
             return Json(new
             {
                 reviewerEmail,
@@ -226,7 +236,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 // Log or debug here
                 Debug.WriteLine("ScenarioDetails is empty");
             }
-
 
             var selectedScenarios = model.ScenarioDetails
             .Where(s => model.SelectedScenarioIds.Contains(s.ScenarioId))
@@ -319,11 +328,11 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             }
 
             ////todo remove
-            scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
-            stopwatch.Stop();
-            scenario.PredictedSeleniumOutcome.Success = false;
+            //scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+            //stopwatch.Stop();
+            //scenario.PredictedSeleniumOutcome.Success = false;
 
-            return scenario;
+            //return scenario;
 
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)

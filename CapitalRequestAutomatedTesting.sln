@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CapitalRequestAutomatedTest
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CapitalRequestAutomatedTesting.Tests", "CapitalRequestAutomatedTesting.Tests\CapitalRequestAutomatedTesting.Tests.csproj", "{8426BA0F-9CEA-421A-ADF7-E72091070D6A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{39F5555F-3EFC-4EA0-A1B4-8E552A58F11F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,8 +41,15 @@ Global
 		{8426BA0F-9CEA-421A-ADF7-E72091070D6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8426BA0F-9CEA-421A-ADF7-E72091070D6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8426BA0F-9CEA-421A-ADF7-E72091070D6A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39F5555F-3EFC-4EA0-A1B4-8E552A58F11F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39F5555F-3EFC-4EA0-A1B4-8E552A58F11F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39F5555F-3EFC-4EA0-A1B4-8E552A58F11F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39F5555F-3EFC-4EA0-A1B4-8E552A58F11F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BA7E7DF8-04B2-4C9B-B755-ED1F20D25810}
 	EndGlobalSection
 EndGlobal

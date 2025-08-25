@@ -1,4 +1,5 @@
 @model ErrorLogViewModel
+@using CapitalRequestAutomatedTesting.UI.Helpers
 @{
     ViewData["Title"] = "Error Log Details";
 }
@@ -8,7 +9,7 @@
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span>Error ID: @Model.Id</span>
-        <span class="badge @(Model.Level == "Error" ? "bg-danger" : Model.Level == "Warning" ? "bg-warning" : "bg-info")">
+        <span class="badge @(Model.Level == "ERROR" ? "bg-danger" : Model.Level == "WARNING" ? "bg-warning" : "bg-info")">
             @Model.Level
         </span>
     </div>
@@ -17,6 +18,7 @@
         <dl class="row">
             <dt class="col-sm-3">Logged</dt>
             <dd class="col-sm-9">@Model.Logged.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+            
             <dt class="col-sm-3">Level</dt>
             <dd class="col-sm-9">@Model.Level</dd>
 
@@ -49,12 +51,37 @@
                 <dt class="col-sm-3">User</dt>
                 <dd class="col-sm-9">@Model.UserName</dd>
             }
-
         </dl>
     </div>
 </div>
 
-@if (!string.IsNullOrEmpty(Model.Exception))
+@if (!string.IsNullOrEmpty(Model.ExceptionType) || !string.IsNullOrEmpty(Model.ExceptionMessage))
+{
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">Exception Details</div>
+        <div class="card-body">
+            @if (!string.IsNullOrEmpty(Model.ExceptionType))
+            {
+                <h5>Exception Type</h5>
+                <pre class="exception-details">@Model.ExceptionType</pre>
+            }
+            
+            @if (!string.IsNullOrEmpty(Model.ExceptionMessage))
+            {
+                <h5>Exception Message</h5>
+                <pre class="exception-details">@Model.ExceptionMessage</pre>
+            }
+            
+            @if (!string.IsNullOrEmpty(Model.Exception) && 
+                 (string.IsNullOrEmpty(Model.ExceptionType) || string.IsNullOrEmpty(Model.ExceptionMessage)))
+            {
+                <h5>Full Exception</h5>
+                <pre class="exception-details">@Model.Exception</pre>
+            }
+        </div>
+    </div>
+}
+else if (!string.IsNullOrEmpty(Model.Exception))
 {
     <div class="card mb-4">
         <div class="card-header bg-danger text-white">Exception Details</div>
@@ -73,13 +100,48 @@
         </div>
     </div>
 }
-
-@if (!string.IsNullOrEmpty(Model.AdditionalInfo) && Model.AdditionalInfo != Model.StackTrace)
+@if (!string.IsNullOrEmpty(Model.FormData))
 {
     <div class="card mb-4">
-        <div class="card-header">Additional Information</div>
+        <div class="card-header">Form Data</div>
         <div class="card-body">
-            <pre class="additional-info">@Model.AdditionalInfo</pre>
+            @{
+                try
+                {
+                    var formData = ErrorContextHelper.ParseFormXml(Model.FormData);
+                    if (formData != null && formData.Any())
+                    {
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Field Name</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in formData)
+                                {
+                                    <tr>
+                                        <td>@item.Key</td>
+                                        <td>@item.Value</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p>No form data available.</p>
+                    }
+                }
+                catch (Exception ex)
+                {
+                    <div class="alert alert-warning">
+                        Could not parse form data: @ex.Message
+                    </div>
+                    <pre class="stack-trace">@Model.FormData</pre>
+                }
+            }
         </div>
     </div>
 }
@@ -89,7 +151,7 @@
 </div>
 
 <style>
-    pre.exception-details, pre.stack-trace, pre.additional-info {
+    pre.exception-details, pre.stack-trace {
         white-space: pre-wrap;
         word-wrap: break-word;
         max-height: 400px;

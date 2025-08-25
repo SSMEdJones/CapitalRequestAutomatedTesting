@@ -1,80 +1,102 @@
-@model List<ErrorLogViewModel>
+@model ErrorLogListViewModel
 @{
-    ViewData["Title"] = "Error Logs";
+    ViewData["Title"] = Model.IsSearchResult ? $"Search Results for '{Model.SearchQuery}'" : "Error Logs";
 }
 
-<div class="container-fluid mt-4">
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <h2>Error Logs</h2>
-        </div>
-        <div class="col-md-6">
-            <form asp-action="Search" method="get" class="form-inline float-end">
-                <div class="input-group">
-                    <input type="text" name="query" class="form-control" placeholder="Search errors..." value="@ViewBag.Query">
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" type="submit">Search</button>
-                    </div>
+<h1>@ViewData["Title"]</h1>
+
+<div class="row mb-3">
+    <div class="col">
+        <form asp-action="Search" method="get" class="form-inline">
+            <div class="input-group">
+                <input type="text" name="query" class="form-control" placeholder="Search errors..." value="@Model.SearchQuery">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="submit">Search</button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Logs.Any())
+{
+    <div class="alert alert-info">No error logs found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Time</th>
+                    <th>Level</th>
+                    <th>Message</th>
+                    <th>Scenario</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model.Logs)
+                {
+                    <tr>
+                        <td>@log.Id</td>
+                        <td>@log.Logged.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td><span class="badge @(log.Level == "ERROR" ? "bg-danger" : "bg-dark")">@log.Level</span></td>
+                        <td>@(log.Message?.Length > 100 ? log.Message.Substring(0, 97) + "..." : log.Message)</td>
+                        <td>@log.ScenarioId</td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@log.Id" class="btn btn-sm btn-primary">Details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info">
-            No error logs found.
-        </div>
-    }
-    else
-    {
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>ID</th>
-                        <th>Timestamp</th>
-                        <th>Level</th>
-                        <th>Logger</th>
-                        <th>Message</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var log in Model)
-                    {
-                        <tr>
-                            <td>@log.Id</td>
-                            <td>@log.Logged.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                            <td>
-                                <span class="badge @(log.Level == "ERROR" ? "bg-danger" : "bg-dark")">
-                                    @log.Level
-                                </span>
-                            </td>
-                            <td>@log.Logger</td>
-                            <td>@(log.Message?.Length > 100 ? log.Message.Substring(0, 100) + "..." : log.Message)</td>
-                            <td>
-                                <a asp-action="Details" asp-route-id="@log.Id" class="btn btn-sm btn-info">
-                                    Details
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    <nav>
+        <ul class="pagination">
+            @if (Model.HasPreviousPage)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="@(Model.IsSearchResult ? "Search" : "Index")" 
+                       asp-route-page="@(Model.CurrentPage - 1)" 
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-query="@Model.SearchQuery">Previous</a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+            }
 
-        <nav>
-            <ul class="pagination">
-                @for (int i = 1; i <= ViewBag.TotalPages; i++)
-                {
-                    <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
-                        <a class="page-link" asp-action="Index" asp-route-page="@i" asp-route-pageSize="@ViewBag.PageSize">
-                            @i
-                        </a>
-                    </li>
-                }
-            </ul>
-        </nav>
-    }
-</div>
+            @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" asp-action="@(Model.IsSearchResult ? "Search" : "Index")" 
+                       asp-route-page="@i" 
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-query="@Model.SearchQuery">@i</a>
+                </li>
+            }
+
+            @if (Model.HasNextPage)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="@(Model.IsSearchResult ? "Search" : "Index")" 
+                       asp-route-page="@(Model.CurrentPage + 1)" 
+                       asp-route-pageSize="@Model.PageSize"
+                       asp-route-query="@Model.SearchQuery">Next</a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+            }
+        </ul>
+    </nav>
+}

@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.Utilities;

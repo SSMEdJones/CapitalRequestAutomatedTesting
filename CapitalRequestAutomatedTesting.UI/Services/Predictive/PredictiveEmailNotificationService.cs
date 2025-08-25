@@ -1,13 +1,13 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using Microsoft.Extensions.Options;
 using Scriban;
 using Scriban.Runtime;
-using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using SSMWorkflow.API.DataAccess.ConfigurationSettings;
 using SSMWorkflow.API.DataAccess.Models;
 using System.Diagnostics;
 using System.Runtime.InteropServices;

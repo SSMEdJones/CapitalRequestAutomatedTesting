@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using CapitalRequestAutomatedTesting.UI.Services;
+using CapitalRequestAutomatedTesting.UI.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Controllers
 {
@@ -16,14 +17,18 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         
         public async Task<IActionResult> Index(int page = 1, int pageSize = 50)
         {
+            var totalCount = await _errorLogService.GetErrorCountAsync();
             var logs = await _errorLogService.GetRecentErrorLogsAsync(pageSize * page);
-            var count = await _errorLogService.GetErrorCountAsync();
             
-            ViewBag.CurrentPage = page;
-            ViewBag.PageSize = pageSize;
-            ViewBag.TotalPages = (int)Math.Ceiling((double)count / pageSize);
+            var viewModel = new ErrorLogListViewModel
+            {
+                Logs = logs.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
             
-            return View(logs.Skip((page - 1) * pageSize).Take(pageSize).ToList());
+            return View(viewModel);
         }
         
         public async Task<IActionResult> Details(int id)
@@ -37,7 +42,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             return View(log);
         }
         
-        public async Task<IActionResult> Search(string query)
+        public async Task<IActionResult> Search(string query, int page = 1, int pageSize = 50)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -45,9 +50,17 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             }
             
             var logs = await _errorLogService.SearchErrorLogsAsync(query);
-            ViewBag.Query = query;
             
-            return View("Index", logs);
+            var viewModel = new ErrorLogListViewModel
+            {
+                Logs = logs.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalCount = logs.Count,
+                SearchQuery = query
+            };
+            
+            return View("Index", viewModel);
         }
     }
 }

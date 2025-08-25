@@ -1,6 +1,7 @@
 ﻿using CapitalRequestAutomatedTesting.Tests.Models;
 using CapitalRequestAutomatedTesting.UI;
 using CapitalRequestAutomatedTesting.UI.Services;
+using Infrastructure.Workflow.DataAccess.ConfigurationSettings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;

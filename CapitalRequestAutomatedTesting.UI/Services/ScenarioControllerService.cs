@@ -1,6 +1,6 @@
 ﻿using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Microsoft.AspNetCore.Mvc;

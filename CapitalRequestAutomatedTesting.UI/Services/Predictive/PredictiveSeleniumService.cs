@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
@@ -258,9 +258,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var requestingGroupId = detail.RequestingGroupId;
-            var replyingGroupId = detail.ReplyingGroupId;
             var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
-            var replyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
 
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
             proposal.RequestingGroupId = detail.RequestingGroupId;
@@ -360,6 +358,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ExpectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
                 actionType = proposal.ActionType;
                 expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
+                var replyingGroupId = detail.ReplyingGroupId;
+                var replyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
 
                 var filter = new RequestedInfoSearchFilter
                 {

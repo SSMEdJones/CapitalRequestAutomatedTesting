@@ -1,7 +1,8 @@
 ﻿using CapitalRequest.API.DataAccess.AutoMapper.MappingProfile;
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Helpers;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.AutoMapper.MappingProfile;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -12,8 +13,10 @@ using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using CapitalRequestAutomatedTesting.UI.Services.Rollback;
 using DinkToPdf;
 using DinkToPdf.Contracts;
+using Infrastructure.Helpers;
+using Infrastructure.Interfaces;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
-using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using SSMWorkflow.API.DataAccess.ConfigurationSettings;
 using SSMWorkflow.API.DataAccess.Services;
 using SSMWorkflow.API.DataAccess.Services.Api;
 
@@ -27,17 +30,6 @@ namespace CapitalRequestAutomatedTesting.UI
 
             services.Configure<SSMWorkFlowSettings>(configuration.GetSection("ssmWorkFlowAPISettings"));
             services.Configure<CapitalRequestSettings>(configuration.GetSection("capitalRequestAPISettings"));
-
-            // Create and register the AppConfiguration service
-            //services.AddSingleton<IAppConfigurationService>(provider =>
-            //{
-            //    var logger = provider.GetRequiredService<ILogger<AppConfigurationService>>();
-            //    return new AppConfigurationService(configuration, logger);
-            //});
-
-            //// Get the service for configuration lookups
-            //var serviceProvider = services.BuildServiceProvider();
-            //var appConfigService = serviceProvider.GetRequiredService<IAppConfigurationService>();
 
             var appConfigService = new AppConfigurationService(
                         configuration,
@@ -167,6 +159,9 @@ namespace CapitalRequestAutomatedTesting.UI
 
             // Register the ErrorLogService
             services.AddScoped<IErrorLogService, ErrorLogService>();
+            services.AddScoped<IApiDiagnosticsSender, ApiDiagnosticsSender>();
+            services.AddScoped<IFormDataContext, FormDataContext>();
+
             return services;
         }
     }

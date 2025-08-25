@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Microsoft.AspNetCore.Http;

@@ -3,7 +3,7 @@ using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Enums;
 using CapitalRequest.API.Models;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using SSMWorkflow.API.DataAccess.Models;

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using CapitalRequestAutomatedTesting.Data;
+using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using OpenQA.Selenium;

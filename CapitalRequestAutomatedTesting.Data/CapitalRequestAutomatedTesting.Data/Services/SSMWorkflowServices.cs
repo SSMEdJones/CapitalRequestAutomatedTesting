@@ -2,14 +2,14 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualBasic;
-using SSMWorkflow.API.DataAccess.ConfiguratonSettings;
+using SSMWorkflow.API.DataAccess.ConfigurationSettings;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.DataAccess.Services.Api;
 using SSMWorkflow.API.Models;
 using System.Diagnostics;
 
 
-namespace CapitalRequestAutomatedTesting.Data
+namespace CapitalRequestAutomatedTesting.Data.Services
 {
     public interface ISSMWorkflowServices
     {

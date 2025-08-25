@@ -1,4 +1,4 @@
-﻿namespace SSMWorkflow.API.DataAccess.ConfiguratonSettings
+﻿namespace SSMWorkflow.API.DataAccess.ConfigurationSettings
 {
     public class SSMWorkFlowSettings
     {
