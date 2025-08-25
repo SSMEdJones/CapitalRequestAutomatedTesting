@@ -13,8 +13,6 @@ using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using CapitalRequestAutomatedTesting.UI.Services.Rollback;
 using DinkToPdf;
 using DinkToPdf.Contracts;
-using Infrastructure.Helpers;
-using Infrastructure.Interfaces;
 using SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile;
 using SSMWorkflow.API.DataAccess.ConfigurationSettings;
 using SSMWorkflow.API.DataAccess.Services;
