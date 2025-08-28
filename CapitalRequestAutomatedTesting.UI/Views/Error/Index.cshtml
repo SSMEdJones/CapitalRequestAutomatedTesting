@@ -1,0 +1,27 @@
+@using System.Diagnostics
+@model ErrorViewModel
+
+@{
+    Layout = null;
+    Debugger.Break();
+}
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="text-center">
+    <h1 class="display-4 text-danger">Error</h1>
+    <p>Sorry, an error occurred while processing your request.</p>
+    
+    @if (Model.ShowRequestId)
+    {
+        <p class="text-muted">
+            <small>Request ID: <code>@Model.RequestId</code></small>
+        </p>
+    }
+    
+    <div class="mt-4">
+        <a href="/" class="btn btn-primary">Return Home</a>
+        <a href="/ErrorLog" class="btn btn-secondary">View Error Logs</a>
+    </div>
+</div>

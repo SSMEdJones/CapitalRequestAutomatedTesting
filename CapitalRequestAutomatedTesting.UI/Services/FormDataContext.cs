@@ -4,16 +4,28 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 {
     public class FormDataContext : IFormDataContext
     {
-        private string? _formData;
+        private string? _formDataXml;
+        private MethodInvocationContext? _invocationContext;
 
         public void Set(string xml)
         {
-            _formData = xml;
+            _formDataXml = xml;
         }
 
         public string? Get()
         {
-            return _formData;
+            return _formDataXml;
+        }
+        
+        
+        public void SetInvocationContext(MethodInvocationContext context)
+        {
+            _invocationContext = context;
+        }
+
+        MethodInvocationContext? IFormDataContext.GetInvocationContext()
+        {
+            return _invocationContext;
         }
     }
 }

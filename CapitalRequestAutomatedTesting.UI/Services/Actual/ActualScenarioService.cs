@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
+using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using Infrastructure.ApiDiagnostics;
+using Infrastructure.Utilities.Xml;
 using SSMWorkflow.API.DataAccess.Models;
 using System.Reflection;
 using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
@@ -26,6 +29,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private IActualEmailNotificationService _actualEmailNotificationService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
 
         public ActualScenarioService(ICapitalRequestServices capitalRequestServices,
@@ -37,6 +41,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             IActualEmailNotificationService actualEmailNotificationService,
             IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
+            IFormDataContext formDataContext,
             IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
@@ -48,12 +53,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _actualEmailNotificationService = actualEmailNotificationService;
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
+            _formDataContext = formDataContext;
             _mapper = mapper;
 
         }
 
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
+
+            var formData = DictionaryHelper.ToDictionary(scenarioDetail);
+            var formDataXml = FormDataXmlBuilder.Build(formData);
+            _formDataContext.Set(formDataXml);
+
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
 
@@ -88,6 +99,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
         public async Task<ScenarioDataViewModel> ExecuteScenarioMethodAsync(ActualMethod method, ScenarioDetailsViewModel scenarioDetail, ScenarioDataViewModel scenarioDataViewModel)
         {
+
+            _formDataContext.SetInvocationContext(new MethodInvocationContext
+            {
+                ServiceName = method.ServiceName,
+                MethodName = method.MethodName,
+                Parameters = method.Parameters?.ToList() ?? new List<object>()
+            });
 
             var nameSpace = "CapitalRequestAutomatedTesting.UI.Services.";
             object serviceInstance = null;
@@ -188,11 +206,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-            var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
 
 
             proposal.ReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo = requestedInfo;
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                         .Where(x => !x.IsComplete)
@@ -232,7 +248,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
                         MethodName = "GetClosedWorkflowStepOptionsAsync",
-                        Parameters = new List<object> { proposal, optionType },
+                        Parameters = new List<object> { proposal, optionType, null },
                         Operation = CrudOperationType.Update
                     }
                 );
@@ -264,6 +280,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 var fileType = UploadFileType.Attachment;
                 var requestedInfoId = detail.RequestedInfoId;
                 var optionType = Constants.OPTION_TYPE_ADD_INFO;
+
+                var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
+                proposal.RequestedInfo = requestedInfo;
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
                 proposal.ReviewerGroupId = detail.ReplyingGroupId;
 

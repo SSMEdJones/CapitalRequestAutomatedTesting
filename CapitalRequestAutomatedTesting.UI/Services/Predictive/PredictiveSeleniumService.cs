@@ -3,6 +3,7 @@ using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using Infrastructure.ApiDiagnostics;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 using vm = CapitalRequest.API.Models;
@@ -26,6 +27,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         private readonly IPredictiveEmailNotificationService _predictiveEmailNotificationService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
 
         public PredictiveSeleniumService(ICapitalRequestServices capitalRequestServices,
@@ -37,6 +39,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             IPredictiveEmailNotificationService predictiveEmailNotificationService,
             IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
+            IFormDataContext formDataContext,
             IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
@@ -48,6 +51,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             _predictiveEmailNotificationService = predictiveEmailNotificationService;
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
+            _formDataContext = formDataContext;
             _mapper = mapper;
         }
 
@@ -162,6 +166,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
         public async Task<SeleniumStepResult> ExecuteSeleniumMethodAsync(PredictiveMethod method, ScenarioDetailsViewModel scenarioDetail)
         {
+
+            _formDataContext.SetInvocationContext(new MethodInvocationContext
+            {
+                ServiceName = method.ServiceName,
+                MethodName = method.MethodName,
+                Parameters = method.Parameters?.ToList() ?? new List<object>()
+            });
+
             var nameSpace = "CapitalRequestAutomatedTesting.UI.Services.";
             object serviceInstance = null;
             Type serviceType = null;

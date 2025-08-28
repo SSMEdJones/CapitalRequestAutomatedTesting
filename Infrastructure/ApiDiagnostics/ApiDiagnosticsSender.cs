@@ -37,10 +37,19 @@ namespace Infrastructure.ApiDiagnostics
             catch (Exception ex)
             {
                 var formDataXml = _formDataContext.Get();
+                var invocationContext = _formDataContext.GetInvocationContext();
 
                 var logEvent = new LogEventInfo(LogLevel.Error, _logger.Name, $"{method} to {fullUrl} failed");
                 logEvent.Exception = ex;
                 logEvent.Properties["FormData"] = formDataXml;
+                
+                if (invocationContext != null)
+                {
+                    logEvent.Properties["ServiceName"] = invocationContext.ServiceName;
+                    logEvent.Properties["MethodName"] = invocationContext.MethodName;
+                    logEvent.Properties["Parameters"] = string.Join(", ", invocationContext.Parameters);
+                }
+                
                 _logger.Log(logEvent);
                 throw;
             }

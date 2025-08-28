@@ -1,0 +1,33 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = $"Error {Model.StatusCode}";
+}
+
+<div class="text-center">
+    <h1 class="display-1">@Model.StatusCode</h1>
+    <h2 class="display-4">Sorry, something went wrong</h2>
+    
+    @if (Model.StatusCode == 404)
+    {
+        <p>The resource you requested could not be found.</p>
+    }
+    else if (Model.StatusCode == 403)
+    {
+        <p>You don't have permission to access this resource.</p>
+    }
+    else
+    {
+        <p>An error occurred while processing your request.</p>
+    }
+    
+    @if (Model.ShowRequestId)
+    {
+        <p class="text-muted">
+            <small>Request ID: <code>@Model.RequestId</code></small>
+        </p>
+    }
+    
+    <div class="mt-4">
+        <a href="/" class="btn btn-primary">Return Home</a>
+    </div>
+</div>

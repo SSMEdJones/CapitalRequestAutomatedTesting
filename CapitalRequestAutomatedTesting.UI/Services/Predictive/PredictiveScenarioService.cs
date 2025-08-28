@@ -4,7 +4,10 @@ using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
+using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using Infrastructure.ApiDiagnostics;
+using Infrastructure.Utilities.Xml;
 using Microsoft.AspNetCore.Mvc;
 using SSMWorkflow.API.DataAccess.Models;
 using System.Collections.Generic;
@@ -31,6 +34,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         private readonly IPredictiveEmailNotificationService _predictiveEmailNotificationService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
 
         public PredictiveScenarioService(ICapitalRequestServices capitalRequestServices,
@@ -42,6 +46,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             IPredictiveEmailNotificationService predictiveEmailNotificationService,
             IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
+            IFormDataContext formDataContext,
             IMapper mapper)
 
         {
@@ -54,11 +59,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             _predictiveEmailNotificationService = predictiveEmailNotificationService;
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
+            _formDataContext = formDataContext;
             _mapper = mapper;
         }
 
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
+            var formData = DictionaryHelper.ToDictionary(scenarioDetail);
+            var formDataXml = FormDataXmlBuilder.Build(formData);
+            _formDataContext.Set(formDataXml);
 
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
@@ -125,6 +134,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
         public async Task<ScenarioDataViewModel> ExecuteScenarioMethodAsync(PredictiveMethod method, ScenarioDetailsViewModel scenarioDetail, ScenarioDataViewModel scenarioDataViewModel)
         {
+
+            _formDataContext.SetInvocationContext(new MethodInvocationContext
+            {
+                ServiceName = method.ServiceName,
+                MethodName = method.MethodName,
+                Parameters = method.Parameters?.ToList() ?? new List<object>()
+            });
 
             var nameSpace = "CapitalRequestAutomatedTesting.UI.Services.";
             object serviceInstance = null;

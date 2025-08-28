@@ -4,5 +4,7 @@ namespace Infrastructure.ApiDiagnostics
     {
         void Set(string xml);
         string? Get();
+        void SetInvocationContext(MethodInvocationContext context);
+        MethodInvocationContext? GetInvocationContext();
     }
 }

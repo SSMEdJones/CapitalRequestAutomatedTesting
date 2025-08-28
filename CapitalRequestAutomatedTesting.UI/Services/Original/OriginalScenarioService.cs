@@ -1,13 +1,13 @@
 using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
+using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
-using SSMWorkflow.API.DataAccess.Models;
+using Infrastructure.ApiDiagnostics;
+using Infrastructure.Utilities.Xml;
 using System.Reflection;
-using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
-using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Original
 {
@@ -19,6 +19,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
     
     public class OriginalScenarioService : IOriginalScenarioService
     {
+        private readonly ILogger<OriginalScenarioService> _logger;
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly IWorkflowControllerService _workflowControllerService;
@@ -28,9 +29,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
         private readonly IActualEmailNotificationService _actualEmailNotificationService;
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
 
-        public OriginalScenarioService(ICapitalRequestServices capitalRequestServices,
+        public OriginalScenarioService(ILogger<OriginalScenarioService> logger,
+            ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
             IWorkflowControllerService workflowControllerService,
             IActualRequestedInfoService actualRequestedInfoService,
@@ -39,8 +42,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             IActualEmailNotificationService actualEmailNotificationService,
             IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
+            IFormDataContext formDataContext,
             IMapper mapper)
         {
+            _logger = logger;
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
             _workflowControllerService = workflowControllerService;
@@ -50,11 +55,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             _actualEmailNotificationService = actualEmailNotificationService;
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
+            _formDataContext = formDataContext;
             _mapper = mapper;
         }
 
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
+            var formData = DictionaryHelper.ToDictionary(scenarioDetail);
+
+            var formDataXml = FormDataXmlBuilder.Build(formData);
+            _formDataContext.Set(formDataXml);
+
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
 
@@ -82,58 +93,105 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
 
         public async Task<ScenarioDataViewModel> ExecuteScenarioMethodAsync(OriginalMethod method, ScenarioDetailsViewModel scenarioDetail, ScenarioDataViewModel scenarioDataViewModel)
         {
-            var nameSpace = "CapitalRequestAutomatedTesting.UI.Services.";
-            object serviceInstance = null;
-            Type serviceType = null;
-
-            var serviceName = $"{nameSpace}{method.ServiceName}";
-            // Resolve service type
-            if (serviceName == $"{nameSpace}IActualRequestedInfoService")
-                serviceType = typeof(IActualRequestedInfoService);
-            else if (serviceName == $"{nameSpace}IActualWorkflowStepResponderService")
-                serviceType = typeof(IActualWorkflowStepResponderService);
-            else if (serviceName == $"{nameSpace}IActualWorkflowStepOptionService")
-                serviceType = typeof(IActualWorkflowStepOptionService);
-            else if (serviceName == $"{nameSpace}IActualEmailNotificationService")
-                serviceType = typeof(IActualEmailNotificationService);
-            else if (serviceName == $"{nameSpace}IActualScenarioService")
-                serviceType = typeof(IActualScenarioService);
-
-            if (serviceType == null) return scenarioDataViewModel;
-
-            // Get service instance
-            using var scope = _scopeFactory.CreateScope();
-            serviceInstance = scope.ServiceProvider.GetRequiredService(serviceType);
-
-            if (serviceInstance == null) return scenarioDataViewModel;
-
-            // Get method info
-            MethodInfo methodInfo = serviceInstance.GetType().GetMethod(method.MethodName);
-            if (methodInfo == null) return scenarioDataViewModel;
-
-            object[] formattedParameters = method.Parameters?.ToArray() ?? new object[] { };
-
-            object result = methodInfo.Invoke(serviceInstance, formattedParameters);
-            if (result is Task taskResult) // If method returns a Task
+            try
             {
-                await taskResult.ConfigureAwait(false); // Await task completion
+                // Set invocation context first
+                _formDataContext.SetInvocationContext(new MethodInvocationContext
+                {
+                    ServiceName = method.ServiceName,
+                    MethodName = method.MethodName,
+                    Parameters = method.Parameters?.ToList() ?? new List<object>()
+                });
+
+                var nameSpace = "CapitalRequestAutomatedTesting.UI.Services.";
+                object serviceInstance = null;
+                Type serviceType = null;
+
+                var serviceName = $"{nameSpace}{method.ServiceName}";
+                // Resolve service type
+                if (serviceName == $"{nameSpace}IActualRequestedInfoService")
+                    serviceType = typeof(IActualRequestedInfoService);
+                else if (serviceName == $"{nameSpace}IActualWorkflowStepResponderService")
+                    serviceType = typeof(IActualWorkflowStepResponderService);
+                else if (serviceName == $"{nameSpace}IActualWorkflowStepOptionService")
+                    serviceType = typeof(IActualWorkflowStepOptionService);
+                else if (serviceName == $"{nameSpace}IActualEmailNotificationService")
+                    serviceType = typeof(IActualEmailNotificationService);
+                else if (serviceName == $"{nameSpace}IActualScenarioService")
+                    serviceType = typeof(IActualScenarioService);
+
+                if (serviceType == null) return scenarioDataViewModel;
+
+                // Get service instance
+                using var scope = _scopeFactory.CreateScope();
+                serviceInstance = scope.ServiceProvider.GetRequiredService(serviceType);
+
+                if (serviceInstance == null) return scenarioDataViewModel;
+
+                // Get method info
+                MethodInfo methodInfo = serviceInstance.GetType().GetMethod(method.MethodName);
+                if (methodInfo == null) 
+                {
+                    throw new InvalidOperationException($"Method '{method.MethodName}' not found on service '{method.ServiceName}'");
+                }
+
+                // Validate parameter count before invoking
+                var expectedParamCount = methodInfo.GetParameters().Length;
+                var actualParamCount = method.Parameters?.Count ?? 0;
                 
-                // If Task<T>, retrieve the actual result
-                var resultProperty = taskResult.GetType().GetProperty("Result");
-                result = resultProperty?.GetValue(taskResult);
-            }
+                if (expectedParamCount != actualParamCount)
+                {
+                    throw new ArgumentException(
+                        $"Parameter count mismatch for method '{method.MethodName}'. " + 
+                        $"Expected: {expectedParamCount}, Actual: {actualParamCount}");
+                }
 
-            // Ensure inner async methods are awaited properly
-            if (result is Task innerTaskResult)
+                object[] formattedParameters = method.Parameters?.ToArray() ?? new object[] { };
+
+                // Invoke with explicit try-catch
+                object result;
+                try
+                {
+                    result = methodInfo.Invoke(serviceInstance, formattedParameters);
+                }
+                catch (TargetInvocationException ex)
+                {
+                    // Unwrap the inner exception from reflection
+                    throw ex.InnerException ?? ex;
+                }
+
+                if (result is Task taskResult) // If method returns a Task
+                {
+                    await taskResult.ConfigureAwait(false); // Await task completion
+                    
+                    // If Task<T>, retrieve the actual result
+                    var resultProperty = taskResult.GetType().GetProperty("Result");
+                    result = resultProperty?.GetValue(taskResult);
+                }
+
+                // Ensure inner async methods are awaited properly
+                if (result is Task innerTaskResult)
+                {
+                    var innerResultProperty = innerTaskResult.GetType().GetProperty("Result");
+                    result = innerResultProperty?.GetValue(innerTaskResult);
+                }
+
+                // Map results dynamically to ViewModel
+                MapResultsToTables(scenarioDataViewModel, method.ServiceName, result, method.Operation);
+
+                return scenarioDataViewModel;
+            }
+            catch (Exception ex)
             {
-                var innerResultProperty = innerTaskResult.GetType().GetProperty("Result");
-                result = innerResultProperty?.GetValue(innerTaskResult);
+                // Log error with context before letting it propagate
+                _logger.LogError(ex, "Error executing method {Method} on {Service} with parameters: {Parameters}", 
+                    method.MethodName, 
+                    method.ServiceName, 
+                    string.Join(", ", method.Parameters ?? new List<object>()));
+                
+                // Re-throw to preserve stack trace
+                throw;
             }
-
-            // Map results dynamically to ViewModel
-            MapResultsToTables(scenarioDataViewModel, method.ServiceName, result, method.Operation);
-
-            return scenarioDataViewModel;
         }
 
         private string DetermineTableName(string serviceName)
@@ -180,12 +238,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-            var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
 
             //TODO Map
             proposal.ReviewerGroupId = detail.RequestingGroupId;
             proposal.ReviewerId = detail.ReviewerId;
-            proposal.RequestedInfo = requestedInfo;
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                         .Where(x => !x.IsComplete)
@@ -214,7 +270,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                     {
                         ServiceName = "IActualWorkflowStepResponderService",
                         MethodName = "GetWorkflowStepResponderAsync",
-                        Parameters = new List<object> { proposal, Constants.RESPONDER_REQUEST },
+                        Parameters = new List<object> { proposal, Constants.RESPONDER_REQUEST, optionType },
                         Operation = CrudOperationType.Select
                     }
                 );
@@ -224,7 +280,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
                         MethodName = "GetClosedWorkflowStepOptionsAsync",
-                        Parameters = new List<object> { proposal, optionType },
+                        Parameters = new List<object> { proposal, optionType, null },
                         Operation = CrudOperationType.Select
                     }
                 );
@@ -235,9 +291,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                 string fileName = null;
                 var fileType = UploadFileType.Attachment;
                 var requestedInfoId = detail.RequestedInfoId;
+                var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
+
                 var optionType = Constants.OPTION_TYPE_ADD_INFO;
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
                 proposal.ReviewerGroupId = detail.ReplyingGroupId;
+                proposal.RequestedInfo = requestedInfo;
+
                 originalMethods.Add(
                     new OriginalMethod
                     {

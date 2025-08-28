@@ -2,6 +2,7 @@
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using Infrastructure.ApiDiagnostics;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using SSMWorkflow.API.DataAccess.Models;
@@ -30,10 +31,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IRollbackService _rollbackService;
+        private readonly IFormDataContext _formDataContext;
         private readonly ILogger<ActualSeleniumService> _logger;
         private readonly IMapper _mapper;
 
-        public ActualSeleniumService(ICapitalRequestServices capitalRequestServices,
+        public ActualSeleniumService(ILogger<ActualSeleniumService> logger,
+            ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
             IWorkflowControllerService workflowControllerService,
             IActualRequestedInfoService actualRequestedInfoService,
@@ -44,9 +47,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
             IRollbackService rollbackService,
-            ILogger<ActualSeleniumService> logger,
+            IFormDataContext formDataContext,
             IMapper mapper)
         {
+            _logger = logger;
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
             _workflowControllerService = workflowControllerService;
@@ -58,7 +62,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
             _rollbackService = rollbackService;
-            _logger = logger;
+            _formDataContext = formDataContext;
             _mapper = mapper;
         }
 

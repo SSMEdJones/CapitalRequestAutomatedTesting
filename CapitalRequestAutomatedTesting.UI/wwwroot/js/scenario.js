@@ -1,6 +1,6 @@
 ﻿import { ScenarioBinder } from './ScenarioBinder.js';
 import { DevLogger } from './logger.js';
-
+import { fetchJsonOrRenderError } from './fetchHelpers.js';
 // Enable logging if not already set
 window.DEBUG = window.DEBUG || true;
 
@@ -12,41 +12,30 @@ const ScenarioInitializer = {
 
     loadRequestIds() {
         DevLogger.info("Loading request IDs", "📋");
-        showLoadingDelayed("Loading Requests...", 200);  // Show spinner
+        showLoadingDelayed("Loading Requests...", 200);
 
-        fetch("/Scenario/GetRequestIds")
-            .then(response => response.json())
+        fetchJsonOrRenderError("/Scenario/GetRequestIds")
             .then(data => {
                 const $requestSelect = $('#RequestId');
-
                 if (!$requestSelect.length) {
                     DevLogger.warn("RequestId dropdown not found", "⛔");
-                    cancelDelayedLoading();  // Hide spinner on error
                     return;
                 }
 
-                // Destroy existing Select2 instance if present
                 if ($.fn.select2 && $requestSelect.hasClass('select2-hidden-accessible')) {
                     $requestSelect.select2('destroy');
                 }
 
-                // Populate the dropdown
                 $requestSelect.empty().append('<option value="">-- Select One --</option>');
-                data.forEach(item => {
-                    $requestSelect.append(new Option(item.text, item.value));
-                });
+                data.forEach(item => $requestSelect.append(new Option(item.text, item.value)));
 
                 DevLogger.info("Request IDs loaded", data.length);
-
-                // Let ScenarioBinder handle UI + behavior
                 ScenarioBinder.bindRequestIdEvents();
-
-                cancelDelayedLoading();  // Hide spinner on success
             })
-            .catch(error => {
-                DevLogger.error("Error loading request IDs", error);
-                cancelDelayedLoading();  // Hide spinner on error
-            });
+            .catch(err => {
+                DevLogger.error("Error loading request IDs", err);
+            })
+            .finally(cancelDelayedLoading);
     },
 
     observeDynamicPartials(proposalId) {
@@ -98,24 +87,29 @@ document.addEventListener("DOMContentLoaded", () => {
         if (actionType === "RunSelected") {
             showSpinner("Running selected scenario...");
 
-            // 📦 Use FormData to serialize the entire form
             const formData = new FormData(form);
-            formData.append("actionType", actionType); // Include actionType if not part of the form
+            formData.append("actionType", actionType);
 
-            fetch("/Scenario/Index", {
+            // Use our unified error-handling fetch wrapper
+            fetchJsonOrRenderError("/Scenario/Index", {
                 method: "POST",
-                body: formData // No need for headers — browser sets content type automatically
+                body: formData
             })
-                .then(res => {
-                    if (!res.ok) throw new Error("Request failed");
-                    return res.text(); // Or .json() depending on response type
-                })
-                .then(data => {
-                    console.log("Success:", data);
-                    // Handle response or redirect if needed
+                .then(htmlOrJson => {
+                    // If server returned HTML (success), inject it
+                    if (typeof htmlOrJson === "string") {
+                        document.open();
+                        document.write(htmlOrJson);
+                        document.close();
+                    } else {
+                        console.log("Success:", htmlOrJson);
+                        // Optionally handle JSON success
+                    }
                 })
                 .catch(err => {
-                    console.error("Error:", err);
+                    // We’ll only get here if fetchJsonOrRenderError already
+                    // redirected/replaced the DOM or parsing failed
+                    console.error("RunSelected failed:", err);
                 })
                 .finally(() => {
                     hideSpinner();

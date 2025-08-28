@@ -21,5 +21,8 @@ public class ErrorLogViewModel
     public string FormData { get; set; }
     public string Endpoint { get; set; }
     public string ResponseBody { get; set; }
+    public string InvokedService { get; set; }
+    public string InvokedMethod { get; set; }
+    public string InvokedParameters { get; set; }
 
 }

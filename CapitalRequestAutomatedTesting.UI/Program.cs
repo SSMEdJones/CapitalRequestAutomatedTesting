@@ -1,14 +1,12 @@
 using CapitalRequestAutomatedTesting.UI;
-using CapitalRequestAutomatedTesting.UI.Helpers;
+using Infrastructure.Middleware;
 using Microsoft.AspNetCore.Authentication.Negotiate;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.StaticFiles;
 using NLog;
 using NLog.Extensions.Logging;
 using NLog.Web;
 using System.Diagnostics;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
-using NLogLevel = NLog.LogLevel;
 
 
 AppContext.SetSwitch("Microsoft.Data.SqlClient.DisableSqlConnectionPoolPerformanceCounters", true);
@@ -26,10 +24,6 @@ var logger = LogManager.Setup()
     .GetCurrentClassLogger();
 try
 {
-    //logger.Info("Starting application");
-    //logger = NLog.LogManager.GetCurrentClassLogger();
-    //logger.Error("Testing SQL logging — this should go to the database.");
-
     var builder = WebApplication.CreateBuilder(args);
 
     // Clear default providers and use NLog
@@ -80,40 +74,19 @@ try
 
     var app = builder.Build();
 
-    app.UseExceptionHandler(errorApp =>
-    {
-        errorApp.Run(async context =>
-        {
-            var exceptionFeature = context.Features.Get<IExceptionHandlerPathFeature>();
-            var exception = exceptionFeature?.Error;
+    app.UseMiddleware<GlobalExceptionMiddleware>();
+    
+    //if (app.Environment.IsDevelopment())
+    //{
+    //    app.UseDeveloperExceptionPage();
+    //}
+    //else
+    //{
+    //    app.UseExceptionHandler("/Error");
+    //    app.UseStatusCodePagesWithReExecute("/Error/{0}");
+    //    app.UseHsts();
+    //}
 
-            var formData = ErrorContextHelper.CaptureFormData(context.Request);
-            var formXml = ErrorContextHelper.SerializeFormData(formData);
-
-            var logEvent = new LogEventInfo(NLogLevel.Error, "", exception?.Message ?? "Unhandled exception");
-            logEvent.Exception = exception;
-            logEvent.Properties["FormData"] = formXml;
-            logEvent.Properties["ScenarioId"] = "SCN002"; // example
-            logEvent.Properties["RollbackStatus"] = "Failed"; // example
-
-            var logger = LogManager.GetCurrentClassLogger();
-            logger.Log(logEvent);
-
-            context.Response.StatusCode = 500;
-            await context.Response.WriteAsync("An unexpected error occurred.");
-        });
-    });
-
-
-    var owasp = builder.Configuration.GetSection("OWASP");
-
-    // Configure the HTTP request pipeline.
-    if (!app.Environment.IsDevelopment())
-    {
-        app.UseExceptionHandler("/Home/Error");
-        // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-        app.UseHsts();
-    }
 
     app.UseHttpsRedirection();
     app.UseStaticFiles();
@@ -125,6 +98,7 @@ try
         }
     });
 
+    var owasp = builder.Configuration.GetSection("OWASP");
     app.UseSession();
     app.UseRouting();
 
@@ -173,8 +147,8 @@ try
 }
 catch (Exception ex)
 {
-    logger.Error(ex, "Application stopped due to exception");
-    throw;
+    logger.Error(ex, "Application stopped due to exception at startup. This is a startup exception, not a request exception.");
+    throw; // Re-throw to let the hosting layer handle it
 }
 finally
 {

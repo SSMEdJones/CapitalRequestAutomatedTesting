@@ -4,6 +4,17 @@
     ViewData["Title"] = "Error Log Details";
 }
 
+<style>
+    .stack-trace-links a {
+        color: #007acc;
+        text-decoration: none;
+    }
+
+        .stack-trace-links a:hover {
+            text-decoration: underline;
+        }
+</style>
+
 <h1>Error Log Details</h1>
 
 <div class="card mb-4">
@@ -91,13 +102,21 @@ else if (!string.IsNullOrEmpty(Model.Exception))
     </div>
 }
 
-@if (!string.IsNullOrEmpty(Model.StackTrace))
+@if (!string.IsNullOrWhiteSpace(Model.StackTrace))
 {
-    <div class="card mb-4">
-        <div class="card-header">Stack Trace</div>
-        <div class="card-body">
-            <pre class="stack-trace">@Model.StackTrace</pre>
-        </div>
+    <div class="stack-trace-links">
+        <h4>Stack Trace</h4>
+        @foreach (var link in StackTraceParser.Parse(Model.StackTrace))
+        {
+            <div>
+                <a href="@link.EditorLink" target="_blank">@link.DisplayText</a>
+            </div>
+        }
+
+        <details>
+            <summary>View Raw Stack Trace</summary>
+            <pre>@Model.StackTrace</pre>
+        </details>
     </div>
 }
 @if (!string.IsNullOrEmpty(Model.FormData))
@@ -146,8 +165,38 @@ else if (!string.IsNullOrEmpty(Model.Exception))
     </div>
 }
 
+@if (!string.IsNullOrEmpty(Model.InvokedService) ||
+     !string.IsNullOrEmpty(Model.InvokedMethod) ||
+     !string.IsNullOrEmpty(Model.InvokedParameters))
+{
+    <div class="card mb-4">
+        <div class="card-header">Method Context</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                @if (!string.IsNullOrEmpty(Model.InvokedService))
+                {
+                    <dt class="col-sm-3">Service Name</dt>
+                    <dd class="col-sm-9">@Model.InvokedService</dd>
+                }
+                @if (!string.IsNullOrEmpty(Model.InvokedMethod))
+                {
+                    <dt class="col-sm-3">Method Name</dt>
+                    <dd class="col-sm-9">@Model.InvokedMethod</dd>
+                }
+                @if (!string.IsNullOrEmpty(Model.InvokedParameters))
+                {
+                    <dt class="col-sm-3">Parameters</dt>
+                    <dd class="col-sm-9">
+                        <pre class="mb-0">@Model.InvokedParameters</pre>
+                    </dd>
+                }
+            </dl>
+        </div>
+    </div>
+}
+
 <div>
-    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    <a asp-action="Errors" class="btn btn-secondary">Back to List</a>
 </div>
 
 <style>

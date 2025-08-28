@@ -1,3 +1,4 @@
+using Infrastructure.Middleware;
 using Microsoft.Data.SqlClient;
 using System.Data;
 
@@ -125,7 +126,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                 using var cmd = new SqlCommand(
                     @"SELECT TOP 100 Id, Logged, Level, Message, Logger, ExceptionType, ExceptionMessage, 
-                      Url, UserName, StackTrace, ScenarioId, RollbackStatus, FormData
+                      Url, UserName, StackTrace, ScenarioId, RollbackStatus, FormData, Endpoint, ResponseBody,
+                      InvokedService, InvokedMethod, InvokedParameters
                       FROM LogEntries 
                       WHERE Id = @Id", connection);
 
@@ -167,8 +169,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                             : null,
                         FormData = !reader.IsDBNull(reader.GetOrdinal("FormData"))
                             ? reader.GetString(reader.GetOrdinal("FormData"))
-                            : null
-
+                            : null,
+                        Endpoint = !reader.IsDBNull(reader.GetOrdinal("Endpoint"))
+                            ? reader.GetString(reader.GetOrdinal("Endpoint"))
+                            : null,
+                        ResponseBody = !reader.IsDBNull(reader.GetOrdinal("ResponseBody"))
+                            ? reader.GetString(reader.GetOrdinal("ResponseBody"))
+                            : null,
+                        InvokedService = !reader.IsDBNull(reader.GetOrdinal("InvokedService"))
+                            ? reader.GetString(reader.GetOrdinal("InvokedService"))
+                            : null,
+                        InvokedMethod = !reader.IsDBNull(reader.GetOrdinal("InvokedMethod"))
+                            ? reader.GetString(reader.GetOrdinal("InvokedMethod"))
+                            : null,
+                        InvokedParameters = !reader.IsDBNull(reader.GetOrdinal("InvokedParameters"))
+                            ? reader.GetString(reader.GetOrdinal("InvokedParameters"))
+                            : null                        
                     };
                 }
             }
@@ -180,6 +196,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return null;
         }
 
+        
         public async Task<int> GetErrorCountAsync()
         {
             try
@@ -216,7 +233,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                       WHERE (Message LIKE @Query OR ExceptionType LIKE @Query OR ExceptionMessage LIKE @Query) 
                       AND Level IN ('ERROR', 'FATAL')
                       ORDER BY Logged DESC", connection);
-                
+
                 command.Parameters.Add("@Query", SqlDbType.NVarChar).Value = $"%{query}%";
 
                 using var reader = await command.ExecuteReaderAsync();

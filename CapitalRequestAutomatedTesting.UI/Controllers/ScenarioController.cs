@@ -88,12 +88,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         public async Task<IActionResult> Index([FromForm] ScenarioFormViewModel model, string actionType)
         {
 
-            var formData = Request.Form.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString());
-
-            var formDataXml= FormDataXmlBuilder.Build(formData);
-            _formDataContext.Set(formDataXml);
-
-
             if (actionType == "RunSelected")
             {
                 // Handle the selected scenarios
@@ -179,7 +173,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 requestedInfo = requestedInfos.FirstOrDefault(); // fallback to first open request
             }
 
-            if (replyingGroupId.HasValue )
+            if (replyingGroupId.HasValue)
             {
 
                 if (requestedInfo != null)
@@ -196,8 +190,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId.Value);
                 replyingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(replyingGroupId.Value);
                 returnedInformation = $"{replyingGroup.Name} replying to request for more information from {requestingGroup.Name} as {reviewer.FullName} via Workflow Automated Testing - {displayText} Scenario.";
-            }            
-            else if(requestingGroupId.HasValue)
+            }
+            else if (requestingGroupId.HasValue)
             {
                 requestingGroup = await _scenarioControllerService.GetReviewerGroupByIdAsync(requestingGroupId.Value);
                 if (targetGroupId.HasValue)
@@ -211,7 +205,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 }
 
             }
-             
+
             return Json(new
             {
                 reviewerEmail,
@@ -328,11 +322,11 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             }
 
             ////todo remove
-            //scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
-            //stopwatch.Stop();
-            //scenario.PredictedSeleniumOutcome.Success = false;
+            scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+            stopwatch.Stop();
+            scenario.PredictedSeleniumOutcome.Success = false;
 
-            //return scenario;
+            return scenario;
 
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
@@ -463,7 +457,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             }
             else if (groupType == "replying")
             {
-                targetGroups = await _scenarioControllerService.GetRequestingGroupsByReplyingIdAsync(proposalId, groupId);                
+                targetGroups = await _scenarioControllerService.GetRequestingGroupsByReplyingIdAsync(proposalId, groupId);
                 reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
             }
 
