@@ -1,14 +1,11 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using HtmlAgilityPack;
 using SSMWorkflow.API.DataAccess.Models;
-using System;
 using EmailNotification = SSMWorkflow.API.Models.EmailNotification;
 using vm = CapitalRequest.API.Models;
 
@@ -56,6 +53,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
         public async Task<List<EmailNotification>> GetRequestEmailNotificationsAsync(vm.Proposal proposal, string emailType)
         {
+            var emailNotifications = new List<EmailNotification>();
+
             var workflowStep = proposal.WorkflowStep;
 
             var workflowStepId = workflowStep.WorkflowStepID;
@@ -63,77 +62,24 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var reviewerGroupdId = proposal.RequestedInfo.ReviewerGroupId;
             var requestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
 
-            vm.ReviewerGroup reviewerGroup;
-            vm.ReviewerGroup requestingGroup;
-            vm.EmailTemplate emailTemplate;
-            vm.WorkflowTemplate workflowTemplate;
-            List<vm.Reviewer> reviewers;
-            try
+            if (reviewerGroupdId == 0 || requestingGroupId == 0)
             {
-                reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to retrieve reviewer group with ID {reviewerGroupdId}: {ex.Message}", ex);
-            }
-            
-            try
-            {
-                requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to retrieve requesting group with ID {requestingGroupId}: {ex.Message}", ex);
+                return emailNotifications;
             }
 
-            try
-            {
-                emailTemplate = (await _capitalRequestServices
+            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
+            var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
+            var emailTemplate = (await _capitalRequestServices
                     .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = emailType }))
                     .FirstOrDefault();
-                
-                if (emailTemplate == null)
-                {
-                    throw new Exception($"Email template with name '{emailType}' not found");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to retrieve email template with name '{emailType}': {ex.Message}", ex);
-            }
-
-            try
-            {
-                workflowTemplate = (await _capitalRequestServices
+            var workflowTemplate = (await _capitalRequestServices
                     .GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep.StepName }))
                     .FirstOrDefault();
-                    
-                if (workflowTemplate == null)
-                {
-                    throw new Exception($"Workflow template with step name '{workflowStep.StepName}' not found");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to retrieve workflow template for step '{workflowStep.StepName}': {ex.Message}", ex);
-            }
 
-            try
-            {
-                reviewers = (await GetReviewers(proposal))
+            var reviewers = (await GetReviewers(proposal))
                     .Where(x => x.ReviewerGroupId == reviewerGroupdId)
                     .Select(z => _mapper.Map<vm.Reviewer>(z))
                     .ToList();
-                    
-                if (reviewers.Count == 0)
-                {
-                    throw new Exception($"No reviewers found for reviewer group ID {reviewerGroupdId}");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to retrieve reviewers for proposal: {ex.Message}", ex);
-            }
             
             var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
             var emailTemplateType = Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION;
@@ -149,20 +95,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 OptionId = proposal.RequestedInfo.WorkflowStepOptionId != null ? $"'{proposal.RequestedInfo.WorkflowStepOptionId}'" : "NULL",
                 RequestedInfoId = proposal.RequestedInfo.Id.ToString()
             };
-            //EXECUTE dbo.GetCapitalRequestGroupNotifications NULL,'57b740bd-1f2a-f011-a318-0050569736fd','3','3','Edward Jones from IT requested more information from Facilities on 5/30/2025.',NULL,'667'
-
-            var emailNotifications = new List<EmailNotification>();
 
             var allEmailNotifications = await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId });
 
-            //TODO uncomment date match
             var relevantNotifications = allEmailNotifications
                 .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
                             x.EmailQueryDetails.EmailTemplateId == emailTemplate.Id.ToString() &&
                             x.EmailQueryDetails.ReviewerGroupId == reviewerGroupdId.ToString() &&
-                            x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString()
-                            // &&  x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, 3)
-                            )
+                            x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString() &&  
+                            x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, 3))
                 .ToList();
 
             emailNotifications = (from data in relevantNotifications
@@ -224,20 +165,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 OptionId = proposal.RequestedInfo.WorkflowStepOptionId != null ? $"'{proposal.RequestedInfo.WorkflowStepOptionId}'" : "NULL",
                 RequestedInfoId = proposal.RequestedInfo.Id.ToString()
             };
-            //EXECUTE dbo.GetCapitalRequestGroupNotifications NULL,'57b740bd-1f2a-f011-a318-0050569736fd','3','3','Edward Jones from IT requested more information from Facilities on 5/30/2025.',NULL,'667'
 
             var emailNotifications = new List<EmailNotification>();
 
             var allEmailNotifications = await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId });
 
-            //TODO uncomment date match
             var relevantNotifications = allEmailNotifications
                 .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
                             x.EmailQueryDetails.EmailTemplateId == emailTemplate.Id.ToString() &&
                             x.EmailQueryDetails.ReviewerGroupId == reviewerGroupdId.ToString() &&
-                            x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString()
-                            // &&  x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, 3)
-                            )
+                            x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString() &&  
+                            x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, 3))
                 .ToList();
 
             emailNotifications = (from data in relevantNotifications
@@ -286,8 +224,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         {
             return await _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter { SegmentId = proposal.SegmentId });
         }
-
-        
 
     }
 }

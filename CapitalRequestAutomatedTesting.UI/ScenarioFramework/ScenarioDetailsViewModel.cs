@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+﻿using CapitalRequestAutomatedTesting.UI.CustomAttributes;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -16,6 +17,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         public string DisplayText { get; set; }
 
+        [IgnoreForLogging]
         public Dictionary<string, string> SelectedProperties { get; set; } = new();
 
         [DisplayName("Requesting Group:")]
@@ -55,10 +57,19 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         public string Message { get; set; } = string.Empty;
 
+        [IgnoreForLogging]
         public List<SelectListItem> RequestingGroups { get; set; } = new();
+        [IgnoreForLogging]
+
         public List<SelectListItem> SecondaryRequestingGroups { get; set; } = new();
+        [IgnoreForLogging]
+
         public List<SelectListItem> ReplyingGroups { get; set; } = new();
+        [IgnoreForLogging]
+
         public List<SelectListItem> TargetGroups { get; set; } = new();
+        [IgnoreForLogging]
+
         public List<SelectListItem> Reviewers { get; set; } = new();
 
         public int RequestCount { get; set; }
@@ -78,12 +89,13 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [ValidateNever]
         public ScenarioDataViewModel ActualData { get; set; } = new();
 
-        // ✅ New property to store predictive methods
+        [IgnoreForLogging]
         public List<PredictiveMethod> PredictiveMethods { get; set; } = new();
 
         public int PredictiveCompletionStep { get; set; }
         public string PredictiveStopReason { get; set; }
-
+        
+        [IgnoreForLogging]
         public bool CanExecuteActualSteps { get; set; } = true;
         public int RequestedInfoId { get; set; }
 

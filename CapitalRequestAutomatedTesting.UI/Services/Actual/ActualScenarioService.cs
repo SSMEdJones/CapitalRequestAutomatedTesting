@@ -61,10 +61,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
 
-            var formData = DictionaryHelper.ToDictionary(scenarioDetail);
-            var formDataXml = FormDataXmlBuilder.Build(formData);
-            _formDataContext.Set(formDataXml);
-
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
 
@@ -223,6 +219,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             if (scenarioId == "SCN001")
             {
                 var optionType = Constants.OPTION_TYPE_VERIFY;
+
+                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
+                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
+
+                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
+                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
+
+                var combined = scenarioLabeled
+                    .Concat(proposalLabeled)
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+                var formDataXml = FormDataXmlBuilder.Build(combined);
+                _formDataContext.Set(formDataXml);
+
                 actualMethods.Add(
                     new ActualMethod
                     {
@@ -286,6 +296,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
                 proposal.ReviewerGroupId = detail.ReplyingGroupId;
 
+                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
+                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
+
+                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
+                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
+
+                var combined = scenarioLabeled
+                    .Concat(proposalLabeled)
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+                var formDataXml = FormDataXmlBuilder.Build(combined);
+                _formDataContext.Set(formDataXml);
 
                 actualMethods.Add(
                     new ActualMethod

@@ -65,9 +65,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
-            var formData = DictionaryHelper.ToDictionary(scenarioDetail);
-            var formDataXml = FormDataXmlBuilder.Build(formData);
-            _formDataContext.Set(formDataXml);
 
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
@@ -299,12 +296,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             {
                 //proposal.ReviewerGroupId = detail.RequestingGroupId;
                 proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
-
-                //proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-                //proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-                //proposal.ReviewerId = detail.ReviewerId;
-                //proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
                 proposal.RequestedInfo.Id = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id);
+
+                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
+                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
+
+                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
+                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
+
+                var combined = scenarioLabeled
+                    .Concat(proposalLabeled)
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+                var formDataXml = FormDataXmlBuilder.Build(combined);
+                _formDataContext.Set(formDataXml);
 
 
                 predictiveMethods.Add(
@@ -388,6 +393,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
 
                 var stepNumber = 0;
+                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
+                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
+
+                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
+                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
+
+                var combined = scenarioLabeled
+                    .Concat(proposalLabeled)
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+                var formDataXml = FormDataXmlBuilder.Build(combined);
+                _formDataContext.Set(formDataXml);
+
                 //
                 predictiveMethods.Add(
                     new PredictiveMethod

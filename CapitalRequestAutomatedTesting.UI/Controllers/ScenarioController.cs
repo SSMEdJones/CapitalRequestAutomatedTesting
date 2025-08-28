@@ -322,11 +322,11 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             }
 
             ////todo remove
-            scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
-            stopwatch.Stop();
-            scenario.PredictedSeleniumOutcome.Success = false;
+            //scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+            //stopwatch.Stop();
+            //scenario.PredictedSeleniumOutcome.Success = false;
 
-            return scenario;
+            //return scenario;
 
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)

@@ -61,11 +61,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
 
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
-            var formData = DictionaryHelper.ToDictionary(scenarioDetail);
-
-            var formDataXml = FormDataXmlBuilder.Build(formData);
-            _formDataContext.Set(formDataXml);
-
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
 
@@ -255,13 +250,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             {
                 // For "Request More Information" scenario
                 var optionType = Constants.OPTION_TYPE_VERIFY;
+
+                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
+                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
+                
+                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
+                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
+
+                var combined = scenarioLabeled
+                    .Concat(proposalLabeled)
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+                var formDataXml = FormDataXmlBuilder.Build(combined);
+                _formDataContext.Set(formDataXml);
+
                 originalMethods.Add(
                     new OriginalMethod
                     {
                         ServiceName = "IActualRequestedInfoService",
                         MethodName = "GetRequestedInfoAsync",
                         Parameters = new List<object> { proposal },
-                        Operation = CrudOperationType.Select
+                        Operation = CrudOperationType.Insert
                     }
                 );
 
@@ -271,7 +280,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                         ServiceName = "IActualWorkflowStepResponderService",
                         MethodName = "GetWorkflowStepResponderAsync",
                         Parameters = new List<object> { proposal, Constants.RESPONDER_REQUEST, optionType },
-                        Operation = CrudOperationType.Select
+                        Operation = CrudOperationType.Insert
                     }
                 );
 
@@ -281,7 +290,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                         ServiceName = "IActualWorkflowStepOptionService",
                         MethodName = "GetClosedWorkflowStepOptionsAsync",
                         Parameters = new List<object> { proposal, optionType, null },
-                        Operation = CrudOperationType.Select
+                        Operation = CrudOperationType.Update
                     }
                 );
             }
@@ -294,9 +303,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                 var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
 
                 var optionType = Constants.OPTION_TYPE_ADD_INFO;
-                proposal.RequestedInfoId = proposal.RequestedInfo.Id;
                 proposal.ReviewerGroupId = detail.ReplyingGroupId;
                 proposal.RequestedInfo = requestedInfo;
+                proposal.RequestedInfoId = proposal.RequestedInfo.Id;
+
+                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
+                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
+
+                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
+                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
+
+                var combined = scenarioLabeled
+                    .Concat(proposalLabeled)
+                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+                var formDataXml = FormDataXmlBuilder.Build(combined);
+                _formDataContext.Set(formDataXml);
 
                 originalMethods.Add(
                     new OriginalMethod
@@ -304,7 +326,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                         ServiceName = "IActualProvidedInfoService",
                         MethodName = "GetProvidedInfoAsync",
                         Parameters = new List<object> { proposal },
-                        Operation = CrudOperationType.Select
+                        Operation = CrudOperationType.Insert
                     }
                 );
 
@@ -314,7 +336,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                         ServiceName = "IActualWorkflowStepResponderService",
                         MethodName = "GetWorkflowStepResponderAsync",
                         Parameters = new List<object> { proposal, Constants.RESPONDER_REPLY, optionType },
-                        Operation = CrudOperationType.Select
+                        Operation = CrudOperationType.Update
                     }
                 );
 
@@ -324,7 +346,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                         ServiceName = "IActualWorkflowStepOptionService",
                         MethodName = "GetExpectedClosedWorkflowStepOptionsAsync",
                         Parameters = new List<object> { proposal, optionType, requestedInfoId },
-                        Operation = CrudOperationType.Select
+                        Operation = CrudOperationType.Update
                     }
                 );
 
@@ -344,7 +366,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                         ServiceName = "IActualRequestedInfoService",
                         MethodName = "GetRequestedInfoByIdAsync",
                         Parameters = new List<object> { proposal },
-                        Operation = CrudOperationType.Select
+                        Operation = CrudOperationType.Update
                     }
                 );
             }

@@ -55,7 +55,7 @@ namespace Infrastructure.Middleware
 
             var exceptionDetail = new ExceptionDetail
             {
-                Logged = DateTime.UtcNow,
+                Logged = DateTime.Now,
                 Level = "Error",
                 Message = exception?.Message,
                 Logger = $"{methodContext?.ServiceName ?? "Unknown"}.{methodContext?.MethodName ?? "Unknown"}",
@@ -69,8 +69,8 @@ namespace Infrastructure.Middleware
                 FormData = formData,
                 Endpoint = context.Request.Path,
                 ResponseBody = null,
-                InvokedService = methodContext.ServiceName ?? string.Empty,
-                InvokedMethod = methodContext.MethodName ?? string.Empty,
+                InvokedService = methodContext?.ServiceName ?? string.Empty,
+                InvokedMethod = methodContext?.MethodName ?? string.Empty,
                 InvokedParameters = methodParameters
             };
 

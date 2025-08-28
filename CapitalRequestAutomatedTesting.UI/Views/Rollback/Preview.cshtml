@@ -2,12 +2,44 @@
 @using CapitalRequestAutomatedTesting.UI.Services
 @using CapitalRequestAutomatedTesting.UI.Enums
 
-@{
-    Layout = null;
-}
+@model ScenarioComparisonResult
+
+<style media="print">
+    .no-print {
+        display: none;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+
+    .section {
+        page-break-after: always;
+    }
+
+    .table-warning td {
+        background-color: #ff6961;
+    }
+
+    .table-warning td {
+        background-color: #ff6961;
+    }
+</style>
 
 
-<h3>test</h3>
+<style>
+    .table-warning td {
+        background-color: #ff6961;
+    }
+</style>
+@Html.Partial("_SelectedProperties", Model.SelectedProperties)
+
+@Html.Partial("_RollbackComparison", Model)
+
+<form asp-action="ConfirmRollback" method="post">
+    <input type="hidden" asp-for="ScenarioId" />
+    <button type="submit" class="btn btn-danger">Confirm Full Rollback</button>
+</form>
 
 
 
