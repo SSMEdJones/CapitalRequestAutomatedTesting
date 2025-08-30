@@ -1,19 +1,13 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
-using Microsoft.AspNetCore.Mvc;
-using SSMWorkflow.API.DataAccess.Models;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Threading;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
@@ -298,20 +292,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
                 proposal.RequestedInfo.Id = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id);
 
-                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
-                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
-
-                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
-                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
-
-                var combined = scenarioLabeled
-                    .Concat(proposalLabeled)
-                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-                var formDataXml = FormDataXmlBuilder.Build(combined);
-                _formDataContext.Set(formDataXml);
-
-
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
@@ -393,18 +373,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
 
                 var stepNumber = 0;
-                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
-                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
-
-                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
-                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
-
-                var combined = scenarioLabeled
-                    .Concat(proposalLabeled)
-                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-                var formDataXml = FormDataXmlBuilder.Build(combined);
-                _formDataContext.Set(formDataXml);
 
                 //
                 predictiveMethods.Add(
@@ -542,6 +510,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 );
 
             }
+
+            var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
+            var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
+
+            var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
+            var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
+
+            var combined = scenarioLabeled
+                .Concat(proposalLabeled)
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            var formDataXml = FormDataXmlBuilder.Build(combined);
+            _formDataContext.Set(formDataXml);
+
             return predictiveMethods;
         }
 

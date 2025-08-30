@@ -251,19 +251,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                 // For "Request More Information" scenario
                 var optionType = Constants.OPTION_TYPE_VERIFY;
 
-                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
-                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
-                
-                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
-                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
-
-                var combined = scenarioLabeled
-                    .Concat(proposalLabeled)
-                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-                var formDataXml = FormDataXmlBuilder.Build(combined);
-                _formDataContext.Set(formDataXml);
-
                 originalMethods.Add(
                     new OriginalMethod
                     {
@@ -307,18 +294,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                 proposal.RequestedInfo = requestedInfo;
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
 
-                var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
-                var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
-
-                var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
-                var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
-
-                var combined = scenarioLabeled
-                    .Concat(proposalLabeled)
-                    .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-                var formDataXml = FormDataXmlBuilder.Build(combined);
-                _formDataContext.Set(formDataXml);
 
                 originalMethods.Add(
                     new OriginalMethod
@@ -370,6 +345,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                     }
                 );
             }
+
+            var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
+            var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
+
+            var scenarioLabeled = scenarioData.ToDictionary(kvp => $"Scenario.{kvp.Key}", kvp => kvp.Value);
+            var proposalLabeled = proposalData.ToDictionary(kvp => $"Proposal.{kvp.Key}", kvp => kvp.Value);
+
+            var combined = scenarioLabeled
+                .Concat(proposalLabeled)
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            var formDataXml = FormDataXmlBuilder.Build(combined);
+            _formDataContext.Set(formDataXml);
 
             _mapper.Map(detail, scenarioDetail);
             return originalMethods;

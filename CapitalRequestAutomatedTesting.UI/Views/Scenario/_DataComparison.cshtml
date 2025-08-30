@@ -69,6 +69,13 @@
                                     <td>@(isHtml ? Html.Raw(actualValue?.ToString() ?? "—") : actualValue ?? Html.Raw("—"))</td>
                                 </tr>
                             }
+
+                            if (record != group.Records.OrderBy(r => r.RowKey).Last())
+                            {
+                                <tr>
+                                    <td colspan="3" style="background-color: #00839b; height: 6px; border: none;"></td>
+                                </tr>
+                            }
                         }
                     }
                 }
