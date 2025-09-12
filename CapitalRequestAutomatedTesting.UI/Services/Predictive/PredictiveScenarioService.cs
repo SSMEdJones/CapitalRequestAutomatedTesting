@@ -372,6 +372,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ProvidedInfo.ReviewerId = proposal.Reviewer.Id;
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
 
+
                 var stepNumber = 0;
 
                 //

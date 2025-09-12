@@ -79,6 +79,35 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                     return key;
                                 }
 
+                                var seenRowKeys = new HashSet<string>();
+                                var duplicateRowKeys = new List<string>();
+
+                                foreach (var obj in predictiveList.Cast<object>())
+                                {
+                                    var key = GetRowKey(obj);
+                                    if (!seenRowKeys.Add(key))
+                                    {
+                                        duplicateRowKeys.Add(key);
+                                        Debug.WriteLine($"[DUPLICATE] Predictive RowKey: {key}");
+                                    }
+                                }
+
+                                foreach (var obj in actualList.Cast<object>())
+                                {
+                                    var key = GetRowKey(obj);
+                                    if (!seenRowKeys.Add(key))
+                                    {
+                                        duplicateRowKeys.Add(key);
+                                        Debug.WriteLine($"[DUPLICATE] Actual RowKey: {key}");
+                                    }
+                                }
+
+                                // Optionally, log all duplicates at once
+                                if (duplicateRowKeys.Any())
+                                {
+                                    Debug.WriteLine($"Duplicate RowKeys detected in table '{tableName}', operation '{opType}': {string.Join(", ", duplicateRowKeys)}");
+                                }
+
                                 var dictA = predictiveList.Cast<object>().ToDictionary(GetRowKey);
                                 var dictB = actualList.Cast<object>().ToDictionary(GetRowKey);
 

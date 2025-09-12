@@ -542,6 +542,7 @@ namespace CapitalRequest.API.Models
         public Guid WorkflowStepId { get; set; }
 
         public int ReviewerGroupId { get; set; }
+        public int RequestingReviewerGroupId { get; set; }
 
         public string ReviewerGroupName { get; set; }
 
@@ -553,6 +554,7 @@ namespace CapitalRequest.API.Models
         public int ReviewerId { get; set; }
 
         public int RequestedInfoId { get; set; }
+        public int? ExecutionDurationMinutes { get; set; }
 
     }
 }

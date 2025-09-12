@@ -75,7 +75,7 @@ try
     var app = builder.Build();
 
     app.UseMiddleware<GlobalExceptionMiddleware>();
-    
+    app.UseStatusCodePagesWithReExecute("/Error/Error/{0}");
     //if (app.Environment.IsDevelopment())
     //{
     //    app.UseDeveloperExceptionPage();

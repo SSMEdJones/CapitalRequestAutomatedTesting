@@ -59,8 +59,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             var workflowStepId = workflowStep.WorkflowStepID;
 
-            var reviewerGroupdId = proposal.RequestedInfo.ReviewerGroupId;
-            var requestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
+            var reviewerGroupdId = proposal.ReviewerGroupId;
+            var requestingGroupId = proposal.RequestingGroupId;
 
             if (reviewerGroupdId == 0 || requestingGroupId == 0)
             {
@@ -96,14 +96,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 RequestedInfoId = proposal.RequestedInfo.Id.ToString()
             };
 
-            var allEmailNotifications = await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId });
+            var allEmailNotifications = (await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId }))
+                .Where(x => x.Created.HasValue &&
+                            (DateTime.Now - x.Created.Value).TotalMinutes <= 30 &&
+                            (DateTime.Now - x.Created.Value).TotalMinutes >= 0)
+                .ToList();
+
+
+            var durationMinutes = proposal.ExecutionDurationMinutes ?? 3;
 
             var relevantNotifications = allEmailNotifications
                 .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
                             x.EmailQueryDetails.EmailTemplateId == emailTemplate.Id.ToString() &&
                             x.EmailQueryDetails.ReviewerGroupId == reviewerGroupdId.ToString() &&
-                            x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString() &&  
-                            x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, 3))
+                            x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfoId.ToString() &&  
+                            x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, durationMinutes))
                 .ToList();
 
             emailNotifications = (from data in relevantNotifications
@@ -118,12 +125,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
         public async Task<List<EmailNotification>> GetEmailNotificationsAsync(vm.Proposal proposal, string emailType)
         {
+
             var workflowStep = proposal.WorkflowStep;
 
             var workflowStepId = workflowStep.WorkflowStepID;
 
-            var reviewerGroupdId = proposal.RequestedInfo.ReviewerGroupId;
-            var requestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
+            var reviewerGroupdId = proposal.ReviewerGroupId;
+            var requestingGroupId = proposal.RequestingGroupId;
 
             var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
             var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
@@ -160,7 +168,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             {
                 WorkflowStepId = workflowStep.WorkflowStepID.ToString(),
                 EmailTemplateId = emailTemplate.Id.ToString(),
-                ReviewerGroupId = reviewerGroupdId.ToString(),
+                ReviewerGroupId = requestingGroupId.ToString(),
                 Action = action,
                 OptionId = proposal.RequestedInfo.WorkflowStepOptionId != null ? $"'{proposal.RequestedInfo.WorkflowStepOptionId}'" : "NULL",
                 RequestedInfoId = proposal.RequestedInfo.Id.ToString()
@@ -168,14 +176,26 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             var emailNotifications = new List<EmailNotification>();
 
-            var allEmailNotifications = await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId });
+            var allEmailNotifications = (await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId }))
+                .Where(x => x.Created.HasValue && x.Created.Value.Date == DateTime.Now.Date)
+                .ToList();
+
+            var durationMinutes = proposal.ExecutionDurationMinutes ?? 3;
+            if (emailType != Constants.EMAIL_REQUEST_MORE_INFORMATION)
+            {
+                reviewerGroupdId = requestingGroupId;
+                reviewers = (await GetReviewers(proposal))
+                     .Where(x => x.ReviewerGroupId == reviewerGroupdId)
+                     .Select(z => _mapper.Map<vm.Reviewer>(z))
+                     .ToList();
+            }
 
             var relevantNotifications = allEmailNotifications
                 .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
                             x.EmailQueryDetails.EmailTemplateId == emailTemplate.Id.ToString() &&
                             x.EmailQueryDetails.ReviewerGroupId == reviewerGroupdId.ToString() &&
                             x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString() &&  
-                            x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, 3))
+                            x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, durationMinutes))
                 .ToList();
 
             emailNotifications = (from data in relevantNotifications

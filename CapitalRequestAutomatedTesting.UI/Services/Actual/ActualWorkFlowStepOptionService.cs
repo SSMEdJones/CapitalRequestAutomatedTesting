@@ -274,7 +274,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         public async Task<List<WorkflowStepOption>> GetReOpenedOptionsAsync(string optionType, vm.Proposal proposal)
         {
             // unlock verify rows for requesting group
-            var reviewer = await _capitalRequestServices.GetReviewer(proposal.RequestedInfo.RequestingReviewerId);
+            var reviewer = proposal.Reviewer;
             var reviewerGroupId = reviewer.ReviewerGroupId;
 
             // Identify the current reviewer’s OptionID

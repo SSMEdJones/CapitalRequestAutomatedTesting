@@ -380,7 +380,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                         Message = $"Could not find button '{buttonText}'."
                     };
                 }
-               
+
             };
         }
 
@@ -571,7 +571,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
-        public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateReviewerDashboardCell(int dashboardOrder, string expectedName, DateTime expectedDate)
+        public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateReviewerDashboardCell(int dashboardOrder, string expectedName, DateTime? expectedDate)
         {
             return async driver =>
             {
@@ -619,28 +619,37 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                         .Where(t => !string.IsNullOrWhiteSpace(t))
                         .ToList();
 
-                    var expectedDateStr = expectedDate.ToString("MM/dd/yy");
-                    var issues = new List<string>();
-
-                    if (!textParts.Contains(expectedName))
-                        issues.Add($"Expected reviewer name '{expectedName}' not found in cell.");
-
-                    if (!textParts.Contains(expectedDateStr))
-                        issues.Add($"Expected date '{expectedDateStr}' not found in cell.");
-
-                    var hasInfoIcon = reviewCell.FindElements(By.CssSelector("i.fa-info-circle")).Any();
-                    if (!hasInfoIcon)
-                        issues.Add("Expected info icon not found in reviewer cell.");
-
-                    if (issues.Any())
+                    if (expectedDate != null)
                     {
-                        return new SeleniumStepResult
-                        {
-                            Success = false,
-                            Message = "Reviewer cell mismatch:\n" + string.Join("\n", issues)
-                        };
-                    }
 
+
+                        var expectedDateStr = string.Empty;
+                        if (expectedDate.HasValue)
+                        {
+                            expectedDateStr = expectedDate.Value.ToString("MM/dd/yy");
+                        }
+
+                        var issues = new List<string>();
+
+                        if (!textParts.Contains(expectedName))
+                            issues.Add($"Expected reviewer name '{expectedName}' not found in cell.");
+
+                        if (!textParts.Contains(expectedDateStr))
+                            issues.Add($"Expected date '{expectedDateStr}' not found in cell.");
+
+                        var hasInfoIcon = reviewCell.FindElements(By.CssSelector("i.fa-info-circle")).Any();
+                        if (!hasInfoIcon)
+                            issues.Add("Expected info icon not found in reviewer cell.");
+
+                        if (issues.Any())
+                        {
+                            return new SeleniumStepResult
+                            {
+                                Success = false,
+                                Message = "Reviewer cell mismatch:\n" + string.Join("\n", issues)
+                            };
+                        }
+                    }
                     return new SeleniumStepResult
                     {
                         Success = true,
@@ -900,7 +909,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             return null;
         }
 
-       
+
 
         //public static Func<IWebDriver, SeleniumStepResult> NoRequestsMessage()
         //{

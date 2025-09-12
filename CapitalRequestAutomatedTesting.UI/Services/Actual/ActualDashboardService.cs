@@ -44,13 +44,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             if (dashboards == null || !dashboards.Any())
                 return dashboardData;
 
-            var applicationUserAccess = await GetApplicationUserAccess(userId);
-
-            var applicationRoleName = applicationUserAccess.ApplicationRoleName;
-
-            if (applicationRoleName == Constants.APPLICATION_ROLE_NAME_REVIEWER)
-            {
-                var reviewerFilter = (await _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter { UserId = userId}))
+            var reviewerFilter = (await _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter { UserId = userId }))
                     .Select(x => new
                     {
                         x.RegionId,
@@ -59,57 +53,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     .Distinct()
                     .ToList();
 
-                if (reviewerFilter.Any())
-                {
-                    var authorlist = dashboardData.Where(x => x.UserId == userId).ToList();
-
-                    dashboardData = (from data in dashboardData
-                                     join reviewer in reviewerFilter on new
-                                     {
-                                         data.RegionId,
-                                         data.SegmentId
-                                     } equals new
-                                     {
-                                         reviewer.RegionId,
-                                         reviewer.SegmentId
-                                     }
-                                     select data)
-                    .ToList();
-
-                    if (authorlist.Any())
-                    {
-                        dashboardData.RemoveAll(x => x.UserId == userId);
-
-                        authorlist.ForEach(x =>
-                        {
-                            dashboardData.Add(x);
-                        });
-                    }
-                }
-            }
-            //else if (applicationRoleName == Constants.APPLICATION_ROLE_NAME_REGIONAL)
-            //{
-            //    var regionFilter = _userRegionRepo.GetAllUserRegions(userId)
-            //                .Distinct()
-            //                .ToList();
-
-            //    dashboardData = (from model in dashboardData
-            //                     join region in regionFilter on model.RegionId equals region.RegionId
-            //                     select model)
-            //              .Distinct()
-            //              .ToList();
-            //}
-            else if (applicationRoleName == Constants.APPLICATION_ROLE_NAME_AUTHOR)
+            if (reviewerFilter.Any())
             {
-                dashboardData = dashboardData.Where(x => x.UserId == userId).ToList();
-            }
 
-            if (dashboardData != null && dashboardData.Any())
-            {
-                dashboardData = dashboardData
-                .OrderByDescending(x => x.Submitted == DateTime.MinValue ?
-                        x.Pending :
-                        x.Submitted)
+                dashboardData = (from data in dashboards
+                                 join reviewer in reviewerFilter on new
+                                 {
+                                     data.RegionId,
+                                     data.SegmentId
+                                 } equals new
+                                 {
+                                     reviewer.RegionId,
+                                     reviewer.SegmentId
+                                 }
+                                 select data)
                 .ToList();
 
             }

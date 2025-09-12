@@ -1,4 +1,5 @@
 using AutoMapper;
+using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
@@ -238,6 +239,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             proposal.ReviewerGroupId = detail.RequestingGroupId;
             proposal.ReviewerId = detail.ReviewerId;
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestingReviewerGroupId = detail.RequestingGroupId;
+
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                         .Where(x => !x.IsComplete)
                         .FirstOrDefault();
@@ -250,13 +253,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             {
                 // For "Request More Information" scenario
                 var optionType = Constants.OPTION_TYPE_VERIFY;
-
+                var isOpen = true;
                 originalMethods.Add(
                     new OriginalMethod
                     {
                         ServiceName = "IActualRequestedInfoService",
                         MethodName = "GetRequestedInfoAsync",
-                        Parameters = new List<object> { proposal },
+                        Parameters = new List<object> { proposal, isOpen },
                         Operation = CrudOperationType.Insert
                     }
                 );

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
+using System.Diagnostics;
 using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
 
@@ -8,6 +9,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 {
     public interface IActualRequestedInfoService
     {
+        Task<RequestedInfo> GetRequestedInfoAsync(vm.Proposal proposal, bool isOpen);
+        Task<RequestedInfo> GetRequestedInfoByIdAsync(vm.Proposal proposal);
     }
     public class ActualRequestedInfoService : IActualRequestedInfoService
     {
@@ -20,14 +23,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _mapper = mapper;
         }
 
-        public async Task<RequestedInfo> GetRequestedInfoAsync(vm.Proposal proposal)
+        public async Task<RequestedInfo> GetRequestedInfoAsync(vm.Proposal proposal, bool isOpen)
         {
+
+            Debug.WriteLine($"In GetRequestedInfoAsync {Environment.NewLine} ProposalId: {proposal.Id} " +
+                $"{ Environment.NewLine} ReviewerGroupId: {proposal.ReviewerGroupId} " +
+                $"{Environment.NewLine} RequestingReviewerGroupId: {proposal.RequestingReviewerGroupId}");
+
             var requestedInfo = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter
             {
                 ProposalId = proposal.Id,
-                ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
-                RequestingReviewerGroupId = proposal.ReviewerGroupId,
-                IsOpen = true
+                ReviewerGroupId = proposal.ReviewerGroupId,
+                RequestingReviewerGroupId = proposal.RequestingReviewerGroupId,
+                IsOpen = isOpen
             }))
             .FirstOrDefault();
 

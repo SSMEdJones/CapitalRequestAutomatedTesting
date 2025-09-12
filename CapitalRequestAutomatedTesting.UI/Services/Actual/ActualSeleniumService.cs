@@ -96,18 +96,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                 scenarioDetail.SelectedProperties["Target Group"] = targetGroup.Name;
 
-                //var steps = await GenerateSeleniumSteps(scenarioDetail);
-                //var options = GetChromeOptions();
-                //var driver = new ChromeDriver(options);
-                //driver.Manage().Window.Maximize();
-                //try
-                //{
-                //    seleniumScenarioOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail, driver);
-                //}
-                //finally
-                //{
-                //    driver.Quit(); // Always clean up
-                //}
             }
             else if (scenarioId == "SCN002")
             {
@@ -115,18 +103,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 proposal.ReplyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
                 scenarioDetail.SelectedProperties["Replying Group"] = proposal.ReplyingGroup.Name;
 
-                //var steps = await GenerateSeleniumSteps(scenarioDetail);
-                //var options = GetChromeOptions();
-                //var driver = new ChromeDriver(options);
-                //driver.Manage().Window.Maximize();
-                //try
-                //{
-                //    seleniumScenarioOutcome = await ExecuteSeleniumStepsAsync(steps, scenarioDetail, driver);
-                //}
-                //finally
-                //{
-                //    driver.Quit(); // Always clean up
-                //}
             }
 
             var steps = await GenerateSeleniumSteps(scenarioDetail);
@@ -335,7 +311,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         Validate.NoRequestsMessage(), // When no requests
                         new SeleniumDsl()
                             .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
-                            .Then(Validate.DashboardStatus(dashboardOrder, replyingGroup.Name, DateTime.Now))
+                            .Then(Validate.DashboardStatus(dashboardOrder, string.Empty, null))
                             .Build("Dashboard Search + Status Validation")
                     ))
                     .Build("Navigate to Home Dashboard and validate group status");
@@ -446,8 +422,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         Message = $"Exception during step execution: {ex.Message}"
                     };
 
-                    //LogError(ex);
-                    CleanUpAndExit();
+                    _logger.LogError(ex.Message);
+
                     Debug.WriteLine($"Error in step {step.StepNumber}: {ex.Message}");
 
                     try
@@ -476,6 +452,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         //outcome.RollbackCandidates = await _rollbackService.ExecuteRollbackAsync(scenarioDetail);
                     }
 
+                    scenarioDetail.PredictedSeleniumOutcome.Success = false;
                     // Stop execution after failure
                     break;
                 }
@@ -484,6 +461,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 if (result?.Success == true && step.IsCommitStep)
                 {
                     commitStepReached = true;
+                    scenarioDetail.CommitStepReached = true;
                 }
 
                 outcome.Expected.Steps.Add(step);
@@ -504,20 +482,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return $"{baseUrl.TrimEnd('/')}/{route.TrimStart('/')}{separator}{suffix}";
         }
 
-        private void CleanUpAndExit()
-        {
-            // Close browser
-            //driver.Quit();
-
-            //// Rollback DB changes
-            //RollbackTransaction();
-
-            //// Log error
-            //_logger.Error("Process failed. Rollback executed.");
-
-            Environment.Exit(1); // Fail fast
-        }
-
-
+       
     }
 }

@@ -6,6 +6,8 @@ using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using Microsoft.AspNetCore.Connections.Features;
+using OpenQA.Selenium.DevTools.V134.Network;
 using SSMWorkflow.API.DataAccess.Models;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -177,6 +179,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             reviewers.ForEach(x =>
             {
+                if (x.Email == proposal.Reviewer.Email)
+                {
+                    return;
+                }
+
                 var workflowStepOption = new WorkflowStepOption
                 {
                     OptionName = x.Email,
@@ -192,6 +199,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     UpdatedBy = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? null : proposal.Reviewer.UserId
 
                 };
+
+               
                 workflowStepOptions.Add(workflowStepOption);
 
             });
@@ -510,6 +519,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             
             var workflowstepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
                 .Where(x=> x.ReviewerGroupId == reviewerGroupId && 
+                       x.IsTerminate == false &&
                        x.OptionType == optionType)
                 .ToList();
 

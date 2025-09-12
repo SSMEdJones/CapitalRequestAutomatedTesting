@@ -245,11 +245,16 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
                 if (detail.PredictiveSeleniumFailed)
                 {
-                    //TempData["Error"] = $"Predictive Selenium failed for scenario {detail.ScenarioId}.";
-                    TempData["ScenarioDetail"] = JsonConvert.SerializeObject(detail);
+                    if (detail.CommitStepReached)
+                    {
+                        TempData["ScenarioDetail"] = JsonConvert.SerializeObject(detail);
 
-                    return RedirectToAction("Preview", "Rollback");
-                    //return RedirectToAction("Preview", "Rollback", new { scenarioId = detail.ScenarioId });
+                        return RedirectToAction("Preview", "Rollback");
+
+                    }
+                    
+                    return RedirectToAction("ViewComparison");
+
                 }
 
                 scenarioDetails.Add(detail);
@@ -321,7 +326,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 scenario.OriginalData = await _originalScenarioService.GenerateScenarioDataAsync(scenario);
             }
 
-            ////todo remove
+            //todo remove
             //scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
             //stopwatch.Stop();
             //scenario.PredictedSeleniumOutcome.Success = false;
@@ -330,6 +335,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
+            scenario.StopWatch = Stopwatch.StartNew();
             scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
             //Step 4: Actual Data(only if prediction succeeded)

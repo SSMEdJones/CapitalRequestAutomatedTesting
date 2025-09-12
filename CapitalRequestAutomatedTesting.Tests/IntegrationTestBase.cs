@@ -29,7 +29,6 @@ namespace CapitalRequestAutomatedTesting.Tests
             services.AddSingleton<DiagnosticSource>(new DiagnosticListener("TestDiagnosticListener"));
             services.AddSingleton<DiagnosticListener>(new DiagnosticListener("TestDiagnosticListener"));
 
-            // Other service registrations...
             // Register logging so ILogger<T> can be injected
             services.AddLogging(builder =>
             {
@@ -42,6 +41,9 @@ namespace CapitalRequestAutomatedTesting.Tests
             // Register necessary services for MVC
             services.AddControllersWithViews();
             services.AddRazorPages();
+            
+            // Register HttpClient and HttpClientFactory - THIS IS THE MISSING REGISTRATION
+            services.AddHttpClient();
             
             // Register our mock view render service instead of the real one
             services.AddScoped<IViewRenderService, MockViewRenderService>();

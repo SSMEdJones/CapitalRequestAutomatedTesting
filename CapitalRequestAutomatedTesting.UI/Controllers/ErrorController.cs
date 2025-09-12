@@ -18,18 +18,26 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         }
 
         [HttpGet("")]
-        public IActionResult Index(string id = null)
+        public async Task<IActionResult> Index(string? id, int page = 1, int pageSize = 50)
         {
             // If id is numeric, just delegate to Details
-            if (int.TryParse(id, out var errorId))
+            if (!string.IsNullOrWhiteSpace(id) && int.TryParse(id, out var errorId))
             {
                 return RedirectToAction(nameof(Details), new { id = errorId });
             }
-            // Fallback generic view
-            return View("Index", new ErrorViewModel
+
+            var totalCount = await _errorLogService.GetErrorCountAsync();
+            var logs = await _errorLogService.GetRecentErrorLogsAsync(pageSize * page);
+
+            var viewModel = new ErrorLogListViewModel
             {
-                RequestId = id ?? Activity.Current?.Id ?? HttpContext.TraceIdentifier
-            });
+                Logs = logs.Skip((page - 1) * pageSize).Take(pageSize).ToList(),
+                CurrentPage = page,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
+            return View("Errors",viewModel);
         }
 
 

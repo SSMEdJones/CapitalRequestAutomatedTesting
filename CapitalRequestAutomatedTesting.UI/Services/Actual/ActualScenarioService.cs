@@ -7,6 +7,7 @@ using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
 using SSMWorkflow.API.DataAccess.Models;
+using System.Diagnostics;
 using System.Reflection;
 using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
 using vm = CapitalRequest.API.Models;
@@ -60,9 +61,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
+            if (scenarioDetail.StopWatch != null)
+            {
+                scenarioDetail.StopWatch.Stop();
+
+                scenarioDetail.ExecutionDuration = scenarioDetail.StopWatch.Elapsed;
+                scenarioDetail.ExecutionDurationMinutes = (int)Math.Ceiling(scenarioDetail.StopWatch.Elapsed.TotalMinutes);
+            }
 
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
+
 
             //if (scenarioId == "SCN001")
             //{
@@ -204,20 +213,28 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
 
 
-            proposal.ReviewerGroupId = detail.RequestingGroupId;
+            //TODO Map
+            proposal.RequestedInfoId = detail.RequestedInfoId;
+            proposal.ReviewerGroupId = detail.TargetGroupId;
+            proposal.ReviewerId = detail.ReviewerId;
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestingReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestingGroupId = detail.RequestingGroupId;
+
+            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+
+            proposal.ExecutionDurationMinutes = scenarioDetail.ExecutionDurationMinutes;
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                         .Where(x => !x.IsComplete)
                         .FirstOrDefault();
-            proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 
-            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
-                        .ToList();
-
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
 
             if (scenarioId == "SCN001")
             {
+                var isOpen = true;
+
                 var optionType = Constants.OPTION_TYPE_VERIFY;
 
                 actualMethods.Add(
@@ -225,7 +242,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     {
                         ServiceName = "IActualRequestedInfoService",
                         MethodName = "GetRequestedInfoAsync",
-                        Parameters = new List<object> { proposal },
+                        Parameters = new List<object> { proposal, isOpen },
                         Operation = CrudOperationType.Insert
                     }
                 );
@@ -254,9 +271,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     new ActualMethod
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
-                        MethodName = "GetRequestTypeWorkflowStepOptionsAsync",
-                        Parameters = new List<object> { proposal },
-                        Operation = CrudOperationType.Insert
+                        MethodName = "GetReOpenedOptionsAsync",
+                        Parameters = new List<object> { optionType, proposal },
+                        Operation = CrudOperationType.Update
                     }
                 );
 
@@ -281,7 +298,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
                 proposal.RequestedInfo = requestedInfo;
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
-                proposal.ReviewerGroupId = detail.ReplyingGroupId;
+                proposal.ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId;
+
+                var isOpen = false;
 
                 actualMethods.Add(
                     new ActualMethod
@@ -328,7 +347,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
                         MethodName = "GetReOpenedOptionsAsync",
-                        Parameters = new List<object> {Constants.OPTION_TYPE_VERIFY, proposal },
+                        Parameters = new List<object> { Constants.OPTION_TYPE_VERIFY, proposal },
                         Operation = CrudOperationType.Update
                     }
                 );
@@ -348,7 +367,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     {
                         ServiceName = "IActualRequestedInfoService",
                         MethodName = "GetRequestedInfoAsync",
-                        Parameters = new List<object> { proposal },
+                        Parameters = new List<object> { proposal, isOpen },
                         Operation = CrudOperationType.Update
                     }
                 );
@@ -369,10 +388,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _formDataContext.Set(formDataXml);
 
 
-            _mapper.Map(detail, scenarioDetail); 
+            _mapper.Map(detail, scenarioDetail);
 
             return actualMethods;
         }
-       
+
     }
 }

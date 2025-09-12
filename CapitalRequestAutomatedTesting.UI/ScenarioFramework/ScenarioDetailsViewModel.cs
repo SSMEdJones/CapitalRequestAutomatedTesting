@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 
 namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
@@ -100,6 +101,12 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public int RequestedInfoId { get; set; }
 
         public bool PredictiveSeleniumFailed => !PredictedSeleniumOutcome?.Success ?? true;
+
+        public Stopwatch StopWatch { get; set; }
+        public TimeSpan? ExecutionDuration { get; set; }
+        public int? ExecutionDurationMinutes { get; set; }
+
+        public bool CommitStepReached { get; set; } = false;
 
     }
 }
