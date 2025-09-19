@@ -8,6 +8,7 @@
         public string OptionName { get; set; }
 
         public bool IsComplete { get; set; }
+        [RowKey]
         public bool IsTerminate { get; set; }
         [RowKey]
         public int? ReviewerGroupId { get; set; }

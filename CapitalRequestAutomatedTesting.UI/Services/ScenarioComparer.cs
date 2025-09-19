@@ -1,10 +1,8 @@
 ﻿using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Newtonsoft.Json;
-using OpenQA.Selenium.BiDi.Modules.Input;
 using System.Collections;
 using System.Diagnostics;
-using System.Reflection;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
 {
@@ -61,6 +59,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
                             {
                                 var itemType = type.GetGenericArguments()[0];
+                                LogRowKeyDiagnostics(tableName, itemType); // Add this line
                                 var listType = typeof(List<>).MakeGenericType(itemType);
 
                                 var predictiveList = (IEnumerable)JsonConvert.DeserializeObject(predictiveJson, listType);
@@ -68,13 +67,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                                 string GetRowKey(object obj)
                                 {
-                                    var keyParts = itemType
+                                    var rowKeyProperties = itemType
                                         .GetProperties()
                                         .Where(p => Attribute.IsDefined(p, typeof(RowKeyAttribute)))
-                                        .Select(p => p.GetValue(obj)?.ToString());
+                                        .OrderBy(p => p.Name) // Ensure consistent ordering of key parts
+                                        .ToArray();
+
+                                    var keyParts = rowKeyProperties
+                                        .Select(p => p.GetValue(obj)?.ToString() ?? "null");
 
                                     var key = string.Join("|", keyParts);
-                                    Debug.WriteLine($"[{tableName}] Operation: {opType} — RowKey: {key}");
+                                    Debug.WriteLine($"[{tableName}] Operation: {opType} — RowKey: {key} (Properties: {string.Join(", ", rowKeyProperties.Select(p => p.Name))})");
 
                                     return key;
                                 }
@@ -111,7 +114,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                 var dictA = predictiveList.Cast<object>().ToDictionary(GetRowKey);
                                 var dictB = actualList.Cast<object>().ToDictionary(GetRowKey);
 
-                                foreach (var key in dictA.Keys.Union(dictB.Keys).OrderBy(k => k))
+                                // Replacement starts here
+                                var allKeys = dictA.Keys.Union(dictB.Keys);
+                                var orderedKeys = allKeys.OrderBy(k => GetSortableRowKey(k, itemType));
+
+                                foreach (var key in orderedKeys)
                                 {
                                     dictA.TryGetValue(key, out var a);
                                     dictB.TryGetValue(key, out var b);
@@ -124,6 +131,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                         RowKey = key
                                     });
                                 }
+                                // Replacement ends here
 
                             }
                             else
@@ -140,16 +148,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                     FieldDifferences = fieldDiffs,
                                     RowKey = $"{opType}|{i}"
                                 });
-                                //if (fieldDiffs.Any())
-                                //{
-                                //    operationDiffs.Add(new RecordDifference
-                                //    {
-                                //        RecordPredictive = predictiveTyped,
-                                //        RecordActual = actualTyped,
-                                //        FieldDifferences = fieldDiffs,
-                                //        RowKey = $"{opType}|{i}"
-                                //    });
-                                //}
                             }
 
                             if (operationDiffs.Any())
@@ -257,49 +255,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         }
 
 
-        //public static List<FieldDifference> CompareFields(object predictiveRecord, object actualRecord)
-        //{
-        //    var differences = new List<FieldDifference>();
-        //    if (predictiveRecord == null || actualRecord == null) return differences;
 
-        //    var type = predictiveRecord.GetType();
-        //    if (type != actualRecord.GetType()) return differences;
-
-        //    foreach (var prop in type.GetProperties())
-        //    {
-        //        // 🚫 Skip indexers (like object[index])
-        //        if (prop.GetIndexParameters().Length > 0)
-        //            Debug.WriteLine($"Skipping indexed property: {prop.Name}");
-        //        if (prop.GetIndexParameters().Length > 0)
-        //            continue;
-
-        //        object predictiveValue;
-        //        object actualValue;
-
-        //        try
-        //        {
-        //            predictiveValue = prop.GetValue(predictiveRecord);
-        //            actualValue = prop.GetValue(actualRecord);
-        //        }
-        //        catch (TargetParameterCountException)
-        //        {
-        //            // 🛡️ Skip any property that still blows up
-        //            continue;
-        //        }
-
-        //        if (!Equals(predictiveValue, actualValue))
-        //        {
-        //            differences.Add(new FieldDifference
-        //            {
-        //                FieldName = prop.Name,
-        //                ValuePredictive = predictiveValue,
-        //                ValueActual = actualValue
-        //            });
-        //        }
-        //    }
-
-        //    return differences;
-        //}
 
         public static void LogStructure(object obj, string label = "Object")
         {
@@ -336,34 +292,61 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         }
 
 
-        //public List<SeleniumStepComparison> CompareOutcomes(SeleniumScenarioResult expected, SeleniumScenarioResult actual)
-        //{
-        //    var stepComparisons = new List<SeleniumStepComparison>();
 
-        //    var stepMap = actual.Steps.ToDictionary(x => x.StepNumber);
+        private static string GetSortableRowKey(string rowKey, Type itemType)
+        {
+            var parts = rowKey.Split('|');
+            var rowKeyProperties = itemType
+                .GetProperties()
+                .Where(p => Attribute.IsDefined(p, typeof(RowKeyAttribute)))
+                .OrderBy(p => p.Name)
+                .ToArray();
 
-        //    foreach (var expectedStep in expected.Steps)
-        //    {
-        //        var comparison = new SeleniumStepComparison
-        //        {
-        //            StepNumber = expectedStep.StepNumber,
-        //            Description = expectedStep.Description,
-        //            ExpectedMessage = expectedStep.Result?.Message,
-        //            ExpectedSuccess = expectedStep.Result?.Success
-        //        };
+            // Create sortable versions of each part
+            var sortableParts = new List<string>();
+            for (int i = 0; i < parts.Length && i < rowKeyProperties.Length; i++)
+            {
+                var part = parts[i];
+                var property = rowKeyProperties[i];
+                
+                // Special handling for different types
+                if (property.PropertyType == typeof(int) || property.PropertyType == typeof(int?))
+                {
+                    if (int.TryParse(part, out var intValue))
+                    {
+                        sortableParts.Add(intValue.ToString("D10")); // Zero-pad for proper sorting
+                    }
+                    else
+                    {
+                        sortableParts.Add(part);
+                    }
+                }
+                else
+                {
+                    sortableParts.Add(part);
+                }
+            }
+            
+            return string.Join("|", sortableParts);
+        }
 
-        //        if (stepMap.TryGetValue(expectedStep.StepNumber, out var actualStep))
-        //        {
-        //            comparison.ActualMessage = actualStep.Result?.Message;
-        //            comparison.ActualSuccess = actualStep.Result?.Success;
-        //        }
+        private void LogRowKeyDiagnostics(string tableName, Type itemType)
+        {
+            var rowKeyProperties = itemType
+                .GetProperties()
+                .Where(p => Attribute.IsDefined(p, typeof(RowKeyAttribute)))
+                .OrderBy(p => p.Name)
+                .ToArray();
 
-        //        stepComparisons.Add(comparison);
-        //    }
-
-        //    return stepComparisons;
-        //}
-
+            Debug.WriteLine($"=== RowKey Diagnostics for {tableName} ===");
+            Debug.WriteLine($"Item Type: {itemType.Name}");
+            Debug.WriteLine($"RowKey Properties: {string.Join(", ", rowKeyProperties.Select(p => $"{p.Name} ({p.PropertyType.Name})"))}");
+            
+            if (!rowKeyProperties.Any())
+            {
+                Debug.WriteLine("⚠️ WARNING: No properties marked with [RowKey] attribute!");
+            }
+        }
     }
 
 }

@@ -97,15 +97,20 @@ public class PredictiveEmailNotificationServiceTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetActualEmailNotificationsAsync_ShouldReturnExpectedResults()
+    public async Task GetlEmailNotificationsAsync_ShouldReturnExpectedResults()
     {
-        var proposal = await _capitalRequestservices.GetProposal(2884);
-        proposal.ReviewerGroupId = 2;  // will come from selection of what button selected
-        proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
-        proposal.RequestedInfo = await _capitalRequestservices.GetRequestedInfo(667);
+        var proposal = await _capitalRequestservices.GetProposal(2936);
+        proposal.ReviewerGroupId = 3;  // will come from selection of what button selected
+        proposal.RequestingGroupId = 2;
 
+        proposal.RequestedInfo.ReviewerGroupId = 3; //will come from drop down selection from what Group info requested 
+        proposal.RequestedInfo = await _capitalRequestservices.GetRequestedInfo(715);
+        proposal.RequestedInfoId = proposal.RequestedInfo.Id;
+        proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(Guid.Parse("50774b16-8257-f011-a31b-0050569736fd"));
+
+        var requestingUser = (await _capitalRequestservices.GetReviewer(proposal.RequestedInfo.RequestingReviewerId)).FullName;
         var emailType = "Request More Information Email";
-        var result = await _actualEmailNotificationService.GetRequestEmailNotificationsAsync(proposal, emailType);
+        var result = await _actualEmailNotificationService.GetEmailNotificationsAsync(proposal, emailType, requestingUser);
     }
 }
 

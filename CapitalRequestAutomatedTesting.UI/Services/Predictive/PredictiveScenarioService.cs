@@ -159,7 +159,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 Debug.WriteLine($"Service type for {method.ServiceName} not found.");
                 return scenarioDataViewModel;
             }
-                
+
 
             // Get service instance
             using var scope = _scopeFactory.CreateScope();
@@ -232,7 +232,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 Debug.WriteLine($"Service Name : {context.ServiceName}");
                 return;
             }
-                
+
             if (!scenarioDataViewModel.Tables.ContainsKey(tableName))
             {
                 scenarioDataViewModel.Tables[tableName] = new TableData
@@ -275,7 +275,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             proposal.WorkflowStepId = workflowStep.WorkflowStepID;
             proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
-            
+
             proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
                 .Where(x => x.IsComplete == false && x.IsTerminate == false)
                 .ToList();
@@ -345,6 +345,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             else if (scenarioId == "SCN002")
             {
+                proposal.ReviewerGroupId = detail.ReplyingGroupId;
                 proposal.ReplyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
                 var workflowStepId = proposal.WorkflowStep.WorkflowStepID;
                 var filter = new RequestedInfoSearchFilter
@@ -363,6 +364,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ExpectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
                 var actionType = proposal.ActionType;
                 var expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
+
+                //TODO remove once selenium code is updated
+                proposal.Attachment = null;
                 var lookupKey = string.Empty;
                 List<IFormFile> files = null;
 
@@ -371,7 +375,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ProvidedInfo.ProvidedInformation = detail.ReturnedInformation;
                 proposal.ProvidedInfo.ReviewerId = proposal.Reviewer.Id;
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
-
+                proposal.RequestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
 
                 var stepNumber = 0;
 
@@ -438,7 +442,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     {
                         ServiceName = "IPredictiveWorkflowStepOptionService",
                         MethodName = "CloseOptionsAsync",
-                        Parameters = new List<object> { proposal, Guid.Empty, Constants.RESPONDER_ADD_INFO, null },
+                        Parameters = new List<object> { proposal, Guid.Empty, Constants.RESPONDER_ADD_INFO, proposal.RequestedInfoId },
                         Operation = CrudOperationType.Update,
                         StepNumber = ++stepNumber,
 
@@ -446,7 +450,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         {
                             ServiceName = "IRollbackWorkflowStepOptionService",
                             MethodName = "OpenOptionsAsync",
-                            Parameters = new List<object> { Constants.RESPONDER_ADD_INFO,  proposal },
+                            Parameters = new List<object> { Constants.RESPONDER_ADD_INFO, proposal },
                             Operation = CrudOperationType.Update
                         }
                     }
@@ -457,7 +461,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     {
                         ServiceName = "IPredictiveWorkflowStepOptionService",
                         MethodName = "ReOpenOptionsAsync",
-                        Parameters = new List<object> {Constants.OPTION_TYPE_VERIFY, proposal},
+                        Parameters = new List<object> { Constants.OPTION_TYPE_VERIFY, proposal },
                         Operation = CrudOperationType.Update,
                         StepNumber = ++stepNumber,
 
@@ -465,13 +469,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         {
                             ServiceName = "IRollbackWorkflowStepOptionService",
                             MethodName = "CloseOptionsAsync",
-                            Parameters = new List<object> {proposal, Constants.OPTION_TYPE_VERIFY, null},
+                            Parameters = new List<object> { proposal, Constants.OPTION_TYPE_VERIFY, null },
                             Operation = CrudOperationType.Update
                         }
                     }
                 );
 
-                
+
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {

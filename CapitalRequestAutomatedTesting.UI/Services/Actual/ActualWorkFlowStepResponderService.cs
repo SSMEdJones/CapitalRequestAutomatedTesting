@@ -61,22 +61,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private WorkFlowStepOptionViewModel GetWorkflowStepOption(vm.Proposal proposal, string optionType)
         {
             var workflowStepOptions = proposal.WorkflowStepOptions;
-            WorkFlowStepOptionViewModel workflowStepOption = null;
+            WorkFlowStepOptionViewModel? workflowStepOption = null;
+
+            var reviewerGroupId = optionType == Constants.ACTION_TYPE_ADD_INFO ? proposal.ReviewerGroupId : proposal.RequestingGroupId;
             if (workflowStepOptions.Any())
             {
-                var optionsByGroup = workflowStepOptions
-                    .Where(x => x.OptionType == Constants.ACTION_TYPE_ADD_INFO
-                        ? x.ReviewerGroupId == proposal.ReviewerGroupId
-                        : x.ReviewerGroupId == proposal.RequestingGroupId);
 
+                var optionsByGroup = workflowStepOptions
+                    .Where(x => x.ReviewerGroupId == reviewerGroupId);
+
+                int? requestedInfoId = optionType == Constants.ACTION_TYPE_ADD_INFO ? proposal.RequestedInfoId : null;
                 if (optionsByGroup.Any())
                 {
                     workflowStepOption = optionsByGroup
                         .Where(x => x.OptionType == optionType &&
                             x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower() &&
-                            (x.OptionType == Constants.ACTION_TYPE_ADD_INFO
-                                ? x.RequestedInfoId == proposal.RequestedInfoId
-                                : x.RequestedInfoId == null))
+                            x.RequestedInfoId == requestedInfoId)
                         .FirstOrDefault();
 
                 }

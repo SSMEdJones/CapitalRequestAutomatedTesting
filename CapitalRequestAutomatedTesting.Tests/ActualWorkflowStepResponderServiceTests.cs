@@ -47,9 +47,9 @@ namespace CapitalRequestAutomatedTesting.Tests
 
             proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
                         .ToList();
-            proposal.RequestingGroupId = 4;
-            proposal.ReplyingGroupId = 5;
-            proposal.ReviewerGroupId = 5;
+            proposal.RequestingGroupId = 2;
+            //proposal.ReplyingGroupId = 3;
+            proposal.ReviewerGroupId = 3;
             // Act
             var result = await _service.GetWorkflowStepResponderAsync(proposal, responderType, Constants.OPTION_TYPE_ADD_INFO);
 
@@ -57,6 +57,35 @@ namespace CapitalRequestAutomatedTesting.Tests
             Assert.NotNull(result);
             Assert.Equal(workflowStepId, result.WorkflowStepID);
             Assert.Equal(expectedResponderEmail, result.Responder);
+            Assert.Equal(responderType, result.ResponderType);
+        }
+
+        [Fact]
+        public async Task GetWorkflowStepResponderAsyncRequest_ReturnsCorrectResponder()
+        {
+            // Arrange
+            var proposalId = 2936; // Example proposal ID
+            var responderType = Constants.ACTION_TYPE_REQUEST;
+
+            var proposal = await _capitalRequestservices.GetProposal(proposalId);
+            proposal.ExecutionDurationMinutes = 30;
+            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                     .Where(x => !x.IsComplete)
+                     .FirstOrDefault();
+
+            proposal.Reviewer = await _capitalRequestservices.GetReviewer(37841); // Travis
+            var workflowStepId = proposal.WorkflowStep.WorkflowStepID;
+
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
+                        .ToList();
+            proposal.RequestingGroupId = 2;
+            proposal.ReviewerGroupId = 3;
+            // Act
+            var result = await _service.GetWorkflowStepResponderAsync(proposal, responderType, Constants.OPTION_TYPE_VERIFY);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(workflowStepId, result.WorkflowStepID);
             Assert.Equal(responderType, result.ResponderType);
         }
 

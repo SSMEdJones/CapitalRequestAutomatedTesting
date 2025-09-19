@@ -12,7 +12,7 @@
         <p><em>No operation groups found for this table.</em></p>
     }
 
-    @foreach (var group in table.OperationGroups)
+    @foreach (var group in table.OperationGroups.OrderBy(g => g.Operation))
     {
         <h4>@((CrudOperationType)group.Operation) Rows</h4>
 
@@ -34,8 +34,17 @@
                 }
                 else
                 {
-                    @foreach (var record in group.Records.OrderBy(r => r.RowKey))
+
+                    // Order records by sortable RowKey
+                    var orderedRecords = group.Records.OrderBy(r => GetSortableKey(r.RowKey ?? ""));
+
+                    @foreach (var record in orderedRecords)
                     {
+                        // Display RowKey for debugging
+                        <tr style="background-color: #f8f9fa;">
+                            <td colspan="3"><strong>RowKey:</strong> @(record.RowKey ?? "N/A")</td>
+                        </tr>
+
                         var reference = record.RecordPredictive ?? record.RecordActual;
 
                         if (reference == null)
@@ -65,12 +74,12 @@
 
                                 <tr class="@(isDifferent ? "table-warning" : "")">
                                     <td>@prop.Name</td>
-                                    <td>@(isHtml ? Html.Raw(predictiveValue?.ToString() ?? "—") : predictiveValue ?? Html.Raw("—"))</td>
-                                    <td>@(isHtml ? Html.Raw(actualValue?.ToString() ?? "—") : actualValue ?? Html.Raw("—"))</td>
+                                    <td>@(isHtml? Html.Raw(predictiveValue?.ToString() ?? "—") : predictiveValue ?? Html.Raw("—"))</td>
+                                    <td>@(isHtml? Html.Raw(actualValue?.ToString() ?? "—") : actualValue ?? Html.Raw("—"))</td>
                                 </tr>
                             }
 
-                            if (record != group.Records.OrderBy(r => r.RowKey).Last())
+                            if (record != orderedRecords.Last())
                             {
                                 <tr>
                                     <td colspan="3" style="background-color: #00839b; height: 6px; border: none;"></td>
@@ -83,5 +92,28 @@
         </table>
     }
 
-    
+
+}
+
+@{
+    // Helper function to create sortable key
+    string GetSortableKey(string rowKey)
+    {
+        var parts = rowKey.Split('|');
+        var sortableParts = new List<string>();
+
+        foreach (var part in parts)
+        {
+            if (int.TryParse(part, out var intValue))
+            {
+                sortableParts.Add(intValue.ToString("D10"));
+            }
+            else
+            {
+                sortableParts.Add(part);
+            }
+        }
+
+        return string.Join("|", sortableParts);
+    }
 }

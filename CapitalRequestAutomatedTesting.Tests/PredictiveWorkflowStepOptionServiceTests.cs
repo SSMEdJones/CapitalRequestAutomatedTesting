@@ -77,10 +77,10 @@ public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase
 
 
         var actual = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(predicted.First().WorkflowStepID))
-            .Where(x => x.OptionType == Constants.OPTION_TYPE_ADD_INFO && 
+            .Where(x => x.OptionType == Constants.OPTION_TYPE_ADD_INFO &&
                    x.RequestedInfoId == proposal.RequestedInfo.Id)
             .ToList();
-        
+
         Assert.NotNull(actual);
         Assert.NotEmpty(actual);
 
@@ -105,6 +105,23 @@ public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase
         });
 
         Debug.WriteLine($"WorkflowStepOption: {System.Text.Json.JsonSerializer.Serialize(predicted)}");
+    }
+    [Fact]
+    public async Task ReOpenOptionsAsync_WithValidData_ReturnsCorrectWorkflowStepOptions()
+    {
+        int proposalId = 2936;
+        var proposal = await _capitalRequestservices.GetProposal(proposalId);
+        proposal.WorkflowStep =  (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                .Where(x => !x.IsComplete)
+                .FirstOrDefault();
+
+        proposal.Reviewer = await _capitalRequestservices.GetReviewer(15251);
+        proposal.ReviewerGroupId = 3;
+
+        var predicted = await _service.ReOpenOptionsAsync(Constants.OPTION_TYPE_VERIFY, proposal);
+
+        Assert.NotEmpty(predicted);
+
     }
 }
 

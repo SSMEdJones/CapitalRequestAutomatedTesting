@@ -377,6 +377,8 @@ namespace CapitalRequest.API.Models
         [DisplayName("Attachments (File name cannot exceed 255 characters.)")]
         public List<Attachment> Attachments { get; set; } = new List<Attachment>();
 
+        [IgnoreForLogging]
+        public Attachment Attachment { get; set; } = new Attachment();
 
         #endregion
         #region Attach and Submit Page

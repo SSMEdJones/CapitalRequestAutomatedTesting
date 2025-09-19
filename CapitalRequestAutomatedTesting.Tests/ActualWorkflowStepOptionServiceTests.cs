@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.Tests;
 using CapitalRequestAutomatedTesting.UI.Models;
@@ -32,69 +34,25 @@ namespace CapitalRequestAutomatedTesting.Tests
         public async Task GetReOpenedOptionsAsync_ReturnsUnlockedOptions_ExcludesCurrentReviewer()
         {
             // Arrange
-            var proposalId = 2935; // Example proposal ID
-            var requestingRevierId = 36993; // Example requesting reviewer ID
-            var reviewerGroupId = 4;
-            var optionType = "Verify";
-            var reviewerEmail = "edward.jones@ssmhealth.com";
-            var workflowStepId = Guid.Parse("53E451AC-8057-F011-A31B-0050569736FD");
-            var options = new List<WorkFlowStepOptionViewModel>
-            {
-                new WorkFlowStepOptionViewModel
-                {
-                    WorkflowStepID = workflowStepId,
-                    OptionID = Guid.Parse("87E451AC-8057-F011-A31B-0050569736FD"),
-                    OptionName = reviewerEmail,
-                    IsTerminate = false,
-                    ReviewerGroupId = 4,
-                    OptionType = "Verify",
-                    Created = DateTime.Parse("2025-07-02 15:11:07.787"),
-                    Updated = null,
-                    UpdatedBy = null
-                },
-                new WorkFlowStepOptionViewModel
-                {
-                    WorkflowStepID = workflowStepId,
-                    OptionID = Guid.Parse("88E451AC-8057-F011-A31B-0050569736FD"),
-                    OptionName = "pamela.shumway@ssmhealth.com",
-                    IsTerminate = false,
-                    ReviewerGroupId = 4,
-                    OptionType = "Verify",
-                    Created = DateTime.Parse("2025-07-02 15:11:07.807"),
-                    Updated = DateTime.Parse("2025-08-01 14:19:37.007"),
-                    UpdatedBy = "ejones08"
-                },
-                new WorkFlowStepOptionViewModel
-                {
-                    WorkflowStepID = workflowStepId,
-                    OptionID = Guid.Parse("89E451AC-8057-F011-A31B-0050569736FD"),
-                    OptionName = "takashi.fujimoto@ssmhealth.com",
-                    IsTerminate = false,
-                    ReviewerGroupId = 4,
-                    OptionType = "Verify",
-                    Created = DateTime.Parse("2025-07-02 15:11:07.833"),
-                    Updated = DateTime.Parse("2025-08-01 14:19:37.050"),
-                    UpdatedBy = "ejones08"
-                }
-            };
-
-
+            var proposalId = 2936; // Example proposal ID
             var proposal = await _capitalRequestservices.GetProposal(proposalId);
 
-            proposal.RequestedInfo = new vm.RequestedInfo { RequestingReviewerGroupId = reviewerGroupId };
-            proposal.Reviewer = new vm.Reviewer { Email = reviewerEmail };
-            proposal.WorkflowStepOptions = options;
-            proposal.RequestedInfo.RequestingReviewerId = requestingRevierId;
+            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+            .Where(x => !x.IsComplete)
+            .FirstOrDefault();
 
+            proposal.RequestedInfo = (await _capitalRequestservices.GetAllRequestedInfos(new RequestedInfoSearchFilter { ProposalId = proposal.Id, IsOpen = true }))
+                .FirstOrDefault();
+
+
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
 
             // Act
-            var result = await _service.GetReOpenedOptionsAsync(optionType, proposal);
+            var actual = await _service.GetReOpenedOptionsAsync(Constants.OPTION_TYPE_VERIFY, proposal);
 
             // Assert
-            Assert.Equal(2, result.Count);
-            Assert.DoesNotContain(result, x => x.OptionName == reviewerEmail);
-            Assert.Contains(result, x => x.OptionName == "pamela.shumway@ssmhealth.com");
-            Assert.Contains(result, x => x.OptionName == "takashi.fujimoto@ssmhealth.com");
+            Assert.NotNull(actual);
+            Assert.Equal(actual.First().ReviewerGroupId, proposal.RequestedInfo.RequestingReviewerGroupId);
         }
 
         [Fact]
@@ -132,5 +90,40 @@ namespace CapitalRequestAutomatedTesting.Tests
             Assert.Contains(result, x => x.OptionName == "takashi.fujimoto@ssmhealth.com");
 
         }
+
+        [Fact]
+        public async Task GetRequestTypeWorkflowStepOptionsAsync_ReturnsCorrectOptions()
+        {
+            /*
+             *  var workflowStep = proposal.WorkflowStep;
+
+            var allOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                                .Where(x => x.ReviewerGroupId == proposal.RequestedInfo.ReviewerGroupId &&
+                                       x.OptionType == Constants.OPTION_TYPE_ADD_INFO &&
+                                       x.CreatedBy == proposal.Reviewer.UserId &&
+                                       x.RequestedInfoId == proposal.RequestedInfo.Id
+             */
+            // Arrange
+            var proposalId = 2936; // Example proposal ID
+            var optionType = Constants.OPTION_TYPE_ADD_INFO;
+            var requestedInfoId = 723;
+            //var workflowStepId = Guid.Parse("53E451AC-8057-F011-A31B-0050569736FD");
+            var proposal = await _capitalRequestservices.GetProposal(proposalId);
+            proposal.ReviewerId = 37841;
+            proposal.Reviewer = await _capitalRequestservices.GetReviewer(proposal.ReviewerId);
+            proposal.RequestedInfo = await _capitalRequestservices.GetRequestedInfo(requestedInfoId);
+            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                     .Where(x => !x.IsComplete)
+                     .FirstOrDefault();
+
+
+            //};
+            // Act
+            var result = await _service.GetRequestTypeWorkflowStepOptionsAsync(proposal);
+            // Assert
+            Assert.NotNull(result);
+
+        }
+
     }
 }

@@ -2,8 +2,6 @@ using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using Microsoft.Extensions.DependencyInjection;
-using vm = CapitalRequest.API.Models;
-using Xunit;
 
 namespace CapitalRequestAutomatedTesting.Tests
 {
@@ -33,7 +31,7 @@ namespace CapitalRequestAutomatedTesting.Tests
             proposal.RequestingReviewerGroupId = requestingReviewerGroupId;
 
             // Act
-            var result = await _service.GetRequestedInfoAsync(proposal);
+            var result = await _service.GetRequestedInfoAsync(proposal, false);
 
             // Assert
             Assert.NotNull(result);
@@ -71,7 +69,7 @@ namespace CapitalRequestAutomatedTesting.Tests
             proposal.RequestingReviewerGroupId = requestingReviewerGroupId;
 
             // Act
-            var result = await _service.GetRequestedInfoAsync(proposal);
+            var result = await _service.GetRequestedInfoAsync(proposal, false);
 
             // Assert
             Assert.Null(result);

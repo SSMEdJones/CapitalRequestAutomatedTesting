@@ -79,7 +79,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Rollback
             return relevantNotifications;
         }
 
-        public async Task<List<EmailNotification>> GetRequestEmailNotificationsAsync(vm.Proposal proposal, string emailType)
+        public async Task<List<EmailNotification>> GetRequestEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser)
         {
             var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId);
             var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
@@ -107,7 +107,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Rollback
             
             var fullName = $"{_userContextService.FirstName} {_userContextService.LastName}";
 
-            var action = EmailNotifcationHelper.GenerateActionString(reviewerGroup.Name, requestingGroup.Name, Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION, fullName);
+            var action = EmailNotifcationHelper.GenerateActionString(reviewerGroup, requestingGroup, Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION, fullName, requestingUser);
 
             var emallQueryViewModel = new EmailQueryViewModel
             {

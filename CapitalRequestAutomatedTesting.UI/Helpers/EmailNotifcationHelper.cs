@@ -4,6 +4,8 @@ using Microsoft.VisualBasic;
 using Scriban;
 using SSMWorkflow.API.Models;
 using System.Text.RegularExpressions;
+using vm = CapitalRequest.API.Models;
+
 
 namespace CapitalRequestAutomatedTesting.UI.Helpers
 {
@@ -75,17 +77,22 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             }
         }
 
-        public static string GenerateActionString(string reviewerGroupName, string requestingGroupName, string emailActionTemplate, string fullName, string requestingUser = null)
+        public static string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName, string requestingUser)
         {
-            var requestDate = DateTime.Now.ToString("MM/dd/yyyy");
+            var requestingGroupName = requestingGroup.Name;
+            var requestedGroup = reviewerGroup.Name;
+            var reviewerGroupName = reviewerGroup.Name;
+
+            var requestDate = DateTime.Now.ToShortDateString();
+
             var model = new Dictionary<string, object>
             {
                 ["fullName"] = fullName,
                 ["requestingGroupName"] = requestingGroupName,
                 ["reviewerGroupName"] = reviewerGroupName,
-                ["requestDate"] = requestDate,
                 ["requestingUser"] = requestingUser,
-
+                ["requestedGroup"] = requestedGroup,
+                ["requestDate"] = requestDate
             };
 
             var actionTemplate = Template.Parse(emailActionTemplate);
@@ -94,7 +101,29 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
 
             return action;
         }
-               
+
+        //public static string GenerateActionString(string reviewerGroupName, string requestingGroupName, string emailActionTemplate, string fullName, string requestingUser = null)
+        //{
+        //    var requestDate = DateTime.Now.ToString("MM/dd/yyyy");
+
+        //    var model = new Dictionary<string, object>
+        //    {
+        //        ["fullName"] = fullName,
+        //        ["requestingGroupName"] = requestingGroupName,
+        //        ["reviewerGroupName"] = reviewerGroupName,
+        //        ["requestedGroup"] = reviewerGroupName,
+        //        ["requestDate"] = requestDate,
+        //        ["requestingUser"] = requestingUser,
+
+        //    };
+
+        //    var actionTemplate = Template.Parse(emailActionTemplate);
+
+        //    var action = TemplateHelper.Render(emailActionTemplate, model);
+
+        //    return action;
+        //}
+
 
         public static EmailActionData ParseActionString(string actionString)
         {

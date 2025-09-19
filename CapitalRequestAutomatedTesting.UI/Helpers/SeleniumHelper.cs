@@ -123,13 +123,10 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             {
                 try
                 {
-                    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
-                    var element = wait.Until(drv =>
-                    {
-                        var el = drv.FindElement(By.Id(elementId));
-                        return el.Displayed && el.Enabled ? el : null;
-                    });
+                    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(8));
 
+                    var element = wait.Until(ExpectedConditions.ElementToBeClickable(By.Id(elementId)));
+                                       
                     return new SeleniumStepResult
                     {
                         Success = true,
@@ -483,11 +480,13 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                 try
                 {
                     var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(8));
-                    var dropdown = wait.Until(drv => drv.FindElement(By.Id(dropdownId)));
+                    // Wait for the dropdown to be visible (returns a fresh reference)
+                    var dropdown = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(By.Id(dropdownId)));
 
+                    // Optionally, scroll into view
                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", dropdown);
-                    await Task.Delay(200); // Give layout time to settle after scroll
 
+                    // Now interact with the dropdown
                     var selectElement = new SelectElement(dropdown);
                     selectElement.SelectByText(visibleText);
 

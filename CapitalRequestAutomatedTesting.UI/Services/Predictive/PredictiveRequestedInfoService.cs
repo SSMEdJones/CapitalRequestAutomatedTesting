@@ -162,16 +162,19 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
 
     public async Task<RequestedInfo> UpdateRequestedInfoAsync(vm.Proposal proposal)
     {
-        var requestedInfo = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter
-                {
-                    ProposalId = proposal.Id,
-                    ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId,
-                    RequestingReviewerGroupId = proposal.ReviewerGroupId,
-                    IsOpen = true
-                })
-            ).FirstOrDefault();
+        RequestedInfo requestedInfo = new RequestedInfo();
+        if (proposal.RequestedInfoId != null && proposal.RequestedInfoId > 0)
+        {
+            requestedInfo = _mapper.Map<RequestedInfo>( await _capitalRequestServices.GetRequestedInfo(proposal.RequestedInfoId));
+        }
+        else
+        {
+            requestedInfo = await GetRequestedInfoAsync(proposal);
+        }
 
         requestedInfo.IsOpen = false;
+        requestedInfo.Updated = DateTime.Now;
+        requestedInfo.UpdatedBy = proposal.Reviewer.UserId;
 
         return _mapper.Map< RequestedInfo>(requestedInfo);
     }

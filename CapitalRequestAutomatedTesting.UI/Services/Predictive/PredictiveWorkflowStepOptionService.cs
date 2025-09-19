@@ -184,23 +184,41 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     return;
                 }
 
+                var created = workflowStep.Created;
+                var createdBy = workflowStep.CreatedBy;
+                var optionId = Guid.Empty;
+                if (optionType == Constants.OPTION_TYPE_ADD_INFO)
+                {
+                    var activeOption = proposal.WorkflowStepOptions.Where(w => w.RequestedInfoId == proposal.RequestedInfoId
+                                        && w.OptionName == x.Email)
+                    .FirstOrDefault();
+
+                    optionId = activeOption.OptionID;
+                    created = activeOption.Created;
+                    createdBy = activeOption.CreatedBy;
+
+
+                }
+
+
                 var workflowStepOption = new WorkflowStepOption
                 {
+                    OptionID = optionId,
                     OptionName = x.Email,
                     WorkflowStepID = workflowStep.WorkflowStepID,
                     ReviewerGroupId = reviewerGroupId,
                     OptionType = optionType,
                     RequestedInfoId = requestedInfoId,
-                    Created = workflowStep.Created,
-                    CreatedBy = workflowStep.CreatedBy,
+                    Created = created,
+                    CreatedBy = createdBy,
                     IsComplete = false,
-                    IsTerminate = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? false : true,
+                    IsTerminate = true,
                     Updated = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? null : DateTime.Now,
                     UpdatedBy = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? null : proposal.Reviewer.UserId
 
                 };
 
-               
+
                 workflowStepOptions.Add(workflowStepOption);
 
             });
@@ -445,7 +463,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     proposal.ResponseMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
                 }
                 else
-                { 
+                {
                     //TODO conditional based on scenario actionType                
                     proposal.ResponseMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
                 }
@@ -502,7 +520,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                            ? proposal.AuthorEmail
                            : reviewer.Email) &&
                         x.OptionType == actionType);
-                      
+
 
             var workflowStepOption = workflowStepOptions
                 .Select(x => _mapper.Map<WorkflowStepOption>(x))
@@ -515,63 +533,55 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         {
             var workflowStep = proposal.WorkflowStep;
             var reviewer = proposal.Reviewer;
-            var reviewerGroupId = proposal.ReplyingGroup.Id;
-            
-            var workflowstepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                .Where(x=> x.ReviewerGroupId == reviewerGroupId && 
-                       x.IsTerminate == false &&
+            var reviewerGroupId = proposal.RequestingGroupId;
+
+            var allOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                .Where(x => x.ReviewerGroupId == reviewerGroupId &&
                        x.OptionType == optionType)
                 .ToList();
 
-            var optionId = Guid.Empty;
+            var deduplicated = allOptions
+                .GroupBy(x => new { x.OptionName, x.ReviewerGroupId, x.WorkflowStepID })
+                .Select(g =>
+                    g.OrderBy(x => x.IsTerminate) // false (active) comes before true
+                     .ThenByDescending(x => x.Updated ?? x.Created)
+                     .First()
+                )
+                .ToList();
 
-            var workflowStepOption = workflowstepOptions
-                .Where(x => x.IsTerminate == false &&
-                       x.OptionName == reviewer.Email)
-                 .OrderByDescending(x => x.Created)
-                 .FirstOrDefault();
+            var relevantOptions = deduplicated
+                .Where(x => x.IsTerminate == true)
+                .ToList();
 
-            if (workflowStepOption != null)
-            {
-                optionId = workflowStepOption.OptionID;
-            }
-
-            var workflowTemplate = (await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep?.StepName }))
-                .FirstOrDefault();
-
-            var stepNumber = workflowTemplate?.StepNumber ?? 0;
-
-            //var reviewers = await _capitalRequestServices
-            //    .GetAllReviewers(new ReviewerSearchFilter
-            //    {
-            //        SegmentId = proposal.SegmentId,
-            //        RegionId = proposal.Region,
-            //        ReviewerGroupId = reviewerGroupId,
-            //        StepNumber = stepNumber
-            //    }
-            //    );
+            var workflowstepOptions = relevantOptions
+                .Select(x => _mapper.Map<WorkflowStepOption>(x))
+                .ToList();
 
             workflowstepOptions.ForEach(x =>
             {
-                if (x.OptionID == optionId || x.OptionName == workflowStepOption.OptionName)
-                {
-                    return;
-                }
-                else
-                {
-                    var reviewer = proposal.Reviewer;
-
-                    if (reviewer != null)
-                    {
-                        x.Updated = DateTime.Now;
-                        x.UpdatedBy = reviewer.UserId;
-                        x.IsTerminate = false;
-                    }
-                }
+                x.Updated = DateTime.Now;
+                x.UpdatedBy = reviewer.UserId;
+                x.IsTerminate = false;
 
             });
-            
+
             return workflowstepOptions.Select(x => _mapper.Map<WorkflowStepOption>(x)).ToList();
+
+            //var requestingOptionId = Guid.Empty;
+
+            //var workflowStepOption = deduplicated.FirstOrDefault(x => x.IsTerminate == false);
+
+            //if (workflowStepOption != null)
+            //{
+            //    requestingOptionId = workflowStepOption.OptionID;
+
+            //}
+
+            //var workflowTemplate = (await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep?.StepName }))
+            //    .FirstOrDefault();
+
+            //var stepNumber = workflowTemplate?.StepNumber ?? 0;
+
         }
     }
 

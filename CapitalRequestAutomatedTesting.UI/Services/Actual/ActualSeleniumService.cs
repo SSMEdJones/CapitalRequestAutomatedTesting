@@ -467,6 +467,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 outcome.Expected.Steps.Add(step);
             }
 
+            //TODO calculate success property
             return outcome;
         }
 

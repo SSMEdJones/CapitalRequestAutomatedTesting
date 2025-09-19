@@ -212,24 +212,34 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
 
+            if (detail.RequestedInfoId == 0)
+            {
+                var requestedInfo = (await _capitalRequestServices
+                    .GetAllRequestedInfos(new RequestedInfoSearchFilter { ProposalId = proposal.Id, IsOpen = true }))
+                    .FirstOrDefault();
 
+                detail.RequestedInfoId = requestedInfo.Id;
+
+            }
             //TODO Map
             proposal.RequestedInfoId = detail.RequestedInfoId;
-            proposal.ReviewerGroupId = detail.TargetGroupId;
+            proposal.RequestedInfo = await _capitalRequestServices.GetRequestedInfo(detail.RequestedInfoId);
+
+            proposal.ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId;
+            proposal.RequestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
+
             proposal.ReviewerId = detail.ReviewerId;
-            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestingGroupId = detail.RequestingGroupId;
 
-            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
-
+            
             proposal.ExecutionDurationMinutes = scenarioDetail.ExecutionDurationMinutes;
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                         .Where(x => !x.IsComplete)
                         .FirstOrDefault();
 
             proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
+            Debug.WriteLine($"proposal.RequestedInfo.RequestingReviewerId : {proposal.RequestedInfo.RequestingReviewerId}");
+            var requestingUser = (await _capitalRequestServices.GetReviewer(proposal.RequestedInfo.RequestingReviewerId)).FullName;
 
             if (scenarioId == "SCN001")
             {
@@ -237,6 +247,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                 var optionType = Constants.OPTION_TYPE_VERIFY;
 
+                var requestedInfo = (await _capitalRequestServices
+                .GetAllRequestedInfos(new RequestedInfoSearchFilter { ProposalId = proposal.Id, IsOpen = true }))
+                .FirstOrDefault();
+
+                detail.RequestedInfoId = requestedInfo.Id;
                 actualMethods.Add(
                     new ActualMethod
                     {
@@ -271,8 +286,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     new ActualMethod
                     {
                         ServiceName = "IActualWorkflowStepOptionService",
-                        MethodName = "GetReOpenedOptionsAsync",
-                        Parameters = new List<object> { optionType, proposal },
+                        MethodName = "GetRequestTypeWorkflowStepOptionsAsync",
+                        Parameters = new List<object> { proposal },
                         Operation = CrudOperationType.Update
                     }
                 );
@@ -281,8 +296,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     new ActualMethod
                     {
                         ServiceName = "IActualEmailNotificationService",
-                        MethodName = "GetRequestEmailNotificationsAsync",
-                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION },
+                        MethodName = "GetEmailNotificationsAsync",
+                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION,requestingUser },
                         Operation = CrudOperationType.Insert
                     }
                 );
@@ -292,15 +307,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             {
                 string fileName = null;
                 var fileType = UploadFileType.Attachment;
+                var isOpen = false;
                 var requestedInfoId = detail.RequestedInfoId;
                 var optionType = Constants.OPTION_TYPE_ADD_INFO;
 
-                var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
-                proposal.RequestedInfo = requestedInfo;
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
                 proposal.ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId;
+                proposal.RequestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
 
-                var isOpen = false;
 
                 actualMethods.Add(
                     new ActualMethod
@@ -357,7 +371,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     {
                         ServiceName = "IActualEmailNotificationService",
                         MethodName = "GetEmailNotificationsAsync",
-                        Parameters = new List<object> { proposal, Constants.EMAIL_PROVIDE_MORE_INFORMATION },
+                        Parameters = new List<object> { proposal, Constants.EMAIL_PROVIDE_MORE_INFORMATION, requestingUser },
                         Operation = CrudOperationType.Insert
                     }
                 );
@@ -366,8 +380,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     new ActualMethod
                     {
                         ServiceName = "IActualRequestedInfoService",
-                        MethodName = "GetRequestedInfoAsync",
-                        Parameters = new List<object> { proposal, isOpen },
+                        MethodName = "GetRequestedInfoByIdAsync",
+                        Parameters = new List<object> { proposal},
                         Operation = CrudOperationType.Update
                     }
                 );

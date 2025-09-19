@@ -235,19 +235,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
 
+
             //TODO Map
-            proposal.ReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestedInfoId = detail.RequestedInfoId;
+            proposal.ReviewerGroupId = detail.TargetGroupId;
             proposal.ReviewerId = detail.ReviewerId;
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.RequestingReviewerGroupId = detail.RequestingGroupId;
+            proposal.RequestingGroupId = detail.RequestingGroupId;
+
+            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
 
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                         .Where(x => !x.IsComplete)
                         .FirstOrDefault();
 
-            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
-                        .ToList();
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
 
             if (scenarioId == "SCN001")
             {

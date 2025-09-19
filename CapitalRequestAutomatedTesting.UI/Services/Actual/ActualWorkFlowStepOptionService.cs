@@ -7,12 +7,14 @@ using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.Models;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
+using System.Diagnostics;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 {
     public interface IActualWorkflowStepOptionService
     {
+        Task<List<WorkflowStepOption>> GetRequestTypeWorkflowStepOptionsAsync(vm.Proposal proposal);
         //Task<List<WorkflowStepOption>> GetRequestTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal);
         Task<List<WorkflowStepOption>> GetClosedWorkflowStepOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId);
         Task<List<WorkflowStepOption>> GetReOpenedOptionsAsync(string optionType, vm.Proposal proposal);
@@ -39,20 +41,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         {
             var workflowStep = proposal.WorkflowStep;
 
-            var useRequestedInfoReviewerGroup = requestedInfoId == null ? false : true;
-            if (workflowStep == null)
-            {
-                throw new Exception("No workflow steps found for the given proposal.");
-            }
+            //TODO Verify which reviewer group to use
+            var reviewerGroupId = requestedInfoId == null ? proposal.RequestingGroupId : proposal.ReviewerGroupId;
 
-            // Determine which reviewer group to use
-            var reviewerGroupId = useRequestedInfoReviewerGroup && proposal.RequestedInfo != null
-                ? proposal.RequestedInfo.ReviewerGroupId
-                : proposal.ReviewerGroupId;
-
-            // Get all workflow step options with appropriate filtering
-            var allOptionsQuery = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                .Where(x => x.ReviewerGroupId == reviewerGroupId && x.OptionType == optionType);
+                // Get all workflow step options with appropriate filtering
+            var allOptionsQuery = proposal.WorkflowStepOptions
+                    .Where(x => x.ReviewerGroupId == reviewerGroupId && x.OptionType == optionType);
 
             // Apply additional filters for RequestedInfo mode
             if (requestedInfoId.HasValue)
@@ -76,9 +70,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             var relevantOptions = deduplicated
                 .Where(x => x.Updated.HasValue &&
-                x.IsTerminate && !x.IsComplete ||
-                !x.Updated.HasValue && !x.IsTerminate && !x.IsComplete &&
-                x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
+                    x.IsTerminate && !x.IsComplete ||
+                    !x.Updated.HasValue && !x.IsTerminate && !x.IsComplete &&
+                    x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                 .ToList();
 
             var actual = relevantOptions
@@ -274,20 +268,24 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         public async Task<List<WorkflowStepOption>> GetReOpenedOptionsAsync(string optionType, vm.Proposal proposal)
         {
             // unlock verify rows for requesting group
-            var reviewer = proposal.Reviewer;
-            var reviewerGroupId = reviewer.ReviewerGroupId;
+            var reviewerGroupId = proposal.RequestingGroupId;
+            
+            Debug.WriteLine($"proposal.RequestedInfo.RequestingReviewerId : {proposal.RequestedInfo.RequestingReviewerId}");
 
-            // Identify the current reviewer’s OptionID
-            var currentOptionId = proposal.WorkflowStepOptions
+            var requestingReviewer = await _capitalRequestServices.GetReviewer(proposal.RequestedInfo.RequestingReviewerId);
+
+            // Identify the requesting reviewer’s OptionID
+            var requestingOption = proposal.WorkflowStepOptions
                 .Where(x =>
                     x.ReviewerGroupId == reviewerGroupId &&
                     x.OptionType == optionType &&
                     x.IsTerminate == false &&
-                    x.OptionName?.ToLower() == proposal.Reviewer.Email.ToLower()
+                    x.OptionName?.ToLower() == requestingReviewer.Email.ToLower()
                 )
                 .OrderByDescending(x => x.Created)
-                .Select(x => x.OptionID)
                 .FirstOrDefault();
+
+            var requestingOptionId = requestingOption.OptionID;
 
             // Find all other unlocked options in the same group and step
             var unlockedOptions = proposal.WorkflowStepOptions
@@ -295,7 +293,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     x.OptionType == optionType &&
                     x.ReviewerGroupId == reviewerGroupId &&
                     x.IsTerminate == false &&
-                    x.OptionID != currentOptionId
+                    x.OptionID != requestingOptionId
                 )
                 .Select(x => _mapper.Map<WorkflowStepOption>(x))
                 .ToList();
