@@ -16,6 +16,14 @@
       "files": [
         "dist/jquery.min.js"
       ]
+    },
+    {
+      "library": "@microsoft/signalr@6.0.0",
+      "destination": "wwwroot/lib/signalr/",
+      "files": [
+        "dist/browser/signalr.min.js",
+        "dist/browser/signalr.js"
+      ]
     }
   ]
 }

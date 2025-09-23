@@ -80,56 +80,253 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
         e.preventDefault(); // Prevent default form submission
 
         const actionType = document.getElementById("actionType")?.value;
         if (actionType === "RunSelected") {
-            showSpinner("Running selected scenario...");
+            await runSelectedScenarios(form);
+        }
+    });
+});
 
-            const formData = new FormData(form);
-            formData.append("actionType", actionType);
+// SignalR-related variables and functions
+let connection;
+let connectionId;
 
-            // Use our unified error-handling fetch wrapper
-            fetchJsonOrRenderError("/Scenario/Index", {
-                method: "POST",
-                body: formData
-            })
-                .then(htmlOrJson => {
-                    // If server returned HTML (success), inject it
-                    if (typeof htmlOrJson === "string") {
-                        document.open();
-                        document.write(htmlOrJson);
-                        document.close();
-                    } else {
-                        console.log("Success:", htmlOrJson);
-                        // Optionally handle JSON success
-                    }
-                })
-                .catch(err => {
-                    // We’ll only get here if fetchJsonOrRenderError already
-                    // redirected/replaced the DOM or parsing failed
-                    console.error("RunSelected failed:", err);
-                })
-                .finally(() => {
-                    hideSpinner();
-                });
+// Initialize SignalR connection
+async function initializeSignalR() {
+    connection = new signalR.HubConnectionBuilder()
+        .withUrl("/scenarioProgressHub")
+        .build();
+
+    // Handle progress updates
+    connection.on("UpdateProgress", function (data) {
+        showScenarioProgress(data.current, data.total, data.scenarioName, data.currentStep);
+    });
+
+    // Handle scenario completion
+    connection.on("ScenarioComplete", function (data) {
+        DevLogger.info(`Scenario completed: ${data.scenarioName}`, "✅");
+        // You could show a brief success indicator here
+    });
+
+    // Handle errors
+    connection.on("ScenarioError", function (data) {
+        DevLogger.error(`Scenario failed: ${data.scenarioName}`, data.error);
+        const statusDiv = document.getElementById('status');
+        if (statusDiv) {
+            statusDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>❌ Error in ${data.scenarioName}:</strong><br>
+                    ${data.error}
+                </div>
+            `;
         }
     });
 
-});
+    try {
+        await connection.start();
+        connectionId = connection.connectionId;
+        await connection.invoke("JoinScenarioGroup", connectionId);
+        DevLogger.info("SignalR connected", connectionId);
+    } catch (err) {
+        DevLogger.error("SignalR connection error", err);
+    }
+}
 
+// New function to handle running selected scenarios with progress tracking
+async function runSelectedScenarios(form) {
+    const requestSelect = document.getElementById("RequestId");
+    const requestId = requestSelect?.value;
 
-//document.addEventListener("DOMContentLoaded", () => {
-//    DevLogger.info("DOM loaded, initializing modules", "🌐");
-//    ScenarioBinder.init();
-//    ScenarioInitializer.init();
+    if (!isValidRequestId(requestId)) {
+        alert('⚠️ Please select a valid Request ID before running scenarios.');
+        return;
+    }
 
-//    observer.observe(document.body, {
-//        childList: true,
-//        subtree: true
-//    });
-//});
+    const checkboxes = document.querySelectorAll('input[name="SelectedScenarioIds"]:checked');
+    const statusDiv = document.getElementById('status') || createStatusDiv();
+
+    if (checkboxes.length === 0) {
+        alert('⚠️ Please select at least one scenario to run.');
+        return;
+    }
+
+    // Ensure SignalR is connected
+    if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
+        await initializeSignalR();
+    }
+
+    statusDiv.innerHTML = '';
+    statusDiv.style.display = 'block';
+
+    // Get scenario details for better messaging
+    const selectedScenarios = getSelectedScenarioDetails(checkboxes);
+    const scenarioNames = selectedScenarios.map(s => s.name);
+
+    showScenarioProgress(0, selectedScenarios.length, "System", "Initializing scenarios");
+
+    DevLogger.info(`Starting ${selectedScenarios.length} scenario(s)`, scenarioNames);
+
+    const totalStart = performance.now();
+
+    try {
+        const formData = new FormData(form);
+        formData.append("actionType", "RunSelected");
+        formData.append("connectionId", connectionId); // Pass connection ID
+
+        // Show initial progress
+        updateScenarioProgress(0, selectedScenarios.length, "System", "Starting scenario execution");
+
+        // Submit the form and let the server handle sequential processing
+        const response = await fetch("/Scenario/Index", {
+            method: "POST",
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // Check if response is HTML (redirect) or JSON
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            const result = await response.json();
+            handleJsonResponse(result, statusDiv);
+        } else {
+            // Server returned HTML (likely a redirect), replace current page
+            const html = await response.text();
+            document.open();
+            document.write(html);
+            document.close();
+        }
+
+    } catch (error) {
+        DevLogger.error('Error running scenarios:', error);
+        statusDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>❌ Error running scenarios:</strong><br>
+                ${error.message || 'Unknown error occurred'}
+            </div>
+        `;
+    }
+}
+
+function getSelectedScenarioDetails(checkboxes) {
+    return Array.from(checkboxes).map(checkbox => {
+        const scenarioCard = checkbox.closest('.card, .scenario-item, .form-check');
+        const nameElement = scenarioCard?.querySelector('.scenario-name, .card-title, label');
+        const scenarioName = nameElement?.textContent?.trim() || checkbox.value;
+
+        return {
+            id: checkbox.value,
+            name: scenarioName,
+            element: checkbox
+        };
+    });
+}
+
+function createStatusDiv() {
+    const statusDiv = document.createElement('div');
+    statusDiv.id = 'status';
+    statusDiv.className = 'mt-3';
+
+    const form = document.getElementById('scenarioForm');
+    if (form && form.parentNode) {
+        form.parentNode.insertBefore(statusDiv, form.nextSibling);
+    } else {
+        document.body.appendChild(statusDiv);
+    }
+
+    return statusDiv;
+}
+
+function showScenarioProgress(current, total, scenarioName, currentStep) {
+    const statusDiv = document.getElementById('status') || createStatusDiv();
+    const progressPercent = total > 0 ? Math.round((current / total) * 100) : 0;
+
+    statusDiv.innerHTML = `
+        <div class="progress-container">
+            <div class="alert alert-info">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Processing...</span>
+                    </div>
+                    <strong>🔄 Processing Scenario ${current + 1} of ${total}</strong>
+                </div>
+                <div class="scenario-details">
+                    <strong>Scenario:</strong> ${scenarioName}<br>
+                    <strong>Current Step:</strong> ${currentStep}
+                </div>
+                <div class="progress mt-2" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                         role="progressbar"
+                         style="width: ${progressPercent}%"
+                         aria-valuenow="${current}"
+                         aria-valuemin="0"
+                         aria-valuemax="${total}">
+                        ${progressPercent}%
+                    </div>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle"></i> 
+                    Scenarios are executed sequentially to maintain dependencies
+                </small>
+            </div>
+        </div>
+    `;
+}
+
+function updateScenarioProgress(current, total, scenarioName, currentStep) {
+    showScenarioProgress(current, total, scenarioName, currentStep);
+    DevLogger.info(`Scenario Progress: ${current + 1}/${total}`, `${scenarioName} - ${currentStep}`);
+}
+
+function handleJsonResponse(result, statusDiv) {
+    if (result.success) {
+        const totalElapsed = result.executionTime || 0;
+        statusDiv.innerHTML = `
+            <div class="alert alert-success">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>✅ All scenarios completed successfully!</strong>
+                </div>
+                <div class="mt-2">
+                    <strong>Results:</strong>
+                    <ul class="mb-0 mt-1">
+                        ${result.scenarios?.map(s => `
+                            <li>${s.name}: ${s.success ? '✅ Success' : '❌ Failed'}</li>
+                        `).join('') || ''}
+                    </ul>
+                </div>
+                ${totalElapsed > 0 ? `
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> 
+                            Total execution time: ${(totalElapsed / 1000).toFixed(2)} seconds
+                        </small>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    } else {
+        statusDiv.innerHTML = `
+            <div class="alert alert-warning">
+                <strong>⚠️ Some scenarios completed with issues:</strong>
+                <ul class="mb-0 mt-1">
+                    ${result.scenarios?.map(s => `
+                        <li>${s.name}: ${s.success ? '✅ Success' : `❌ ${s.error || 'Failed'}`}</li>
+                    `).join('') || ''}
+                </ul>
+            </div>
+        `;
+    }
+}
+
+function isValidRequestId(id) {
+    return id && id !== "" && id !== "0" && id !== 0;
+}
 
 const observer = new MutationObserver((mutations, obs) => {
     const requestSelect = document.getElementById("RequestId");
@@ -197,13 +394,13 @@ document.addEventListener('change', async function (e) {
 
             partial.innerHTML = html;
             partial.style.display = 'block';
-            
+
             DevLogger.info("Partial view injected successfully", targetId);
             cancelDelayedLoading();
 
             // Bind events to the newly loaded partial
             ScenarioBinder.bindScenarioPartial(partial, proposalId);
-            
+
         } catch (err) {
             DevLogger.error("Error loading scenario partial", err);
             cancelDelayedLoading();
@@ -289,3 +486,13 @@ function hideSpinner() {
         DevLogger.info("Spinner hidden", "✓");
     }
 }
+
+// Initialize SignalR when DOM loads
+document.addEventListener("DOMContentLoaded", async () => {
+    DevLogger.info("DOM loaded, initializing modules", "🌐");
+    ScenarioBinder.init();
+    ScenarioInitializer.init();
+    
+    // Initialize SignalR
+    await initializeSignalR();
+});

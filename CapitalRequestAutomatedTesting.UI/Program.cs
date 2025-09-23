@@ -1,4 +1,5 @@
 using CapitalRequestAutomatedTesting.UI;
+using CapitalRequestAutomatedTesting.UI.Hubs;
 using Infrastructure.Middleware;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.StaticFiles;
@@ -71,6 +72,7 @@ try
     builder.Configuration.GetConnectionString($"CapitalRequest_{sqlEnv}");
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddHttpClient();
+    builder.Services.AddSignalR();
 
     var app = builder.Build();
 
@@ -119,7 +121,7 @@ try
     app.MapControllerRoute(
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}");
-
+    app.MapHub<ScenarioProgressHub>("/scenarioProgressHub");
 
     foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
     {

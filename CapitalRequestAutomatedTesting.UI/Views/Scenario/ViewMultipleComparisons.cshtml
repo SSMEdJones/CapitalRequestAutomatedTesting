@@ -1,0 +1,53 @@
+﻿@using CapitalRequestAutomatedTesting.UI.ScenarioFramework
+@using CapitalRequestAutomatedTesting.UI.Services
+@using CapitalRequestAutomatedTesting.UI.Enums
+
+@model List<ScenarioComparisonResult>
+
+<style media="print">
+    .no-print {
+        display: none;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+
+    .section {
+        page-break-after: always;
+    }
+
+    .table-warning td {
+        background-color: #ff6961;
+    }
+
+    .table-warning td {
+        background-color: #ff6961;
+    }
+</style>
+
+
+<style>
+    .table-warning td {
+        background-color: #ff6961;
+    }
+</style>
+@foreach (var scenario in Model)
+{
+    @Html.Partial("_SelectedProperties", scenario.SelectedProperties)
+    @Html.Partial("_SeleniumOutcomeComparison", scenario)
+    @Html.Partial("_DataComparison", scenario)
+
+    <div id="scenario-action-bar">
+        <a href="/Scenario/PrintScenarioPdf?id=@scenario.Id"
+           target="_blank"
+           title="Print PDF Report">
+            🖨️
+        </a>
+        <button disabled title="Save (Coming Soon)">💾</button>
+    </div>
+}
+
+
+
+
