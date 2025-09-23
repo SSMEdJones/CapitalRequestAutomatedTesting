@@ -324,46 +324,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     Retryable = true
                 });
 
-                //actualSteps.Add(new SeleniumScenarioStep
-                //{
-                //    StepNumber = ++stepNumber,
-                //    Description = $"Enter returned information press submit and verify success message",
-                //    Action = new SeleniumDsl()
-                //        .BeginWith(Execute.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries))
-                //        .Then(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
-                //        .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
-                //        .Build("Entered requested information and clicked Submit button"),
-                //    Retryable = true
-
-                //});
-                //actualSteps.Add(new SeleniumScenarioStep
-                //{
-                //    StepNumber = ++stepNumber,
-                //    Description = $"Click '{buttonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
-                //    Action = new SeleniumDsl()
-                //        .BeginWith(Execute.ClickButtonInRow(workflowPortion, buttonText))
-                //        .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
-                //        .Build("Clicked Request and confirmed page transition")
-
-                //});
-
-                //.Then(Execute.RobustClickById(workflowButtonId, workflowButtonText, maxRetries))
-                //BeginWith(Execute.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries);
-                //actualSteps.Add(new SeleniumScenarioStep
-                //{
-                //    StepNumber = ++stepNumber,
-                //    Description = $"Enter returned information press submit and verify success message",
-                //    Action = new SeleniumDsl()
-                //        .BeginWith(Execute.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries))
-                //        .Then(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
-                //        .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
-                //        .Build("Entered requested information and clicked Submit button"),
-                //    Retryable = true
-
-                //});
-
-
-
             }
 
             return actualSteps;
@@ -466,8 +426,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                 outcome.Expected.Steps.Add(step);
             }
-
-            //TODO calculate success property
+            
             return outcome;
         }
 

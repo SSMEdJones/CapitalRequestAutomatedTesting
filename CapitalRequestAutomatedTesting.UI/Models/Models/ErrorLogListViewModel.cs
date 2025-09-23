@@ -1,4 +1,4 @@
-namespace CapitalRequestAutomatedTesting.UI.Models
+namespace CapitalRequestAutomatedTesting.UI.Models.Models
 {
     public class ErrorLogListViewModel
     {

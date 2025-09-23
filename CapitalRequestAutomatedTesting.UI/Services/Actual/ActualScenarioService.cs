@@ -6,11 +6,8 @@ using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
-using SSMWorkflow.API.DataAccess.Models;
-using System.Diagnostics;
 using System.Reflection;
 using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
-using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 {
@@ -23,38 +20,42 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
     {
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        private readonly IWorkflowControllerService _workflowControllerService;
-        private readonly IActualRequestedInfoService _actualRequestedInfoService;
-        private IActualWorkflowStepResponderService _actualWorkflowStepResponderService;
-        private IActualWorkflowStepOptionService _actualWorkflowStepOptionService;
-        private IActualEmailNotificationService _actualEmailNotificationService;
-        private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IFormDataContext _formDataContext;
+        private readonly IWebHostEnvironment _environment;
         private readonly IMapper _mapper;
+
+        //private readonly IWorkflowControllerService _workflowControllerService;
+        //private readonly IActualRequestedInfoService _actualRequestedInfoService;
+        //private IActualWorkflowStepResponderService _actualWorkflowStepResponderService;
+        //private IActualWorkflowStepOptionService _actualWorkflowStepOptionService;
+        //private IActualEmailNotificationService _actualEmailNotificationService;
+        //private readonly IUserContextService _userContextService;
 
         public ActualScenarioService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
-            IWorkflowControllerService workflowControllerService,
-            IActualRequestedInfoService actualRequestedInfoService,
-            IActualWorkflowStepResponderService actualWorkflowStepResponderService,
-            IActualWorkflowStepOptionService actualWorkflowStepOptionService,
-            IActualEmailNotificationService actualEmailNotificationService,
-            IUserContextService userContextService,
+            //IWorkflowControllerService workflowControllerService,
+            //IActualRequestedInfoService actualRequestedInfoService,
+            //IActualWorkflowStepResponderService actualWorkflowStepResponderService,
+            //IActualWorkflowStepOptionService actualWorkflowStepOptionService,
+            //IActualEmailNotificationService actualEmailNotificationService,
+            //IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
             IFormDataContext formDataContext,
+            IWebHostEnvironment environment,
             IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
-            _workflowControllerService = workflowControllerService;
-            _actualRequestedInfoService = actualRequestedInfoService;
-            _actualWorkflowStepResponderService = actualWorkflowStepResponderService;
-            _actualWorkflowStepOptionService = actualWorkflowStepOptionService;
-            _actualEmailNotificationService = actualEmailNotificationService;
-            _userContextService = userContextService;
+            //_workflowControllerService = workflowControllerService;
+            //_actualRequestedInfoService = actualRequestedInfoService;
+            //_actualWorkflowStepResponderService = actualWorkflowStepResponderService;
+            //_actualWorkflowStepOptionService = actualWorkflowStepOptionService;
+            //_actualEmailNotificationService = actualEmailNotificationService;
+            //_userContextService = userContextService;
             _scopeFactory = scopeFactory;
             _formDataContext = formDataContext;
+            _environment = environment;
             _mapper = mapper;
 
         }
@@ -71,17 +72,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
-
-
-            //if (scenarioId == "SCN001")
-            //{
-            //    var methods = await GetScenarioMethodsAsync(scenarioDetail);
-            //    scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
-            //}
-
             var methods = await GetScenarioMethodsAsync(scenarioDetail);
-            scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
 
+            scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
             scenarioDataViewModel.ScenarioId = scenarioId;
 
             return scenarioDataViewModel;
@@ -211,35 +204,24 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-
-            if (detail.RequestedInfoId == 0)
-            {
-                var requestedInfo = (await _capitalRequestServices
-                    .GetAllRequestedInfos(new RequestedInfoSearchFilter { ProposalId = proposal.Id, IsOpen = true }))
-                    .FirstOrDefault();
-
-                detail.RequestedInfoId = requestedInfo.Id;
-
-            }
-            //TODO Map
-            proposal.RequestedInfoId = detail.RequestedInfoId;
-            proposal.RequestedInfo = await _capitalRequestServices.GetRequestedInfo(detail.RequestedInfoId);
-
-            proposal.ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId;
-            proposal.RequestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
-
             proposal.ReviewerId = detail.ReviewerId;
 
             proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
-            
+
             proposal.ExecutionDurationMinutes = scenarioDetail.ExecutionDurationMinutes;
+
+            // Only add 5 minutes in development mode 
+            if (_environment.IsDevelopment())
+            {
+                //allows for debugging time
+                proposal.ExecutionDurationMinutes += 5;
+            }
+
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                         .Where(x => !x.IsComplete)
                         .FirstOrDefault();
 
             proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
-            Debug.WriteLine($"proposal.RequestedInfo.RequestingReviewerId : {proposal.RequestedInfo.RequestingReviewerId}");
-            var requestingUser = (await _capitalRequestServices.GetReviewer(proposal.RequestedInfo.RequestingReviewerId)).FullName;
 
             if (scenarioId == "SCN001")
             {
@@ -247,11 +229,25 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                 var optionType = Constants.OPTION_TYPE_VERIFY;
 
-                var requestedInfo = (await _capitalRequestServices
-                .GetAllRequestedInfos(new RequestedInfoSearchFilter { ProposalId = proposal.Id, IsOpen = true }))
+                proposal.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestingGroupId = detail.RequestingGroupId;
+
+                var filter = new RequestedInfoSearchFilter
+                {
+                    ProposalId = proposal.Id,
+                    RequestingReviewerGroupId = proposal.RequestingGroupId,
+                    ReviewerGroupId = proposal.ReviewerGroupId,
+                    IsOpen = isOpen
+                };
+
+                proposal.RequestedInfo = (await _capitalRequestServices
+                .GetAllRequestedInfos(filter))
                 .FirstOrDefault();
 
-                detail.RequestedInfoId = requestedInfo.Id;
+                detail.RequestedInfoId = proposal.RequestedInfo.Id;
+
+                var requestingUser = (await _capitalRequestServices.GetReviewer(proposal.RequestedInfo.RequestingReviewerId)).FullName;
+
                 actualMethods.Add(
                     new ActualMethod
                     {
@@ -297,7 +293,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     {
                         ServiceName = "IActualEmailNotificationService",
                         MethodName = "GetEmailNotificationsAsync",
-                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION,requestingUser },
+                        Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, requestingUser },
                         Operation = CrudOperationType.Insert
                     }
                 );
@@ -311,10 +307,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 var requestedInfoId = detail.RequestedInfoId;
                 var optionType = Constants.OPTION_TYPE_ADD_INFO;
 
+                proposal.RequestedInfo = await _capitalRequestServices.GetRequestedInfo(detail.RequestedInfoId);
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
                 proposal.ReviewerGroupId = proposal.RequestedInfo.ReviewerGroupId;
                 proposal.RequestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
 
+                var requestingUser = (await _capitalRequestServices.GetReviewer(proposal.RequestedInfo.RequestingReviewerId)).FullName;
 
                 actualMethods.Add(
                     new ActualMethod
@@ -381,7 +379,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     {
                         ServiceName = "IActualRequestedInfoService",
                         MethodName = "GetRequestedInfoByIdAsync",
-                        Parameters = new List<object> { proposal},
+                        Parameters = new List<object> { proposal },
                         Operation = CrudOperationType.Update
                     }
                 );

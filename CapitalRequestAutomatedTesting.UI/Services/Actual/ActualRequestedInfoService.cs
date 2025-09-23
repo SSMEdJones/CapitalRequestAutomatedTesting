@@ -28,16 +28,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             Debug.WriteLine($"In GetRequestedInfoAsync {Environment.NewLine} ProposalId: {proposal.Id} " +
                 $"{ Environment.NewLine} ReviewerGroupId: {proposal.ReviewerGroupId} " +
-                $"{Environment.NewLine} RequestingReviewerGroupId: {proposal.RequestingReviewerGroupId}");
+                $"{Environment.NewLine} RequestingReviewerGroupId: {proposal.RequestingGroupId}" + 
+                $"{Environment.NewLine} IsOpen: {isOpen}" );
 
             var requestedInfo = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter
             {
                 ProposalId = proposal.Id,
                 ReviewerGroupId = proposal.ReviewerGroupId,
-                RequestingReviewerGroupId = proposal.RequestingReviewerGroupId,
+                RequestingReviewerGroupId = proposal.RequestingGroupId,
                 IsOpen = isOpen
             }))
             .FirstOrDefault();
+
+            if (requestedInfo == null)
+            {
+                requestedInfo = new vm.RequestedInfo();
+            }
 
             return _mapper.Map<RequestedInfo>(requestedInfo);
         }

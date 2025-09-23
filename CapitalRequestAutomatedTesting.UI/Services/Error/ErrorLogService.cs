@@ -2,7 +2,7 @@ using Infrastructure.Middleware;
 using Microsoft.Data.SqlClient;
 using System.Data;
 
-namespace CapitalRequestAutomatedTesting.UI.Services
+namespace CapitalRequestAutomatedTesting.UI.Services.Error
 {
     public interface IErrorLogService
     {

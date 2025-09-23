@@ -15,15 +15,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
     public class ActualWorkflowStepResponderService : IActualWorkflowStepResponderService
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        //private readonly IUserContextService _userContextService;
         private IMapper _mapper;
 
         public ActualWorkflowStepResponderService(ISSMWorkflowServices ssmWorkflowServices,
-            //IUserContextService userContextService, 
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
-            //_userContextService = userContextService;
             _mapper = mapper;
         }
 

@@ -8,7 +8,6 @@ using CapitalRequestAutomatedTesting.UI.Services.Original;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using DinkToPdf;
 using Infrastructure.ApiDiagnostics;
-using Infrastructure.Utilities.Xml;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft.Json;
@@ -325,14 +324,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
                 scenario.OriginalData = await _originalScenarioService.GenerateScenarioDataAsync(scenario);
             }
-
-            //todo remove
-            //scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
-            //stopwatch.Stop();
-            //scenario.PredictedSeleniumOutcome.Success = false;
-
-            //return scenario;
-
 
             // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
             scenario.StopWatch = Stopwatch.StartNew();
