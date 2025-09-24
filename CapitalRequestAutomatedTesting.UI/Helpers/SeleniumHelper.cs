@@ -908,6 +908,38 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             return null;
         }
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> UploadFileById(string inputId, string filePath, string description)
+        {
+            return async driver =>
+            {
+                try
+                {
+                    var input = driver.FindElement(By.Id(inputId));
+                    input.SendKeys(filePath);
+                    return SeleniumStepResult.Pass($"Uploaded file '{filePath}' to '{description}'");
+                }
+                catch (Exception ex)
+                {
+                    return SeleniumStepResult.Fail($"Failed to upload file to '{description}': {ex.Message}");
+                }
+            };
+        }
+
+        public static Func<IWebDriver, Task<SeleniumStepResult>> RunJavaScript(string script, string description)
+        {
+            return async driver =>
+            {
+                try
+                {
+                    ((IJavaScriptExecutor)driver).ExecuteScript(script);
+                    return SeleniumStepResult.Pass($"Executed JavaScript for '{description}'");
+                }
+                catch (Exception ex)
+                {
+                    return SeleniumStepResult.Fail($"JavaScript execution failed for '{description}': {ex.Message}");
+                }
+            };
+        }
 
 
         //public static Func<IWebDriver, SeleniumStepResult> NoRequestsMessage()

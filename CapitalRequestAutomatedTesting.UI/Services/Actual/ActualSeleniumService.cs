@@ -21,49 +21,52 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
     public class ActualSeleniumService : IActualSeleniumService
     {
         private readonly ICapitalRequestServices _capitalRequestServices;
-        private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly IWorkflowControllerService _workflowControllerService;
-        private readonly IActualRequestedInfoService _actualRequestedInfoService;
-        private readonly IActualWorkflowStepResponderService _actualWorkflowStepResponderService;
-        private readonly IActualWorkflowStepOptionService _actualWorkflowStepOptionService;
-        private readonly IActualEmailNotificationService _actualEmailNotificationService;
         private readonly IActualDashboardService _actualDashboardService;
-        private readonly IUserContextService _userContextService;
-        private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IRollbackService _rollbackService;
-        private readonly IFormDataContext _formDataContext;
         private readonly ILogger<ActualSeleniumService> _logger;
         private readonly IMapper _mapper;
 
+        //private readonly ISSMWorkflowServices _ssmWorkflowServices;
+        //private readonly IActualRequestedInfoService _actualRequestedInfoService;
+        //private readonly IActualWorkflowStepResponderService _actualWorkflowStepResponderService;
+        //private readonly IActualWorkflowStepOptionService _actualWorkflowStepOptionService;
+        //private readonly IActualEmailNotificationService _actualEmailNotificationService;
+        //private readonly IUserContextService _userContextService;
+        //private readonly IServiceScopeFactory _scopeFactory;
+        //private readonly IRollbackService _rollbackService;
+        //private readonly IFormDataContext _formDataContext;
+
         public ActualSeleniumService(ILogger<ActualSeleniumService> logger,
             ICapitalRequestServices capitalRequestServices,
-            ISSMWorkflowServices ssmWorkflowServices,
             IWorkflowControllerService workflowControllerService,
-            IActualRequestedInfoService actualRequestedInfoService,
-            IActualWorkflowStepResponderService actualWorkflowStepResponderService,
-            IActualWorkflowStepOptionService actualWorkflowStepOptionService,
-            IActualEmailNotificationService actualEmailNotificationService,
             IActualDashboardService actualDashboardService,
-            IUserContextService userContextService,
-            IServiceScopeFactory scopeFactory,
-            IRollbackService rollbackService,
-            IFormDataContext formDataContext,
             IMapper mapper)
+            //ISSMWorkflowServices ssmWorkflowServices,
+            //IActualRequestedInfoService actualRequestedInfoService,
+            //IActualWorkflowStepResponderService actualWorkflowStepResponderService,
+            //IActualWorkflowStepOptionService actualWorkflowStepOptionService,
+            //IActualEmailNotificationService actualEmailNotificationService,
+            //IUserContextService userContextService,
+            //IServiceScopeFactory scopeFactory,
+            //IRollbackService rollbackService,
+            //IFormDataContext formDataContext,
+            //)
         {
             _logger = logger;
             _capitalRequestServices = capitalRequestServices;
-            _ssmWorkflowServices = ssmWorkflowServices;
             _workflowControllerService = workflowControllerService;
-            _actualRequestedInfoService = actualRequestedInfoService;
-            _actualWorkflowStepResponderService = actualWorkflowStepResponderService;
-            _actualWorkflowStepOptionService = actualWorkflowStepOptionService;
-            _actualEmailNotificationService = actualEmailNotificationService;
             _actualDashboardService = actualDashboardService;
-            _userContextService = userContextService;
-            _scopeFactory = scopeFactory;
-            _rollbackService = rollbackService;
-            _formDataContext = formDataContext;
             _mapper = mapper;
+            
+            //_ssmWorkflowServices = ssmWorkflowServices;
+            //_actualRequestedInfoService = actualRequestedInfoService;
+            //_actualWorkflowStepResponderService = actualWorkflowStepResponderService;
+            //_actualWorkflowStepOptionService = actualWorkflowStepOptionService;
+            //_actualEmailNotificationService = actualEmailNotificationService;
+            //_userContextService = userContextService;
+            //_scopeFactory = scopeFactory;
+            //_rollbackService = rollbackService;
+            //_formDataContext = formDataContext;
         }
 
         public async Task<SeleniumScenarioOutcome> GenerateSeleniumOutcomeAsync(ScenarioDetailsViewModel scenarioDetail)
@@ -179,7 +182,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 var requestButtonId = "btnRequestMoreInfo";
                 var targetGroup = await _capitalRequestServices.GetReviewerGroup(detail.TargetGroupId);
 
-
                 actualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = ++stepNumber,
@@ -263,6 +265,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 workflowPortion = $"{replyingGroup.StepNumber} -{replyingGroup.Name}";
                 maxRetries = 3;
 
+                scenarioDetail.FileUploadPaths = scenarioDetail.AttachmentFiles?
+                    .Select(file =>
+                    {
+                        var tempPath = Path.Combine(Path.GetTempPath(), file.FileName);
+                        using (var stream = new FileStream(tempPath, FileMode.Create))
+                        {
+                            file.CopyTo(stream);
+                        }
+                        return tempPath;
+                    })
+                    .ToList();
 
                 actualSteps.Add(new SeleniumScenarioStep
                 {
@@ -290,6 +303,32 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                 });
 
+                if (scenarioDetail.RequiresFileUpload)
+                {
+                    // Step 1: Reveal the hidden file input
+                    actualSteps.Add(new SeleniumScenarioStep
+                    {
+                        StepNumber = ++stepNumber,
+                        Description = "Make file input visible",
+                        Action = new SeleniumDsl()
+                            .BeginWith(Execute.RunJavaScript("document.getElementById('btnFilePicker').style.display = 'block';", "Reveal hidden file input"))
+                            .Build("File input revealed")
+                    });
+
+                    // Step 2: Upload each file one at a time
+                    foreach (var filePath in scenarioDetail.FileUploadPaths)
+                    {
+                        actualSteps.Add(new SeleniumScenarioStep
+                        {
+                            StepNumber = ++stepNumber,
+                            Description = $"Upload file: {Path.GetFileName(filePath)}",
+                            Action = new SeleniumDsl()
+                                .BeginWith(Execute.UploadFileById("btnFilePicker", filePath, "File Picker"))
+                                .Build($"Appended {Path.GetFileName(filePath)} to upload list")
+                        });
+                    }
+                }
+
                 actualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = ++stepNumber,
@@ -302,7 +341,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     .Build("Entered requested information and clicked Submit button")
 
                 });
-
 
                 var conditionalDashboardSteps = new SeleniumDsl()
                     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
@@ -426,7 +464,24 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                 outcome.Expected.Steps.Add(step);
             }
-            
+
+            foreach (var filePath in scenarioDetail.FileUploadPaths)
+            {
+                try
+                {
+                    if (File.Exists(filePath))
+                    {
+                        File.Delete(filePath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Optional: log the error or add to test result
+                    Console.WriteLine($"Failed to delete temp file: {filePath}. Error: {ex.Message}");
+                }
+            }
+
+
             return outcome;
         }
 

@@ -56,6 +56,13 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [Required(ErrorMessage = "Returned Information is required.")]
         public string ReturnedInformation { get; set; } = string.Empty;
 
+        [ValidateNever]
+        public List<string> FileUploadPaths { get; set; } = new();
+
+        public bool RequiresFileUpload => FileUploadPaths?.Any() == true;
+
+        public List<IFormFile>? AttachmentFiles { get; set; }
+
         public string Message { get; set; } = string.Empty;
 
         [IgnoreForLogging]

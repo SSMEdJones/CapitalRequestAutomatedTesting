@@ -1,5 +1,8 @@
 ﻿using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using CapitalRequestAutomatedTesting.UI.Helpers;
+using Infrastructure.ApiDiagnostics;
+using Infrastructure.Utilities.Xml;
 using Newtonsoft.Json;
 using System.Collections;
 using System.Diagnostics;
@@ -13,6 +16,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
     }
     public class ScenarioComparer : IScenarioComparer
     {
+        private readonly ILogger<ScenarioComparer> _logger;
+        private readonly IFormDataContext _formDataContext;
+
+        public ScenarioComparer(ILogger<ScenarioComparer> logger, IFormDataContext formDataContext)
+        {
+            _logger = logger;
+            _formDataContext = formDataContext;
+        }
+
         public ScenarioComparisonResult CompareData(ScenarioDataViewModel predictiveData, ScenarioDataViewModel actualData)
         {
             var result = new ScenarioComparisonResult();
@@ -24,11 +36,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             result.TablesOnlyInActual = actualTableNames.Except(predictiveTableNames).ToList();
 
             var sharedTables = predictiveTableNames.Intersect(actualTableNames);
+            var comparisonData = new Dictionary<string, object>();
+
             foreach (var tableName in sharedTables)
             {
                 var tableA = predictiveData.Tables[tableName];
                 var tableB = actualData.Tables[tableName];
-
 
                 var tableDiff = new TableDifference
                 {
@@ -59,7 +72,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
                             {
                                 var itemType = type.GetGenericArguments()[0];
-                                LogRowKeyDiagnostics(tableName, itemType); // Add this line
+                                LogRowKeyDiagnostics(tableName, itemType);
                                 var listType = typeof(List<>).MakeGenericType(itemType);
 
                                 var predictiveList = (IEnumerable)JsonConvert.DeserializeObject(predictiveJson, listType);
@@ -70,7 +83,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                     var rowKeyProperties = itemType
                                         .GetProperties()
                                         .Where(p => Attribute.IsDefined(p, typeof(RowKeyAttribute)))
-                                        .OrderBy(p => p.Name) // Ensure consistent ordering of key parts
+                                        .OrderBy(p => p.Name)
                                         .ToArray();
 
                                     var keyParts = rowKeyProperties
@@ -84,37 +97,58 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
                                 var seenRowKeys = new HashSet<string>();
                                 var duplicateRowKeys = new List<string>();
+                                var duplicateDetails = new List<object>();
 
+                                // Process predictive list and log duplicate values
                                 foreach (var obj in predictiveList.Cast<object>())
                                 {
                                     var key = GetRowKey(obj);
                                     if (!seenRowKeys.Add(key))
                                     {
                                         duplicateRowKeys.Add(key);
+                                        duplicateDetails.Add(obj);
+
+                                        // Log full values of duplicated keys similar to other services
+                                        var fullValueJson = JsonConvert.SerializeObject(obj, Formatting.Indented);
                                         Debug.WriteLine($"[DUPLICATE] Predictive RowKey: {key}");
+                                        Debug.WriteLine($"[DUPLICATE] Full Predictive Value: {fullValueJson}");
+                                        _logger.LogWarning("Duplicate predictive row key found in table {TableName}, operation {Operation}: {RowKey}. Full value: {FullValue}",
+                                            tableName, opType, key, fullValueJson);
                                     }
                                 }
 
+                                // Process actual list and log duplicate values
                                 foreach (var obj in actualList.Cast<object>())
                                 {
                                     var key = GetRowKey(obj);
                                     if (!seenRowKeys.Add(key))
                                     {
                                         duplicateRowKeys.Add(key);
+                                        duplicateDetails.Add(obj);
+
+                                        // Log full values of duplicated keys
+                                        var fullValueJson = JsonConvert.SerializeObject(obj, Formatting.Indented);
                                         Debug.WriteLine($"[DUPLICATE] Actual RowKey: {key}");
+                                        Debug.WriteLine($"[DUPLICATE] Full Actual Value: {fullValueJson}");
+                                        _logger.LogWarning("Duplicate actual row key found in table {TableName}, operation {Operation}: {RowKey}. Full value: {FullValue}",
+                                            tableName, opType, key, fullValueJson);
                                     }
                                 }
 
-                                // Optionally, log all duplicates at once
+                                // Store comparison data for FormData replacement
                                 if (duplicateRowKeys.Any())
                                 {
                                     Debug.WriteLine($"Duplicate RowKeys detected in table '{tableName}', operation '{opType}': {string.Join(", ", duplicateRowKeys)}");
+
+                                    // Add comparison data for later FormData replacement
+                                    comparisonData[$"DuplicateKeys.{tableName}.{opType}"] = string.Join(", ", duplicateRowKeys);
+                                    comparisonData[$"DuplicateDetails.{tableName}.{opType}"] = duplicateDetails;
+                                    comparisonData[$"DuplicateCount.{tableName}.{opType}"] = duplicateRowKeys.Count;
                                 }
 
                                 var dictA = predictiveList.Cast<object>().ToDictionary(GetRowKey);
                                 var dictB = actualList.Cast<object>().ToDictionary(GetRowKey);
 
-                                // Replacement starts here
                                 var allKeys = dictA.Keys.Union(dictB.Keys);
                                 var orderedKeys = allKeys.OrderBy(k => GetSortableRowKey(k, itemType));
 
@@ -131,8 +165,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                         RowKey = key
                                     });
                                 }
-                                // Replacement ends here
-
                             }
                             else
                             {
@@ -162,12 +194,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                 });
                             }
                         }
-                       
                     }
-                    
-
                 }
-
 
                 // Existing logic
                 var recordsOnlyInA = tableA.Records.Except(tableB.Records, new RecordEntryComparer()).ToList();
@@ -185,11 +213,67 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             result.PredictiveTables = predictiveData.Tables;
             result.ActualTables = actualData.Tables;
 
+            // Add comparison summary data
+            comparisonData["Comparison.PredictiveTableCount"] = predictiveTableNames.Count;
+            comparisonData["Comparison.ActualTableCount"] = actualTableNames.Count;
+            comparisonData["Comparison.SharedTableCount"] = sharedTables.Count();
+            comparisonData["Comparison.TablesOnlyInPredictive"] = result.TablesOnlyInPredictive;
+            comparisonData["Comparison.TablesOnlyInActual"] = result.TablesOnlyInActual;
+            comparisonData["Comparison.DifferingTablesCount"] = result.DifferingTables.Count;
+
+            // Clear and replace FormData and MethodContext
+            ClearAndReplaceFormData(comparisonData);
+
             LogStructure(predictiveData.Tables, $"Predictive Record ");
             LogStructure(actualData.Tables, $"Actual Record ");
             LogStructure(result.DifferingTables, $"Differing Tables Record ");
 
             return result;
+        }
+
+        /// <summary>
+        /// Clears the current FormData and MethodContext, then replaces with comparison data
+        /// </summary>
+        private void ClearAndReplaceFormData(Dictionary<string, object> comparisonData)
+        {
+            try
+            {
+                // Log current context before clearing
+                var currentInvocationContext = _formDataContext.GetInvocationContext();
+                var currentFormData = _formDataContext.Get();
+
+                _logger.LogInformation("Clearing FormData and MethodContext. Previous context: {PreviousContext}, Previous FormData length: {FormDataLength}",
+                    JsonConvert.SerializeObject(currentInvocationContext),
+                    currentFormData?.Length ?? 0);
+
+                // Set new invocation context for comparison
+                _formDataContext.SetInvocationContext(new MethodInvocationContext
+                {
+                    ServiceName = "ScenarioComparer",
+                    MethodName = "CompareData",
+                    Parameters = new List<object> { "Comparison completed with duplicate key analysis" }
+                });
+
+                // Convert comparison data to labeled dictionary for XML building with string values
+                var labeledComparisonData = comparisonData.ToDictionary(
+                    kvp => $"Comparison.{kvp.Key}",
+                    kvp => ConvertToString(kvp.Value));
+
+                // Build new FormData XML with comparison data
+                var newFormDataXml = FormDataXmlBuilder.Build(labeledComparisonData);
+                _formDataContext.Set(newFormDataXml);
+
+                _logger.LogInformation("FormData and MethodContext replaced with comparison data. New FormData length: {NewFormDataLength}",
+                    newFormDataXml?.Length ?? 0);
+
+                Debug.WriteLine("=== FormData Replacement Complete ===");
+                Debug.WriteLine($"New FormData XML Preview: {newFormDataXml?.Substring(0, Math.Min(200, newFormDataXml.Length))}...");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error clearing and replacing FormData with comparison data");
+                // Don't throw - this is supplementary functionality
+            }
         }
 
         public static List<FieldDifference> CompareFields(
@@ -254,9 +338,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return differences;
         }
 
-
-
-
         public static void LogStructure(object obj, string label = "Object")
         {
             var formatted = JsonConvert.SerializeObject(obj, Formatting.Indented);
@@ -291,8 +372,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return stepComparisons;
         }
 
-
-
         private static string GetSortableRowKey(string rowKey, Type itemType)
         {
             var parts = rowKey.Split('|');
@@ -308,7 +387,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 var part = parts[i];
                 var property = rowKeyProperties[i];
-                
+
                 // Special handling for different types
                 if (property.PropertyType == typeof(int) || property.PropertyType == typeof(int?))
                 {
@@ -326,7 +405,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     sortableParts.Add(part);
                 }
             }
-            
+
             return string.Join("|", sortableParts);
         }
 
@@ -341,12 +420,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             Debug.WriteLine($"=== RowKey Diagnostics for {tableName} ===");
             Debug.WriteLine($"Item Type: {itemType.Name}");
             Debug.WriteLine($"RowKey Properties: {string.Join(", ", rowKeyProperties.Select(p => $"{p.Name} ({p.PropertyType.Name})"))}");
-            
+
             if (!rowKeyProperties.Any())
             {
                 Debug.WriteLine("⚠️ WARNING: No properties marked with [RowKey] attribute!");
             }
         }
-    }
 
+        // Add this private static method to ScenarioComparer class to fix CS0103
+        private static string ConvertToString(object value)
+        {
+            if (value == null)
+                return string.Empty;
+            if (value is string s)
+                return s;
+            if (value is IEnumerable enumerable && !(value is IDictionary))
+                return JsonConvert.SerializeObject(enumerable, Formatting.None);
+            if (value is IDictionary dict)
+                return JsonConvert.SerializeObject(dict, Formatting.None);
+            if (value.GetType().IsPrimitive || value is decimal)
+                return value.ToString();
+            return JsonConvert.SerializeObject(value, Formatting.None);
+        }
+    }
 }

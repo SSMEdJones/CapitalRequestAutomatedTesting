@@ -33,17 +33,16 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
         public static Func<IWebDriver, Task<SeleniumStepResult>> DashboardSearch(string proposalId)
             => SeleniumHelper.EnterDashboardSearch(proposalId);
 
-
-        //RobustClickReplyInRow(string workflowPortion, string requestedInfoId, string description, string buttonText = "Reply", int maxRetries = 3)
         public static Func<IWebDriver, Task<SeleniumStepResult>> RobustClickReplyInRow(string workflowPortion, string requestedInfoId, string description, string buttonText = "Reply", int maxRetries = 3)
             => SeleniumHelper.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries);
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> UploadFileById(string inputId, string filePath, string description)
+            => SeleniumHelper.UploadFileById(inputId, filePath, description);
 
-       
-        // You could later add:
-        // TypeTextIntoField(...)
-        // SelectDropdownOption(...)
-        // SubmitForm(...)
+        public static Func<IWebDriver, Task<SeleniumStepResult>> RunJavaScript(string script, string description)
+            => SeleniumHelper.RunJavaScript(script, description);
+
+
     }
 
 }

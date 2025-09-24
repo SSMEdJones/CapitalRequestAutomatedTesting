@@ -486,13 +486,52 @@ function hideSpinner() {
         DevLogger.info("Spinner hidden", "✓");
     }
 }
+function setupFilePicker(filePickerId, fileListId, addButtonId) {
+    const fileList = [];
+    const filePicker = document.getElementById(filePickerId);
+    const fileListElement = document.getElementById(fileListId);
+
+    document.getElementById(addButtonId)?.addEventListener('click', () => {
+        const file = filePicker.files[0];
+        if (!file) return;
+
+        fileList.push(file);
+
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.textContent = file.name;
+        fileListElement.appendChild(li);
+
+        filePicker.value = '';
+    });
+}
 
 // Initialize SignalR when DOM loads
 document.addEventListener("DOMContentLoaded", async () => {
     DevLogger.info("DOM loaded, initializing modules", "🌐");
     ScenarioBinder.init();
     ScenarioInitializer.init();
-    
-    // Initialize SignalR
     await initializeSignalR();
+
+    // Inline file picker setup
+    const fileList = [];
+    const filePicker = document.getElementById('filePicker');
+    const fileListElement = document.getElementById('fileList');
+
+    document.getElementById('addFileButton')?.addEventListener('click', () => {
+        const file = filePicker.files[0];
+        if (!file) return;
+
+        fileList.push(file);
+
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.textContent = file.name;
+        fileListElement.appendChild(li);
+
+        filePicker.value = '';
+    });
+
+    console.log("File picker initialized");
 });
+

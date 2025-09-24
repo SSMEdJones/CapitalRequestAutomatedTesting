@@ -2,10 +2,12 @@
 @model ScenarioDetailsViewModel
 
 <input type="hidden" asp-for="RequestedInfoId" />
+<input type="hidden" asp-for="FileUploadPaths" />
+
 <div>
     <div class="form-group">
         <label asp-for="ReplyingGroupId" class="control-label"></label>
-            <select asp-for="ReplyingGroupId" asp-items="Model.ReplyingGroups" class="form-control">
+        <select asp-for="ReplyingGroupId" asp-items="Model.ReplyingGroups" class="form-control">
             <option value="">-- Select One --</option>
         </select>
     </div>
@@ -16,8 +18,8 @@
         <select asp-for="RequestingGroupId" asp-items="Model.RequestingGroups" class="form-control">
             <option value="">-- Select One --</option>
         </select>
-     </div>
- 
+    </div>
+
     <div class="form-group">
         <label asp-for="ReviewerId" class="control-label"></label>
         <select asp-for="ReviewerId" asp-items="Model.Reviewers" class="form-control">
@@ -46,5 +48,18 @@
         <label asp-for="ReturnedInformation" class="control-label"></label>
         <textarea asp-for="ReturnedInformation" class="form-control"></textarea>
     </div>
+
+
+    <div class="form-group">
+        <label>Select Files One at a Time</label>
+        <input type="file" id="filePicker" class="form-control" />
+        <button type="button" id="addFileButton">Add File</button>
+    </div>
+
+    <ul id="fileList" class="list-group mt-2">
+        <!-- JavaScript will populate this -->
+    </ul>
+
+
 </div>
 

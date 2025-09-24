@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Controllers;
+using CapitalRequestAutomatedTesting.UI.Hubs;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
@@ -10,6 +11,7 @@ using Infrastructure.ApiDiagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -34,6 +36,7 @@ namespace CapitalRequestAutomatedTesting.Tests
         private readonly IScenarioComparer _scenarioComparer;
         private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
+        private readonly IHubContext<ScenarioProgressHub> _hubContext;
 
         private readonly ScenarioController _controller;
 
@@ -54,8 +57,7 @@ namespace CapitalRequestAutomatedTesting.Tests
             _scenarioComparer = _provider.GetRequiredService<IScenarioComparer>();
             _formDataContext = _provider.GetRequiredService<IFormDataContext>();
             _mapper = _provider.GetRequiredService<IMapper>();
-
-
+            _hubContext = _provider.GetRequiredService<IHubContext<ScenarioProgressHub>>();
 
             _controller = new ScenarioController(
                 _logger,
@@ -72,7 +74,8 @@ namespace CapitalRequestAutomatedTesting.Tests
                 _viewModelBuilder,
                 _scenarioComparer,
                 _formDataContext,
-                _mapper
+                _mapper,
+                _hubContext
             );
 
             var tempData = new TempDataDictionary(new DefaultHttpContext(), MockTempDataProvider());
