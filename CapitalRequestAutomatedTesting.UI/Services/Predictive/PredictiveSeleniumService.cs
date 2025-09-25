@@ -282,7 +282,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             proposal.ReturnedInformation = detail.ReturnedInformation;
 
             proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
             var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                 .Where(x => !x.IsComplete)

@@ -206,7 +206,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
             proposal.ReviewerId = detail.ReviewerId;
 
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
             proposal.ExecutionDurationMinutes = scenarioDetail.ExecutionDurationMinutes;
 

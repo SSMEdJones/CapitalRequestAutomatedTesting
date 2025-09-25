@@ -82,7 +82,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
             proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0 );
             
             scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();

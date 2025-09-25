@@ -245,7 +245,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             proposal.RequestingGroupId = detail.RequestingGroupId;
 
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                         .Where(x => !x.IsComplete)

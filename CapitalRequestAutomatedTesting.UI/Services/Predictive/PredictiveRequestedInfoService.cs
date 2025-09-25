@@ -43,7 +43,7 @@ public class PredictiveRequestedInfoService : IPredictiveRequestedInfoService
 
     public async Task<RequestedInfo> CreateRequestedInfoAsync(vm.Proposal proposal, int increment)
     {
-        var reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+        var reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
         WorkFlowStepViewModel? workflowStep = await GetWorkflowStepAsync(proposal);
         // Resolve WorkflowStepOptionId

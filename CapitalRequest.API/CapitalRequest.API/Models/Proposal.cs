@@ -469,7 +469,7 @@ namespace CapitalRequest.API.Models
         public bool VerifyAndSendToVPFinance { get; set; }
 
         [IgnoreForLogging]
-        public bool WBSApproved { get; set; }
+        public bool? WBSApproved { get; set; }
 
         [IgnoreForLogging]
         public string Action { get; set; }
@@ -553,7 +553,7 @@ namespace CapitalRequest.API.Models
 
         public int ReplyingGroupId { get; set; }
 
-        public int ReviewerId { get; set; }
+        public int? ReviewerId { get; set; }
 
         public int RequestedInfoId { get; set; }
         public int? ExecutionDurationMinutes { get; set; }

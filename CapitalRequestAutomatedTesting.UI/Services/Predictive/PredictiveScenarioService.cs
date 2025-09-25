@@ -71,7 +71,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
             proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
             scenarioDetail.SelectedProperties["Scenario Name"] = detail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();
@@ -271,7 +271,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
             proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
             proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId);
+            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
             proposal.WorkflowStepId = workflowStep.WorkflowStepID;
             proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);

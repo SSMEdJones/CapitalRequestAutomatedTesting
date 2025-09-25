@@ -45,7 +45,7 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
         proposal.RequestedInfo.RequestingReviewerGroupId = 2;
         proposal.ReviewerId = 37798;
 
-        proposal.Reviewer = await _capitalRequestservices.GetReviewer(proposal.ReviewerId);
+        proposal.Reviewer = await _capitalRequestservices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
         var increment = 0;
         var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
             .Where(x => !x.IsComplete)

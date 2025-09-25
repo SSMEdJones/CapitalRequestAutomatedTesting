@@ -2,11 +2,13 @@ using CapitalRequestAutomatedTesting.UI;
 using CapitalRequestAutomatedTesting.UI.Hubs;
 using Infrastructure.Middleware;
 using Microsoft.AspNetCore.Authentication.Negotiate;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.StaticFiles;
 using NLog;
 using NLog.Extensions.Logging;
 using NLog.Web;
 using System.Diagnostics;
+using System.Reflection;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 
@@ -29,11 +31,19 @@ try
 
     // Clear default providers and use NLog
 
-    
+
     builder.Logging.ClearProviders();
     builder.Logging.SetMinimumLevel(LogLevel.Trace);
     builder.Logging.AddNLog();
     builder.Host.UseNLog();
+
+    //Persist DataProtection keys to a location outside the temp folder for load-balanced scenarios
+    var appName = Assembly.GetEntryAssembly()?.GetName().Name;
+
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Path.GetTempPath(), $"{appName}-Keys")))
+        .SetApplicationName(appName);
+
 
     // Add services to the container.
     builder.Services.AddDistributedMemoryCache(); // Required for session
@@ -74,20 +84,28 @@ try
     builder.Services.AddHttpClient();
     builder.Services.AddSignalR();
 
+    builder.Logging.AddConsole();
+    builder.Logging.AddDebug();
     var app = builder.Build();
 
-    app.UseMiddleware<GlobalExceptionMiddleware>();
-    app.UseStatusCodePagesWithReExecute("/Error/Error/{0}");
-    //if (app.Environment.IsDevelopment())
-    //{
-    //    app.UseDeveloperExceptionPage();
-    //}
-    //else
-    //{
-    //    app.UseExceptionHandler("/Error");
-    //    app.UseStatusCodePagesWithReExecute("/Error/{0}");
-    //    app.UseHsts();
-    //}
+    //TODO Uncomment when debugging complete
+
+    //app.UseMiddleware<GlobalExceptionMiddleware>();
+    //app.UseStatusCodePagesWithReExecute("/Error/Error/{0}");
+    ///
+
+    //TODO Comment when debugging complete
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+    else
+    {
+        app.UseExceptionHandler("/Error");
+        app.UseStatusCodePagesWithReExecute("/Error/{0}");
+        app.UseHsts();
+    }
+    ///
 
 
     app.UseHttpsRedirection();
@@ -134,16 +152,18 @@ try
 
     foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
     {
-        try
+        Debug.WriteLine($"Assembly: {asm.FullName}");
+
+        if (!asm.IsDynamic)
         {
-            Debug.WriteLine($"Assembly: {asm.FullName}");
             Debug.WriteLine($"Location: {asm.Location}");
         }
-        catch (NotSupportedException)
+        else
         {
-            Debug.WriteLine($"Assembly: {asm.FullName} (dynamic, no location)");
+            Debug.WriteLine("Location: (dynamic assembly, no physical path)");
         }
     }
+
 
     app.Run();
 }

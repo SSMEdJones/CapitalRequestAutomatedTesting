@@ -110,7 +110,7 @@ namespace CapitalRequestAutomatedTesting.Tests
             //var workflowStepId = Guid.Parse("53E451AC-8057-F011-A31B-0050569736FD");
             var proposal = await _capitalRequestservices.GetProposal(proposalId);
             proposal.ReviewerId = 37841;
-            proposal.Reviewer = await _capitalRequestservices.GetReviewer(proposal.ReviewerId);
+            proposal.Reviewer = await _capitalRequestservices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
             proposal.RequestedInfo = await _capitalRequestservices.GetRequestedInfo(requestedInfoId);
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                      .Where(x => !x.IsComplete)

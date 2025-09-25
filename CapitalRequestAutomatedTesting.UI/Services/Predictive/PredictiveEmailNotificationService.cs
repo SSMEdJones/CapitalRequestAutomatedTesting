@@ -72,7 +72,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 .ToList();
 
             var emailActionTemplate = string.Empty;
-            var fullName = (await _capitalRequestServices.GetReviewer(proposal.ReviewerId)).FullName;
+            var fullName = (await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0)).FullName;
             var requestedInfoId = proposal.RequestedInfo?.Id;
 
             switch (emailType)

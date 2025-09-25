@@ -78,8 +78,6 @@ namespace CapitalRequest.API.DataAccess.Models
 
         public int? CapitalFundingYear { get; set; }
 
-        public int? TypeOfProject { get; set; }
-
         public int? CapitalCategory { get; set; }
 
         public int? CapitalPool { get; set; }
