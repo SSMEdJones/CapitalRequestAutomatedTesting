@@ -98,6 +98,12 @@ let connectionId;
 async function initializeSignalR() {
     connection = new signalR.HubConnectionBuilder()
         .withUrl("/scenarioProgressHub")
+        .withAutomaticReconnect({
+            nextRetryDelayInMilliseconds: retryContext => {
+                // Exponential backoff or fixed delay
+                return Math.min(10000, retryContext.previousRetryCount * 2000);
+            }
+        })
         .build();
 
     // Handle progress updates
@@ -124,6 +130,19 @@ async function initializeSignalR() {
             `;
         }
     });
+
+    connection.onclose(error => {
+        DevLogger.warn("SignalR connection closed", error);
+    });
+
+    connection.onreconnecting(error => {
+        DevLogger.info("SignalR reconnecting...", error);
+    });
+
+    connection.onreconnected(connectionId => {
+        DevLogger.info("SignalR reconnected", connectionId);
+    });
+
 
     try {
         await connection.start();
@@ -509,18 +528,36 @@ function setupFilePicker(filePickerId, fileListId, addButtonId) {
 // Initialize SignalR when DOM loads
 document.addEventListener("DOMContentLoaded", async () => {
     DevLogger.info("DOM loaded, initializing modules", "🌐");
-    ScenarioBinder.init();
-    ScenarioInitializer.init();
+
+    try {
+        ScenarioBinder.init();
+        ScenarioInitializer.init();
+    } catch (e) {
+        DevLogger.error("Initialization error", e);
+    }
+
     await initializeSignalR();
 
     // Inline file picker setup
     const fileList = [];
     const filePicker = document.getElementById('filePicker');
+    const addFileButton = document.getElementById('addFileButton');
     const fileListElement = document.getElementById('fileList');
 
-    document.getElementById('addFileButton')?.addEventListener('click', () => {
-        const file = filePicker.files[0];
-        if (!file) return;
+    DevLogger.table("File Picker Elements", { filePicker, addFileButton, fileListElement });
+
+    DevLogger.info("Button found", addFileButton);
+
+    addFileButton?.addEventListener('click', () => {
+        DevLogger.info("Add File button clicked", null);
+
+        const file = filePicker?.files?.[0];
+        if (!file) {
+            DevLogger.warn("No file selected", null);
+            return;
+        }
+
+        DevLogger.info("File selected", file.name);
 
         fileList.push(file);
 
@@ -531,7 +568,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         filePicker.value = '';
     });
+    DevLogger.info("Click listener attached", null);
 
-    console.log("File picker initialized");
+    DevLogger.info("File picker initialized", null);
 });
 

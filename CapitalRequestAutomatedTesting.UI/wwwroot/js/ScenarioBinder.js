@@ -564,19 +564,3 @@ export const ScenarioBinder = {
 };
 
 
-
-//toggleFormGroupByFieldId(fieldIdSuffix, show = true, root = document) {
-//    const field = root.querySelector(`[id$="${fieldIdSuffix}"]`);
-//    if (!field) {
-//        console.warn(`Field not found for suffix: ${fieldIdSuffix}`);
-//        return;
-//    }
-
-//    const formGroup = field.closest(".form-group");
-//    if (!formGroup) {
-//        console.warn(`Form group not found for field: ${fieldIdSuffix}`);
-//        return;
-//    }
-
-//    formGroup.style.display = show ? "block" : "none";
-//},

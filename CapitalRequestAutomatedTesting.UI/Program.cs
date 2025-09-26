@@ -1,5 +1,6 @@
 using CapitalRequestAutomatedTesting.UI;
 using CapitalRequestAutomatedTesting.UI.Hubs;
+using CapitalRequestAutomatedTesting.UI.Services;
 using Infrastructure.Middleware;
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.DataProtection;
@@ -68,10 +69,12 @@ try
     });
 
 
-    var configuration = new ConfigurationBuilder()
-     .SetBasePath(Directory.GetCurrentDirectory())
-     .AddJsonFile("appsettings.json")
-     .Build();
+    //var configuration = new ConfigurationBuilder()
+    // .SetBasePath(Directory.GetCurrentDirectory())
+    // .AddJsonFile("appsettings.json")
+    // .Build();
+
+    var configuration = builder.Configuration;
 
     builder.Services.AddApplicationServices(configuration, builder.Environment);
 
@@ -82,7 +85,16 @@ try
     builder.Configuration.GetConnectionString($"CapitalRequest_{sqlEnv}");
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddHttpClient();
-    builder.Services.AddSignalR();
+    builder.Services.AddHostedService<ScenarioHeartbeatService>();
+
+    //builder.Services.AddSignalR();
+
+    builder.Services.AddSignalR(options =>
+    {
+        options.KeepAliveInterval = TimeSpan.FromSeconds(15); // default is 15s
+        options.ClientTimeoutInterval = TimeSpan.FromSeconds(30); // default is 30s
+    });
+
 
     builder.Logging.AddConsole();
     builder.Logging.AddDebug();
@@ -139,7 +151,30 @@ try
     app.MapControllerRoute(
         name: "default",
         pattern: "{controller=Home}/{action=Index}/{id?}");
+
     app.MapHub<ScenarioProgressHub>("/scenarioProgressHub");
+
+    app.Use(async (context, next) =>
+    {
+        Console.WriteLine($"Request started: {context.Connection.Id}");
+        await next.Invoke();
+        Console.WriteLine($"Request ended: {context.Connection.Id}");
+    });
+
+    app.Use(async (context, next) =>
+    {
+        try
+        {
+            await next();
+        }
+        catch (OperationCanceledException)
+        {
+            // Quietly swallow or log as info
+            Console.WriteLine("Request was canceled by client.");
+        }
+    });
+
+
 
     foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
     {
