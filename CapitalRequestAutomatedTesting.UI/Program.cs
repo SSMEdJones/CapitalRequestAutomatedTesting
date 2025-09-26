@@ -102,21 +102,21 @@ try
 
     //TODO Uncomment when debugging complete
 
-    //app.UseMiddleware<GlobalExceptionMiddleware>();
-    //app.UseStatusCodePagesWithReExecute("/Error/Error/{0}");
-    ///
+    app.UseMiddleware<GlobalExceptionMiddleware>();
+    app.UseStatusCodePagesWithReExecute("/Error/Error/{0}");
+    
 
     //TODO Comment when debugging complete
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseDeveloperExceptionPage();
-    }
-    else
-    {
-        app.UseExceptionHandler("/Error");
-        app.UseStatusCodePagesWithReExecute("/Error/{0}");
-        app.UseHsts();
-    }
+    //if (app.Environment.IsDevelopment())
+    //{
+    //    app.UseDeveloperExceptionPage();
+    //}
+    //else
+    //{
+    //    app.UseExceptionHandler("/Error");
+    //    app.UseStatusCodePagesWithReExecute("/Error/{0}");
+    //    app.UseHsts();
+    //}
     ///
 
 

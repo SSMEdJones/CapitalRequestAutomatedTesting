@@ -96,9 +96,142 @@ export const ScenarioBinder = {
             this.bindGroupChange(partial, proposalId, "replying");
         }
 
+        // 🆕 Bind file upload events for this partial
+        this.bindFileUploadEvents(partial, scenarioId);
+
         DevLogger.groupEnd();
     },
 
+    // 🆕 Add this new method to handle file upload events
+    bindFileUploadEvents(partial, scenarioId) {
+        const filePicker = partial.querySelector("#filePicker");
+        const addFileButton = partial.querySelector("#addFileButton");
+        const fileList = partial.querySelector("#fileList");
+        const fileUploadPathsInput = this.getField(partial, "FileUploadPaths");
+
+        if (!filePicker || !addFileButton || !fileList) {
+            DevLogger.info("File upload elements not found in partial", scenarioId);
+            return;
+        }
+
+        // Prevent multiple bindings
+        if (addFileButton.dataset.bound === "true") {
+            DevLogger.info("File upload events already bound for", scenarioId);
+            return;
+        }
+
+        addFileButton.dataset.bound = "true";
+        DevLogger.info("Binding file upload events for scenario", scenarioId);
+
+        // Store files array for this partial
+        if (!partial._selectedFiles) {
+            partial._selectedFiles = [];
+        }
+
+        // Add File button click handler
+        addFileButton.addEventListener("click", () => {
+            const file = filePicker.files[0];
+            if (!file) {
+                DevLogger.warn("No file selected");
+                return;
+            }
+
+            // Check if file already added
+            const existingFile = partial._selectedFiles.find(f => 
+                f.name === file.name && f.size === file.size
+            );
+            
+            if (existingFile) {
+                DevLogger.warn("File already added", file.name);
+                return;
+            }
+
+            // Add file to array
+            partial._selectedFiles.push(file);
+            
+            // Update the UI
+            this.updateFileList(partial, fileList);
+            
+            // Update hidden input for form submission
+            this.updateFileUploadPaths(partial, fileUploadPathsInput);
+            
+            // Clear the file picker
+            filePicker.value = "";
+            
+            DevLogger.info("File added", file.name);
+        });
+
+        // Optional: Handle file picker change to show selected file name
+        filePicker.addEventListener("change", () => {
+            const file = filePicker.files[0];
+            if (file) {
+                DevLogger.info("File selected", file.name);
+            }
+        });
+    },
+
+    // 🆕 Update the file list UI
+    updateFileList(partial, fileList) {
+        if (!partial._selectedFiles || !fileList) return;
+
+        fileList.innerHTML = "";
+        
+        partial._selectedFiles.forEach((file, index) => {
+            const listItem = document.createElement("li");
+            listItem.className = "list-group-item d-flex justify-content-between align-items-center";
+            
+            listItem.innerHTML = `
+                <span>
+                    <i class="fas fa-file me-2"></i>
+                    ${file.name} <small class="text-muted">(${this.formatFileSize(file.size)})</small>
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-danger" data-file-index="${index}">
+                    <i class="fas fa-times"></i> Remove
+                </button>
+            `;
+            
+            // Add remove button handler
+            const removeButton = listItem.querySelector("button");
+            removeButton.addEventListener("click", () => {
+                this.removeFile(partial, index, fileList);
+            });
+            
+            fileList.appendChild(listItem);
+        });
+    },
+
+    // 🆕 Remove file from list
+    removeFile(partial, index, fileList) {
+        if (!partial._selectedFiles) return;
+        
+        const removedFile = partial._selectedFiles.splice(index, 1)[0];
+        DevLogger.info("File removed", removedFile.name);
+        
+        // Update UI and hidden input
+        this.updateFileList(partial, fileList);
+        const fileUploadPathsInput = this.getField(partial, "FileUploadPaths");
+        this.updateFileUploadPaths(partial, fileUploadPathsInput);
+    },
+
+    // 🆕 Update hidden input for form submission
+    updateFileUploadPaths(partial, fileUploadPathsInput) {
+        if (!partial._selectedFiles || !fileUploadPathsInput) return;
+        
+        // For now, just store file names - you may need to upload files to server first
+        const filePaths = partial._selectedFiles.map(file => file.name);
+        fileUploadPathsInput.value = JSON.stringify(filePaths);
+        
+        DevLogger.info("FileUploadPaths updated", filePaths);
+    },
+
+    // 🆕 Helper method to format file size
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
     bindGroupChange(partial, proposalId, groupType) {
         const groupSelect = this.getField(
             partial,

@@ -31,6 +31,10 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
                            .ForMember(dest => dest.OriginalCapitalFundingYear, o => o.MapFrom(src => src.CapitalFundingYear))
                            .ForMember(dest => dest.IncludePurchasingGroup, o => o.MapFrom(src => src.IncludePurchasingGroup == null ? true : src.IncludePurchasingGroup));
 
+            CreateMap<vm.Proposal, dto.Attachment>()
+                        .ForMember(dest => dest.ProposalId, o => o.MapFrom(src => src.Id))
+                        .ForMember(dest => dest.DateUploaded, o => o.MapFrom(src => DateTime.Now));
+
             CreateMap<dto.RequestedInfo, vm.RequestedInfo>();
             CreateMap<vm.RequestedInfo, CreateUpdateRequestedInfo>();
             CreateMap<dto.ProvidedInfo, vm.ProvidedInfo>();

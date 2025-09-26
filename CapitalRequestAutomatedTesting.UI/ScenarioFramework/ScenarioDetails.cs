@@ -23,5 +23,8 @@
 
         public ScenarioDataViewModel PredictiveData { get; set; }
         public ScenarioDataViewModel ActualData { get; set; }
+
+        public List<IFormFile>? AddInfoFiles { get; set; }
+
     }
 }

@@ -505,25 +505,7 @@ function hideSpinner() {
         DevLogger.info("Spinner hidden", "✓");
     }
 }
-function setupFilePicker(filePickerId, fileListId, addButtonId) {
-    const fileList = [];
-    const filePicker = document.getElementById(filePickerId);
-    const fileListElement = document.getElementById(fileListId);
 
-    document.getElementById(addButtonId)?.addEventListener('click', () => {
-        const file = filePicker.files[0];
-        if (!file) return;
-
-        fileList.push(file);
-
-        const li = document.createElement('li');
-        li.className = 'list-group-item';
-        li.textContent = file.name;
-        fileListElement.appendChild(li);
-
-        filePicker.value = '';
-    });
-}
 
 // Initialize SignalR when DOM loads
 document.addEventListener("DOMContentLoaded", async () => {
@@ -537,39 +519,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     await initializeSignalR();
-
-    // Inline file picker setup
-    const fileList = [];
-    const filePicker = document.getElementById('filePicker');
-    const addFileButton = document.getElementById('addFileButton');
-    const fileListElement = document.getElementById('fileList');
-
-    DevLogger.table("File Picker Elements", { filePicker, addFileButton, fileListElement });
-
-    DevLogger.info("Button found", addFileButton);
-
-    addFileButton?.addEventListener('click', () => {
-        DevLogger.info("Add File button clicked", null);
-
-        const file = filePicker?.files?.[0];
-        if (!file) {
-            DevLogger.warn("No file selected", null);
-            return;
-        }
-
-        DevLogger.info("File selected", file.name);
-
-        fileList.push(file);
-
-        const li = document.createElement('li');
-        li.className = 'list-group-item';
-        li.textContent = file.name;
-        fileListElement.appendChild(li);
-
-        filePicker.value = '';
-    });
-    DevLogger.info("Click listener attached", null);
-
-    DevLogger.info("File picker initialized", null);
+    // File upload handling is now exclusively in ScenarioBinder.bindFileUploadEvents()
 });
 

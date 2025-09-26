@@ -362,13 +362,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ActionType = Constants.ACTION_TYPE_ADD_INFO;
                 proposal.ButtonCaption = Constants.BUTTON_CAPTION_REPLY;
                 proposal.ExpectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
+
+                proposal.AddInfoFiles = detail.AddInfoFiles;
                 var actionType = proposal.ActionType;
                 var expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
 
                 //TODO remove once selenium code is updated
                 proposal.Attachment = null;
-                var lookupKey = string.Empty;
-                List<IFormFile> files = null;
+                var lookupKey = Constants.UPLOAD_DIRECTORY_ATTACHMENTS;
+                List<IFormFile> files = proposal.AddInfoFiles;
 
                 // mapping fields
                 proposal.ProvidedInfo.RequestedInfoId = proposal.RequestedInfo.Id;
@@ -389,32 +391,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         Operation = CrudOperationType.Insert,
                         StepNumber = ++stepNumber,
 
-                        Rollback = new RollbackMethod
-                        {
-                            ServiceName = "IRollbackProvidedInfoService",
-                            MethodName = "DeleteProvidedInfoAsync",
-                            Parameters = new List<object> { proposal },
-                            Operation = CrudOperationType.Delete
-                        }
                     }
                 );
 
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
-                        ServiceName = "IPredictiveFileService",
-                        MethodName = "UploadFile",
+                        ServiceName = "IPredictiveAttachmentService",
+                        MethodName = "CreateAttachments",
                         Parameters = new List<object> { lookupKey, proposal, files },
                         Operation = CrudOperationType.Insert,
                         StepNumber = ++stepNumber,
 
-                        Rollback = new RollbackMethod
-                        {
-                            ServiceName = "IRollbackFileService",
-                            MethodName = "DeleteFile",
-                            Parameters = new List<object> { proposal },
-                            Operation = CrudOperationType.Delete
-                        }
                     }
                 );
 
@@ -427,13 +415,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         Operation = CrudOperationType.Insert,
                         StepNumber = ++stepNumber,
 
-                        Rollback = new RollbackMethod
-                        {
-                            ServiceName = "IRollbackWorkflowStepResponderService",
-                            MethodName = "DeleteWorkflowStepResponderAsync",
-                            Parameters = new List<object> { proposal, Constants.RESPONDER_REPLY, Constants.OPTION_TYPE_ADD_INFO },
-                            Operation = CrudOperationType.Delete
-                        }
                     }
                 );
 
@@ -446,13 +427,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         Operation = CrudOperationType.Update,
                         StepNumber = ++stepNumber,
 
-                        Rollback = new RollbackMethod
-                        {
-                            ServiceName = "IRollbackWorkflowStepOptionService",
-                            MethodName = "OpenOptionsAsync",
-                            Parameters = new List<object> { Constants.RESPONDER_ADD_INFO, proposal },
-                            Operation = CrudOperationType.Update
-                        }
                     }
                 );
 
@@ -465,13 +439,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         Operation = CrudOperationType.Update,
                         StepNumber = ++stepNumber,
 
-                        Rollback = new RollbackMethod
-                        {
-                            ServiceName = "IRollbackWorkflowStepOptionService",
-                            MethodName = "CloseOptionsAsync",
-                            Parameters = new List<object> { proposal, Constants.OPTION_TYPE_VERIFY, null },
-                            Operation = CrudOperationType.Update
-                        }
                     }
                 );
 
@@ -485,13 +452,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         Operation = CrudOperationType.Update,
                         StepNumber = ++stepNumber,
 
-                        Rollback = new RollbackMethod
-                        {
-                            ServiceName = "IRollbackRequestedInfoService",
-                            MethodName = "OpenRequestedInfoAsync",
-                            Parameters = new List<object> { proposal },
-                            Operation = CrudOperationType.Update
-                        }
                     }
                 );
 
@@ -504,13 +464,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         Operation = CrudOperationType.Insert,
                         StepNumber = ++stepNumber,
 
-                        Rollback = new RollbackMethod
-                        {
-                            ServiceName = "IRollbackEmailNotificationService",
-                            MethodName = "DeleteEmailNotificationsAsync",
-                            Parameters = new List<object> { proposal },
-                            Operation = CrudOperationType.Update
-                        }
                     }
                 );
 
@@ -532,32 +485,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             return predictiveMethods;
         }
 
-        //private RollbackMethod GenerateRollbackMethod(PredictiveMethod method)
-        //{
-        //    switch (method.Operation)
-        //    {
-        //        case CrudOperationType.Insert:
-        //            return new RollbackMethod
-        //            {
-        //                ServiceName = method.ServiceName,
-        //                MethodName = "DeleteAsync", // or whatever your delete method is
-        //                //Parameters = new List<object> { ExtractId(method.Parameters) },
-        //                Operation = CrudOperationType.Delete
-        //            };
-
-        //        case CrudOperationType.Update:
-        //            return new RollbackMethod
-        //            {
-        //                ServiceName = method.ServiceName,
-        //                MethodName = "UpdateAsync",
-        //                //Parameters = new List<object> { GetOriginalValues(method.Parameters) },
-        //                Operation = CrudOperationType.Update
-        //            };
-
-        //        default:
-        //            return null;
-        //    }
-        //}
+        
 
     }
 }

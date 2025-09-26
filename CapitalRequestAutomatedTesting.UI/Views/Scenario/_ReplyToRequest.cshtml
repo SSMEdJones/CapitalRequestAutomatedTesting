@@ -52,7 +52,8 @@
 
     <div class="form-group">
         <label>Select Files One at a Time</label>
-        <input type="file" id="filePicker" class="form-control" />
+        @* <input type="file" id="filePicker" class="form-control" /> *@
+        <input type="file" asp-for="AddInfoFiles" class="form-control" />
         <button type="button" id="addFileButton">Add File</button>
     </div>
 

@@ -305,6 +305,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
                 scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
 
+
+
                 // Step 2: Predictive Data (only if prediction succeeded)
                 if (scenario.PredictedSeleniumOutcome.Success)
                 {
@@ -323,6 +325,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
                     scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
+                    return scenario;
                     _logger.LogInformation("Step 2.5/4: Generating Original Data for {ScenarioName}", scenario.DisplayText);
                     
                     if (!string.IsNullOrEmpty(connectionId))

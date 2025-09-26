@@ -89,5 +89,8 @@
         public const string APPLICATION_ROLE_NAME_REGIONAL = "Regional";
         public const string APPLICATION_ROLE_NAME_REVIEWER = "Reviewer";
         public const string APPLICATION_ROLE_NAME_REPORT = "Report";
+
+        public const string UPLOAD_DIRECTORY_ATTACHMENTS = "UploadDirectoryAttachments";
+
     }
 }
