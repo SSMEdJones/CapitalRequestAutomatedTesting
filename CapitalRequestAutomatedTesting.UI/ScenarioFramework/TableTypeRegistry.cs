@@ -1,7 +1,4 @@
-﻿using CapitalRequest.API.DataAccess.Models;
-using SSMWorkflow.API.DataAccess.Models;
-
-namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
+﻿namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public static class TableTypeRegistry
     {
@@ -10,7 +7,8 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
             { "RequestedInfo", typeof(RequestedInfoModel) },
             { "WorkflowStepResponder", typeof(WorkflowStepResponderModel) },
             { "WorkflowStepOption", typeof(List<WorkflowStepOptionModel>) },
-            { "EmailNotification", typeof(List<EmailNotificationModel>) }
+            { "EmailNotification", typeof(List<EmailNotificationModel>) },
+            { "Attachment", typeof(List<AttachmentModel>) }
         // Add more table-to-type mappings here
         };
     }

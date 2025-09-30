@@ -4,8 +4,10 @@ using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
+using System.Collections.Generic;
 using System.Reflection;
 using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
 
@@ -171,6 +173,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 "IActualWorkflowStepResponderService" => "WorkflowStepResponder",
                 "IActualWorkflowStepOptionService" => "WorkflowStepOption",
                 "IActualEmailNotificationService" => "EmailNotification",
+                "IActualAttachmentService" => "Attachment",
                 _ => "UnknownTable"
             };
         }
@@ -241,8 +244,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 };
 
                 proposal.RequestedInfo = (await _capitalRequestServices
-                .GetAllRequestedInfos(filter))
-                .FirstOrDefault();
+                    .GetAllRequestedInfos(filter))
+                    .FirstOrDefault();
 
                 detail.RequestedInfoId = proposal.RequestedInfo.Id;
 
@@ -327,12 +330,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 actualMethods.Add(
                     new ActualMethod
                     {
-                        ServiceName = "IActualFileService",
-                        MethodName = "DownloadFile",
-                        Parameters = new List<object> { fileName, proposal.Id, fileType },
+                        ServiceName = "IActualAttachmentService",
+                        MethodName = "GetAttachments",
+                        Parameters = new List<object> { proposal },
                         Operation = CrudOperationType.Insert
                     }
                 );
+
+                
+                //actualMethods.Add(
+                //    new ActualMethod
+                //    {
+                //        ServiceName = "IActualFileService",
+                //        MethodName = "DownloadFile",
+                //        Parameters = new List<object> { fileName, proposal.Id, fileType },
+                //        Operation = CrudOperationType.Insert
+                //    }
+                //);
 
                 actualMethods.Add(
                     new ActualMethod

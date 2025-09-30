@@ -6,7 +6,6 @@ using CapitalRequestAutomatedTesting.UI.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using CapitalRequestAutomatedTesting.UI.Services.Original;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
-using DinkToPdf;
 using Infrastructure.ApiDiagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -35,6 +34,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
         private readonly ScenarioViewModelBuilder _viewModelBuilder;
+        private readonly IPdfService _pdfService;
         private readonly IHubContext<ScenarioProgressHub> _hubContext;
 
         public ScenarioController(ILogger<ScenarioController> logger,
@@ -51,6 +51,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             ScenarioViewModelBuilder viewModelBuilder,
             IScenarioComparer scenarioComparer,
             IFormDataContext formDataContext,
+            IPdfService pdfService,
             IMapper mapper,
             IHubContext<ScenarioProgressHub> hubContext)
         {
@@ -68,6 +69,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             _viewModelBuilder = viewModelBuilder;
             _scenarioComparer = scenarioComparer;
             _formDataContext = formDataContext;
+            _pdfService = pdfService;
             _mapper = mapper;
             _hubContext = hubContext;
         }
@@ -325,7 +327,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
                     scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
-                    return scenario;
                     _logger.LogInformation("Step 2.5/4: Generating Original Data for {ScenarioName}", scenario.DisplayText);
                     
                     if (!string.IsNullOrEmpty(connectionId))
@@ -619,39 +620,22 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         //public async Task<IActionResult> PrintScenarioPdf(int scenarioId)
         public async Task<IActionResult> PrintScenarioPdf(int id)
         {
-            var scenario = _scenarioMemoryCache.Get(id);
-            //var scenario = await _scenarioControllerService.GetScenarioByIdAsync(scenarioId);
-            string htmlContent = await _viewRenderService.RenderToStringAsync("Scenario/ViewComparison", scenario);
-
-            var doc = new HtmlToPdfDocument
+            try
             {
-                GlobalSettings = new GlobalSettings
-                {
-                    PaperSize = PaperKind.A4,
-                    Orientation = Orientation.Portrait,
-                    DocumentTitle = "Scenario Report",
-                    Margins = new MarginSettings
-                    {
-                        Top = 20,
-                        Bottom = 20,
-                        Left = 15,
-                        Right = 15
-                    }
-                }
-            };
+                var model = _scenarioMemoryCache.Get(id);
+                //var scenario = await _scenarioControllerService.GetScenarioByIdAsync(scenarioId);
 
-            doc.Objects.Add(new ObjectSettings
+                var htmlContent = await _viewRenderService.RenderToStringAsync("Scenario/ViewComparison", model);
+                
+                var pdfBytes = await _pdfService.GeneratePdfFromHtmlAsync(htmlContent);
+                
+                return File(pdfBytes, "application/pdf", "ScenarioReport.pdf");
+            }
+            catch (Exception ex)
             {
-                HtmlContent = htmlContent,
-                WebSettings = new WebSettings
-                {
-                    DefaultEncoding = "utf-8",
-                    EnableIntelligentShrinking = false
-                },
-            });
-
-            var pdf = new SynchronizedConverter(new PdfTools()).Convert(doc);
-            return File(pdf, "application/pdf", "ScenarioReport.pdf");
+                _logger.LogError(ex, "Error generating PDF for scenario {Id}", id);
+                return BadRequest("Error generating PDF");
+            }
         }
 
         private int GetScenarioPriority(string scenarioId)
