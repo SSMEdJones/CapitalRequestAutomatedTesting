@@ -22,6 +22,7 @@
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="NLog.Database" Version="6.0.2" />
 		<PackageReference Include="NLog.Web.AspNetCore" Version="6.0.2" />
+		<PackageReference Include="PuppeteerSharp" Version="20.2.2" />
 		<PackageReference Include="Selenium.Support" Version="4.32.0" />
 		<PackageReference Include="Selenium.WebDriver" Version="4.32.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.Negotiate" Version="8.0.0" />

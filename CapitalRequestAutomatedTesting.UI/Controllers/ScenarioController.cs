@@ -34,7 +34,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
         private readonly ScenarioViewModelBuilder _viewModelBuilder;
-        private readonly IPdfService _pdfService;
+        //private readonly IPdfService _pdfService;
         private readonly IHubContext<ScenarioProgressHub> _hubContext;
 
         public ScenarioController(ILogger<ScenarioController> logger,
@@ -51,7 +51,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             ScenarioViewModelBuilder viewModelBuilder,
             IScenarioComparer scenarioComparer,
             IFormDataContext formDataContext,
-            IPdfService pdfService,
+            //IPdfService pdfService,
             IMapper mapper,
             IHubContext<ScenarioProgressHub> hubContext)
         {
@@ -69,7 +69,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             _viewModelBuilder = viewModelBuilder;
             _scenarioComparer = scenarioComparer;
             _formDataContext = formDataContext;
-            _pdfService = pdfService;
+            //_pdfService = pdfService;
             _mapper = mapper;
             _hubContext = hubContext;
         }
@@ -618,25 +618,25 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         }
 
         //public async Task<IActionResult> PrintScenarioPdf(int scenarioId)
-        public async Task<IActionResult> PrintScenarioPdf(int id)
-        {
-            try
-            {
-                var model = _scenarioMemoryCache.Get(id);
-                //var scenario = await _scenarioControllerService.GetScenarioByIdAsync(scenarioId);
+        //public async Task<IActionResult> PrintScenarioPdf(int id)
+        //{
+        //    try
+        //    {
+        //        var model = _scenarioMemoryCache.Get(id);
+        //        //var scenario = await _scenarioControllerService.GetScenarioByIdAsync(scenarioId);
 
-                var htmlContent = await _viewRenderService.RenderToStringAsync("Scenario/ViewComparison", model);
+        //        var htmlContent = await _viewRenderService.RenderToStringAsync("Scenario/ViewComparison", model);
                 
-                var pdfBytes = await _pdfService.GeneratePdfFromHtmlAsync(htmlContent);
+        //        var pdfBytes = await _pdfService.GeneratePdfFromHtmlAsync(htmlContent);
                 
-                return File(pdfBytes, "application/pdf", "ScenarioReport.pdf");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating PDF for scenario {Id}", id);
-                return BadRequest("Error generating PDF");
-            }
-        }
+        //        return File(pdfBytes, "application/pdf", "ScenarioReport.pdf");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error generating PDF for scenario {Id}", id);
+        //        return BadRequest("Error generating PDF");
+        //    }
+        //}
 
         private int GetScenarioPriority(string scenarioId)
         {

@@ -1,0 +1,69 @@
+﻿@{
+    ViewData["Title"] = "Diagnostic Test";
+    Layout = null; // No layout to avoid any potential issues
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Diagnostic Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .status.alive { background-color: #d4edda; color: #155724; }
+        .status.error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Diagnostic Test Page</h1>
+    <p>This page has no dependencies on your main application services.</p>
+    
+    <div id="status" class="status alive">
+        Status: Loading...
+    </div>
+    
+    <div id="timer">
+        Uptime: <span id="uptime">00:00</span>
+    </div>
+    
+    <script>
+        let startTime = Date.now();
+        let statusElement = document.getElementById('status');
+        let uptimeElement = document.getElementById('uptime');
+        
+        function updateStatus() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            uptimeElement.textContent = 
+                String(minutes).padStart(2, '0') + ':' + 
+                String(seconds).padStart(2, '0');
+            
+            // Check if we're approaching the critical 75-second mark
+            if (elapsed >= 70 && elapsed <= 80) {
+                statusElement.className = 'status error';
+                statusElement.textContent = `CRITICAL WINDOW: ${elapsed}s - Testing for crash...`;
+            } else if (elapsed > 80) {
+                statusElement.className = 'status alive';
+                statusElement.textContent = `SUCCESS: Passed 75s mark (${elapsed}s) - No crash detected!`;
+            } else {
+                statusElement.className = 'status alive';
+                statusElement.textContent = `Status: Running normally (${elapsed}s)`;
+            }
+            
+            // Log critical moments
+            if (elapsed === 75) {
+                console.log('🎯 REACHED 75 SECONDS - The typical crash point');
+            }
+        }
+        
+        // Update every second
+        setInterval(updateStatus, 1000);
+        updateStatus();
+        
+        // Log when page loads
+        console.log('🧪 Diagnostic page loaded at', new Date().toISOString());
+    </script>
+</body>
+</html>

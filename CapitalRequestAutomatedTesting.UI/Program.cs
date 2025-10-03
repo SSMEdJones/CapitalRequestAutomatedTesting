@@ -104,7 +104,7 @@ try
 
     app.UseMiddleware<GlobalExceptionMiddleware>();
     app.UseStatusCodePagesWithReExecute("/Error/Error/{0}");
-    
+
 
     //TODO Comment when debugging complete
     //if (app.Environment.IsDevelopment())
