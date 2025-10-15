@@ -290,15 +290,31 @@ export const ScenarioBinder = {
                 });
         });
 
-        // 🆕 ADD AUTO-SELECTION FOR REPLYING GROUP
-        if (groupType === "replying" && groupSelect.options.length === 2) {
-            // Auto-select if there's only one real option (plus the default "--Select One--")
-            if (groupSelect.value === "") {
-                DevLogger.info("Auto-selecting single replying group", groupSelect.options[1].text);
-                groupSelect.selectedIndex = 1;
-                // Trigger the change event to populate dependent dropdowns
-                groupSelect.dispatchEvent(new Event('change', { bubbles: true }));
-            }
+        // 🔥 MOVE AUTO-SELECTION TO AFTER BINDING BUT USE A DIFFERENT APPROACH
+        // Check for auto-selection after the DOM is stable and the field has options
+        if (groupType === "replying") {
+            // Check for auto-selection after a minimal delay to ensure DOM is ready
+            setTimeout(() => {
+                DevLogger.info("Checking replying group for auto-selection", {
+                    optionsLength: groupSelect.options.length,
+                    currentValue: groupSelect.value
+                });
+                
+                // Only auto-select if there are exactly 2 options (default + one option) and nothing selected
+                if (groupSelect.options.length === 2 && groupSelect.value === "") {
+                    // Hide the partial temporarily to prevent flashing
+                    partial.style.visibility = 'hidden';
+                    
+                    DevLogger.info("Auto-selecting single replying group", groupSelect.options[1].text);
+                    groupSelect.selectedIndex = 1;
+                    groupSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+                    // Show it again after processing
+                    setTimeout(() => {
+                        partial.style.visibility = 'visible';
+                    }, 800);
+                }
+            }, 50); // Minimal delay
         }
     },
 
@@ -317,8 +333,8 @@ export const ScenarioBinder = {
 
         requestingGroupSelect.addEventListener("change", function () {
             const requestingGroupId = this.value;
-            if (!requestingGroupId || !proposalId) return;
-
+            if (!requestingGroupId ||!proposalId) return;
+            DevLogger.info("requestingGroupId change");
             showLoadingDelayed("Loading Groups and Reviewers...", 200);
 
             fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&requestingGroupId=${requestingGroupId}`)
@@ -626,5 +642,16 @@ export const ScenarioBinder = {
         });
     }
 };
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -84,9 +84,14 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault(); // Prevent default form submission
 
         const actionType = document.getElementById("actionType")?.value;
-        if (actionType === "RunSelected") {
+        if (actionType === "RunSelected" ) {
             await runSelectedScenarios(form);
         }
+    });
+
+    // Initialize SignalR after other initialization is complete
+    initializeSignalR().catch(e => {
+        DevLogger.error("SignalR initialization error", e);
     });
 });
 
@@ -142,7 +147,6 @@ async function initializeSignalR() {
     connection.onreconnected(connectionId => {
         DevLogger.info("SignalR reconnected", connectionId);
     });
-
 
     try {
         await connection.start();
@@ -432,67 +436,6 @@ document.addEventListener('change', async function (e) {
     }
 });
 
-//document.addEventListener('change', async function (e) {
-//    if (e.target.name !== 'SelectedScenarioIds') return;
-
-//    const scenarioId = e.target.value;
-//    const targetId = e.target.getAttribute('data-target');
-//    const requestSelect = document.getElementById("RequestId");
-//    const proposalId = requestSelect?.value;
-
-//    // Add debug logging
-//    DevLogger.group("Scenario Selection Changed");
-//    DevLogger.info("Scenario toggled", scenarioId);
-//    DevLogger.info("Target ID", targetId);
-//    DevLogger.info("Request/Proposal ID", proposalId);
-//    DevLogger.info("Request element found", !!requestSelect);
-//    DevLogger.groupEnd();
-
-//    // Enhanced validation
-//    if (!proposalId || proposalId === "0" || proposalId === 0) {
-//        DevLogger.warn("Valid Proposal ID not found or is zero", proposalId);
-//        return;
-//    }
-
-//    const partial = document.getElementById(targetId);
-//    const show = e.target.checked;
-
-//    // If showing and partial doesn't have content, fetch it
-//    if (show && partial && partial.children.length === 0) {
-//        try {
-//            DevLogger.info("Fetching partial view for scenario", scenarioId);
-//            showLoadingDelayed("Loading Scenario...", 200);
-
-//            // Use requestId parameter name to match controller expectation
-//            const params = new URLSearchParams({
-//                scenarioId,
-//                requestId: proposalId  // Changed from proposalId to requestId
-//            });
-
-//            const html = await fetch(`/Scenario/GetPartialViewForScenario?${params}`)
-//                .then(r => r.text());
-
-//            partial.innerHTML = html;
-//            partial.style.display = 'block';
-
-//            DevLogger.info("Partial view injected successfully", targetId);
-//            cancelDelayedLoading();
-
-//            // Bind events to the newly loaded partial
-//            ScenarioBinder.bindScenarioPartial(partial, proposalId);
-
-//        } catch (err) {
-//            DevLogger.error("Error loading scenario partial", err);
-//            cancelDelayedLoading();
-//            return;
-//        }
-//    } else if (partial) {
-//        // Just toggle visibility for already loaded partials
-//        partial.style.display = show ? "block" : "none";
-//        DevLogger.info(`Scenario partial ${show ? 'shown' : 'hidden'}`, targetId);
-//    }
-//});
-
 export function populateDropdown(select, items, defaultText) {
     if (!select) {
         DevLogger.warn("Cannot populate dropdown - select element is null", defaultText);
@@ -512,6 +455,14 @@ export function populateDropdown(select, items, defaultText) {
         itemCount: items?.length || 0,
         defaultText
     });
+
+    // Remove the custom event dispatch that was causing issues
+    // select.dispatchEvent(new CustomEvent('optionsReady', {
+    //     detail: { 
+    //         itemCount: items?.length || 0,
+    //         selectId: select.id 
+    //     }
+    // }));
 }
 
 let spinnerTimeout;
@@ -568,18 +519,4 @@ function hideSpinner() {
 }
 
 
-// Initialize SignalR when DOM loads
-document.addEventListener("DOMContentLoaded", async () => {
-    DevLogger.info("DOM loaded, initializing modules", "🌐");
-
-    try {
-        ScenarioBinder.init();
-        ScenarioInitializer.init();
-    } catch (e) {
-        DevLogger.error("Initialization error", e);
-    }
-
-    await initializeSignalR();
-    // File upload handling is now exclusively in ScenarioBinder.bindFileUploadEvents()
-});
 
