@@ -263,21 +263,15 @@ export const ScenarioBinder = {
                     if (groupType === "replying") {
                         const select = this.getField(partial, "RequestingGroupId");
 
-                        const requestingGroup = this.findSiblingFieldBySwap(partial, "GroupId", "ReplyingGroupId", "RequestingGroupId");
-
                         if (data.targetGroups?.length > 1) {
-
-                            //this.toggleFormGroupByFieldId(requestingGroup, true, partial);
-                            
-                            //DevLogger.info("Multiple target groups found", data.targetGroups.length);
                             populateDropdown(select, data.targetGroups, "-- Select One --");
                             select.value = "";
                         } else {
-                            //this.toggleFormGroupByFieldId(requestingGroup, false, partial);
                             populateDropdown(select, data.targetGroups, "-- Select One --");
                             // ✅ Auto-select the only available group
                             if (data.targetGroups.length === 1) {
                                 select.selectedIndex = 1;
+                                DevLogger.info("Single requesting group - auto-selected", data.targetGroups[0].text);
                             }
                         }
                     }
@@ -295,6 +289,17 @@ export const ScenarioBinder = {
                     }
                 });
         });
+
+        // 🆕 ADD AUTO-SELECTION FOR REPLYING GROUP
+        if (groupType === "replying" && groupSelect.options.length === 2) {
+            // Auto-select if there's only one real option (plus the default "--Select One--")
+            if (groupSelect.value === "") {
+                DevLogger.info("Auto-selecting single replying group", groupSelect.options[1].text);
+                groupSelect.selectedIndex = 1;
+                // Trigger the change event to populate dependent dropdowns
+                groupSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
     },
 
     bindSelectedGroupEvents(partial) {
