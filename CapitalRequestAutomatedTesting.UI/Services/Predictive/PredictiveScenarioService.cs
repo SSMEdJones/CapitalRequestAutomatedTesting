@@ -6,6 +6,7 @@ using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
@@ -153,6 +154,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 serviceType = typeof(IPredictiveEmailNotificationService);
             else if (serviceName == $"{nameSpace}IPredictiveScenarioService")
                 serviceType = typeof(IPredictiveScenarioService);
+            else if (serviceName == $"{nameSpace}IPredictiveAttachmentService")
+                serviceType = typeof(IPredictiveAttachmentService);
 
             if (serviceType == null)
             {
@@ -218,6 +221,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 "IPredictiveWorkflowStepResponderService" => "WorkflowStepResponder",
                 "IPredictiveWorkflowStepOptionService" => "WorkflowStepOption",
                 "IPredictiveEmailNotificationService" => "EmailNotification",
+                "IPredictiveAttachmentService" => "Attachment",
                 _ => "UnknownService"
             };
         }
@@ -370,7 +374,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 //TODO remove once selenium code is updated
                 proposal.Attachment = null;
                 var lookupKey = Constants.UPLOAD_DIRECTORY_ATTACHMENTS;
-                List<IFormFile> files = proposal.AddInfoFiles;
+
+                List<FileUploadData> files = detail.FileUploads;
 
                 // mapping fields
                 proposal.ProvidedInfo.RequestedInfoId = proposal.RequestedInfo.Id;
@@ -381,6 +386,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 var stepNumber = 0;
 
+                //CreateAttachmentsAsync(string lookupKey, vm.Proposal proposal, List < FileUploadData > files)
                 //
                 predictiveMethods.Add(
                     new PredictiveMethod
@@ -398,7 +404,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     new PredictiveMethod
                     {
                         ServiceName = "IPredictiveAttachmentService",
-                        MethodName = "CreateAttachments",
+                        MethodName = "CreateAttachmentsAsync",
                         Parameters = new List<object> { lookupKey, proposal, files },
                         Operation = CrudOperationType.Insert,
                         StepNumber = ++stepNumber,

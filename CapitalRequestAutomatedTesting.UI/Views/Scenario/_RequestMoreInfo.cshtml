@@ -41,6 +41,13 @@
         <label asp-for="RequestedInformation" class="control-label"></label>
         <textarea asp-for="RequestedInformation" class="form-control"></textarea>
     </div>
+
+    <div class="form-check">
+        <input asp-for="PauseBeforeSubmit" class="form-check-input" type="checkbox" id="PauseBeforeSubmit" />
+        <label class="form-check-label" for="PauseBeforeSubmit">
+            Pause before submit (manual interaction)
+        </label>
+    </div>
 </div>
 
 

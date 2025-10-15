@@ -25,6 +25,8 @@
         public ScenarioDataViewModel ActualData { get; set; }
 
         public List<IFormFile>? AddInfoFiles { get; set; }
+        public List<FileUploadData> FileUploads { get; set; } = new List<FileUploadData>();
+
 
     }
 }

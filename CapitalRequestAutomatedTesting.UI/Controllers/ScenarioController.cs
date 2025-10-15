@@ -34,7 +34,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
         private readonly ScenarioViewModelBuilder _viewModelBuilder;
-        //private readonly IPdfService _pdfService;
+        private readonly IPdfService _pdfService;
         private readonly IHubContext<ScenarioProgressHub> _hubContext;
 
         public ScenarioController(ILogger<ScenarioController> logger,
@@ -51,7 +51,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             ScenarioViewModelBuilder viewModelBuilder,
             IScenarioComparer scenarioComparer,
             IFormDataContext formDataContext,
-            //IPdfService pdfService,
+            IPdfService pdfService,
             IMapper mapper,
             IHubContext<ScenarioProgressHub> hubContext)
         {
@@ -69,7 +69,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             _viewModelBuilder = viewModelBuilder;
             _scenarioComparer = scenarioComparer;
             _formDataContext = formDataContext;
-            //_pdfService = pdfService;
+            _pdfService = pdfService;
             _mapper = mapper;
             _hubContext = hubContext;
         }
@@ -93,27 +93,91 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         [HttpPost]
         public async Task<IActionResult> Index([FromForm] ScenarioFormViewModel model, string actionType, string connectionId)
         {
-            _logger.LogInformation("Received connectionId: {ConnectionId}", connectionId ?? "NULL");
-            
-            if (actionType == "RunSelected")
+            try
             {
-                // Handle the selected scenarios
 
-                var selectedIds = model.SelectedScenarioIds;
+                _logger.LogInformation("Received connectionId: {ConnectionId}", connectionId ?? "NULL");
 
-                model.ScenarioDetails.ForEach(x =>
+                if (actionType == "RunSelected")
                 {
-                    x.ProposalId = model.RequestId ?? 0;
-                });
+                    // Process files before serialization
+                    await ProcessScenarioFiles(model.ScenarioDetails);
 
+                    model.ScenarioDetails.ForEach(x =>
+                    {
+                        x.ProposalId = model.RequestId ?? 0;
+                        x.AddInfoFiles = null; // Clear to avoid serialization issues
+                    });
 
-                TempData["ScenarioModel"] = JsonConvert.SerializeObject(model);
-                TempData["ConnectionId"] = connectionId; // Store connectionId in TempData
+                    TempData["ScenarioModel"] = JsonConvert.SerializeObject(model);
+                    TempData["ConnectionId"] = connectionId;
 
-                return RedirectToAction("RunSelected", new { ids = selectedIds });
+                    return RedirectToAction("RunSelected", new { ids = model.SelectedScenarioIds });
+
+                }
+
+                return View(model);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error running scenarios");
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
 
-            return View(model);
+        private async Task ProcessScenarioFiles(List<ScenarioDetailsViewModel> scenarios)
+        {
+            foreach (var scenario in scenarios)
+            {
+                if (scenario.AddInfoFiles?.Any() == true)
+                {
+                    var tempDirectory = Path.Combine(Path.GetTempPath(), "ScenarioFiles", scenario.ScenarioId, scenario.ProposalId.ToString());
+                    Directory.CreateDirectory(tempDirectory);
+
+                    foreach (var file in scenario.AddInfoFiles)
+                    {
+                        var tempFilePath = Path.Combine(tempDirectory, file.FileName);
+
+                        // Check if file exists and is locked
+                        if (System.IO.File.Exists(tempFilePath) && IsFileLocked(tempFilePath))
+                        {
+                            _logger.LogWarning("File {FileName} is currently locked and cannot be overwritten.", file.FileName);
+                            continue; // Skip or handle as needed
+                        }
+
+                        // Save file to temp location
+                        for (int i = 0; i < 3; i++)
+                        {
+                            try
+                            {
+                                using (var stream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                                {
+                                    await file.CopyToAsync(stream);
+                                }
+                                break; // Success
+                            }
+                            catch (IOException ex) when (i < 2)
+                            {
+                                await Task.Delay(100);
+                            }
+                        }
+
+                        // Store file metadata
+                        scenario.FileUploads.Add(new FileUploadData
+                        {
+                            FileName = file.FileName,
+                            FileSize = file.Length,
+                            ContentType = file.ContentType,
+                            TempFilePath = tempFilePath
+                        });
+
+                        scenario.FileUploadPaths.Add(file.FileName);
+                    }
+
+                    _logger.LogInformation("Saved {FileCount} files for scenario {ScenarioId}",
+                        scenario.AddInfoFiles.Count, scenario.ScenarioId);
+                }
+            }
         }
 
         [HttpGet]
@@ -292,12 +356,13 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             {
                 // Step 1: Predictive Selenium
                 _logger.LogInformation("Step 1/4: Executing Predictive Selenium for {ScenarioName}", scenario.DisplayText);
-                
+
                 // Send progress update to client
                 if (!string.IsNullOrEmpty(connectionId))
                 {
                     await _hubContext.Clients.Group($"scenario-{connectionId}")
-                        .SendAsync("UpdateProgress", new {
+                        .SendAsync("UpdateProgress", new
+                        {
                             current = currentIndex - 1,
                             total = totalScenarios,
                             scenarioName = scenario.DisplayText,
@@ -313,11 +378,12 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 if (scenario.PredictedSeleniumOutcome.Success)
                 {
                     _logger.LogInformation("Step 2/4: Generating Predictive Data for {ScenarioName}", scenario.DisplayText);
-                    
+
                     if (!string.IsNullOrEmpty(connectionId))
                     {
                         await _hubContext.Clients.Group($"scenario-{connectionId}")
-                            .SendAsync("UpdateProgress", new {
+                            .SendAsync("UpdateProgress", new
+                            {
                                 current = currentIndex - 1,
                                 total = totalScenarios,
                                 scenarioName = scenario.DisplayText,
@@ -328,11 +394,12 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                     scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
                     _logger.LogInformation("Step 2.5/4: Generating Original Data for {ScenarioName}", scenario.DisplayText);
-                    
+
                     if (!string.IsNullOrEmpty(connectionId))
                     {
                         await _hubContext.Clients.Group($"scenario-{connectionId}")
-                            .SendAsync("UpdateProgress", new {
+                            .SendAsync("UpdateProgress", new
+                            {
                                 current = currentIndex - 1,
                                 total = totalScenarios,
                                 scenarioName = scenario.DisplayText,
@@ -345,11 +412,12 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
                 // Step 3: Actual Selenium
                 _logger.LogInformation("Step 3/4: Executing Actual Selenium for {ScenarioName}", scenario.DisplayText);
-                
+
                 if (!string.IsNullOrEmpty(connectionId))
                 {
                     await _hubContext.Clients.Group($"scenario-{connectionId}")
-                        .SendAsync("UpdateProgress", new {
+                        .SendAsync("UpdateProgress", new
+                        {
                             current = currentIndex - 1,
                             total = totalScenarios,
                             scenarioName = scenario.DisplayText,
@@ -364,11 +432,12 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 if (scenario.PredictedSeleniumOutcome.Success)
                 {
                     _logger.LogInformation("Step 4/4: Generating Actual Data for {ScenarioName}", scenario.DisplayText);
-                    
+
                     if (!string.IsNullOrEmpty(connectionId))
                     {
                         await _hubContext.Clients.Group($"scenario-{connectionId}")
-                            .SendAsync("UpdateProgress", new {
+                            .SendAsync("UpdateProgress", new
+                            {
                                 current = currentIndex - 1,
                                 total = totalScenarios,
                                 scenarioName = scenario.DisplayText,
@@ -387,7 +456,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 if (!string.IsNullOrEmpty(connectionId))
                 {
                     await _hubContext.Clients.Group($"scenario-{connectionId}")
-                        .SendAsync("ScenarioComplete", new {
+                        .SendAsync("ScenarioComplete", new
+                        {
                             current = currentIndex,
                             total = totalScenarios,
                             scenarioName = scenario.DisplayText,
@@ -404,7 +474,8 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 if (!string.IsNullOrEmpty(connectionId))
                 {
                     await _hubContext.Clients.Group($"scenario-{connectionId}")
-                        .SendAsync("ScenarioError", new {
+                        .SendAsync("ScenarioError", new
+                        {
                             current = currentIndex,
                             total = totalScenarios,
                             scenarioName = scenario.DisplayText,
@@ -486,7 +557,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
             // Option A: Process all scenarios and show combined results
             var comparisonResults = new List<ScenarioComparisonResult>();
-            
+
             foreach (var scenario in scenarios)
             {
                 var predictive = scenario.PredictiveData;
@@ -497,7 +568,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 scenarioComparisonResult.ScenarioName = scenario.DisplayText;
                 scenarioComparisonResult.SelectedProperties = new Dictionary<string, string>(scenario.SelectedProperties);
                 scenarioComparisonResult.SeleniumComparisons = _scenarioComparer.CompareOutcomes(
-                    scenario.PredictedSeleniumOutcome.Expected, 
+                    scenario.PredictedSeleniumOutcome.Expected,
                     scenario.ActualSeleniumOutcome.Expected);
                 scenarioComparisonResult.Id = comparisonResults.Count + 1;
 
@@ -617,26 +688,25 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             });
         }
 
-        //public async Task<IActionResult> PrintScenarioPdf(int scenarioId)
-        //public async Task<IActionResult> PrintScenarioPdf(int id)
-        //{
-        //    try
-        //    {
-        //        var model = _scenarioMemoryCache.Get(id);
-        //        //var scenario = await _scenarioControllerService.GetScenarioByIdAsync(scenarioId);
+        public async Task<IActionResult> PrintScenarioPdf(int id)
+        {
+            try
+            {
+                var model = _scenarioMemoryCache.Get(id);
+                //var scenario = await _scenarioControllerService.GetScenarioByIdAsync(scenarioId);
 
-        //        var htmlContent = await _viewRenderService.RenderToStringAsync("Scenario/ViewComparison", model);
-                
-        //        var pdfBytes = await _pdfService.GeneratePdfFromHtmlAsync(htmlContent);
-                
-        //        return File(pdfBytes, "application/pdf", "ScenarioReport.pdf");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error generating PDF for scenario {Id}", id);
-        //        return BadRequest("Error generating PDF");
-        //    }
-        //}
+                var htmlContent = await _viewRenderService.RenderToStringAsync("Scenario/ViewComparison", model);
+
+                var pdfBytes = await _pdfService.GeneratePdfFromHtmlAsync(htmlContent);
+
+                return File(pdfBytes, "application/pdf", "ScenarioReport.pdf");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating PDF for scenario {Id}", id);
+                return BadRequest("Error generating PDF");
+            }
+        }
 
         private int GetScenarioPriority(string scenarioId)
         {
@@ -664,6 +734,22 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         //        }
         //    }
         //}
-       
+
+        // Add this private method to the ScenarioController class to fix CS0103
+        private bool IsFileLocked(string filePath)
+        {
+            try
+            {
+                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    // If we can open the file for read/write with no sharing, it's not locked
+                }
+                return false;
+            }
+            catch (IOException)
+            {
+                return true;
+            }
+        }
     }
 }

@@ -342,6 +342,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     }
                 );
 
+                // Add pause step if enabled
+                if (scenarioDetail.PauseBeforeSubmit)
+                {
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidatePauseBeforeSubmitAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
+                }
+
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
@@ -379,7 +393,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     RequestingReviewerGroupId = detail.RequestingGroupId,
                     ReviewerGroupId = detail.ReplyingGroupId,
                     IsOpen = true
-
                 };
                 var requestedInfo = (await _capitalRequestServices.GetAllRequestedInfos(filter)).FirstOrDefault();
                 if (requestedInfo != null)
@@ -407,15 +420,52 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     }
                 );
 
-                //predictiveMethods.Add(
-                //    new PredictiveMethod
-                //    {
-                //        StepNumber = ++stepNumber,
-                //        ServiceName = "IScenarioControllerService",
-                //        MethodName = "ValidateRequestingGroupForReplyIdAsync",
-                //        Parameters = new List<object> { proposal, requestingGroupId, replyingGroupId }
-                //    }
-                //);
+                // 🆕 Add individual file upload steps to match Selenium behavior
+                if (scenarioDetail.FileUploads?.Any() == true)
+                {
+                    foreach (var fileUpload in scenarioDetail.FileUploads)
+                    {
+                        predictiveMethods.Add(
+                            new PredictiveMethod
+                            {
+                                StepNumber = ++stepNumber,
+                                ServiceName = "IScenarioControllerService",
+                                MethodName = "ValidateFileUploadAsync",
+                                Parameters = new List<object> { fileUpload.FileName, fileUpload.ContentType }
+                            }
+                        );
+                    }
+                }
+                // 🆕 Alternative: Check AddInfoFiles if FileUploads is not populated
+                else if (scenarioDetail.AddInfoFiles?.Any() == true)
+                {
+                    foreach (var file in scenarioDetail.AddInfoFiles)
+                    {
+                        predictiveMethods.Add(
+                            new PredictiveMethod
+                            {
+                                StepNumber = ++stepNumber,
+                                ServiceName = "IScenarioControllerService",
+                                MethodName = "ValidateFileUploadAsync",
+                                Parameters = new List<object> { file.FileName, file.ContentType }
+                            }
+                        );
+                    }
+                }
+
+                // Add pause step if enabled
+                if (scenarioDetail.PauseBeforeSubmit)
+                {
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidatePauseBeforeSubmitAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
+                }
 
                 predictiveMethods.Add(
                    new PredictiveMethod

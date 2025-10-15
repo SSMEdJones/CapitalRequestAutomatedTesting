@@ -120,6 +120,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualScenarioService, ActualScenarioService>();
             services.AddScoped<IActualSeleniumService, ActualSeleniumService>();
             services.AddScoped<IActualProvidedInfoService, ActualProvidedInfoService>();
+            services.AddScoped<IActualAttachmentService, ActualAttachmentService>();
             #endregion
             services.AddScoped<IOriginalScenarioService, OriginalScenarioService>();
             
@@ -162,6 +163,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<Infrastructure.ApiDiagnostics.IApiDiagnosticsSender, Infrastructure.ApiDiagnostics.ApiDiagnosticsSender>();
             services.AddSingleton<Infrastructure.Services.IInfrastructureErrorLogService, Infrastructure.Services.SqlErrorLogService>();
             services.AddSingleton<Infrastructure.ApiDiagnostics.IFormDataContext, CapitalRequestAutomatedTesting.UI.Services.FormDataContext>();
+            services.AddSingleton<IPdfService, PdfService>();
 
             return services;
         }

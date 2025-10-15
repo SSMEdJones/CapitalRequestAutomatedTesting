@@ -7,7 +7,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive;
 
 public interface IPredictiveAttachmentService
 {
-    List<dto.Attachment> CreateAttachments(string lookupKey, vm.Proposal proposal, List<IFormFile> files);
+    Task<List<dto.Attachment>> CreateAttachmentsAsync(string lookupKey, vm.Proposal proposal, List<FileUploadData> fileUploads);
+
 }
 
 public class PredictiveAttachmentService : IPredictiveAttachmentService
@@ -24,8 +25,10 @@ public class PredictiveAttachmentService : IPredictiveAttachmentService
         _mapper = mapper;
     }
 
-    public List<dto.Attachment> CreateAttachments(string lookupKey, vm.Proposal proposal, List<IFormFile> files)
+
+    public async Task<List<dto.Attachment>> CreateAttachmentsAsync(string lookupKey, vm.Proposal proposal, List<FileUploadData> files)
     {
+
         var attachments = new List<dto.Attachment>();
         if (files == null)
         {
@@ -34,25 +37,22 @@ public class PredictiveAttachmentService : IPredictiveAttachmentService
 
         var uploadDirectory = Path.Combine(_appConfigurationService.GetAppKeyValueByKey("CapitalRequest", lookupKey).LookupValue, proposal.Id.ToString());
 
-        files.ForEach(x =>
+        foreach (var file in files)
         {
-            var filePathStr = Path.Combine(uploadDirectory, x.FileName);
+            var filePathStr = Path.Combine(uploadDirectory, file.FileName);
 
             if (lookupKey == Constants.UPLOAD_DIRECTORY_ATTACHMENTS)
-            {
-                if (proposal.AttachmentFiles != null && proposal.AttachmentFiles.Count > 0)
+            {    
+                if (files.Count > 0)
                 {
                     var attachment = _mapper.Map<dto.Attachment>(proposal);
-                    attachment.FileName = x.FileName;
-
+                    attachment.FileName = file.FileName;
                     attachments.Add(attachment);
                 }
             }
-
-        });
+           
+        }
 
         return attachments;
     }
-
-
 }

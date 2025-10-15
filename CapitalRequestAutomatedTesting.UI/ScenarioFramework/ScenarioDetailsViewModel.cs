@@ -65,6 +65,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         public List<IFormFile>? AddInfoFiles { get; set; }
 
+        public List<FileUploadData> FileUploads { get; set; } = new List<FileUploadData>();
 
         public string Message { get; set; } = string.Empty;
 
@@ -117,5 +118,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public int? ExecutionDurationMinutes { get; set; }
 
         public bool CommitStepReached { get; set; } = false;
+
+        public bool PauseBeforeSubmit { get; set; }
     }
 }

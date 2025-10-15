@@ -36,6 +36,11 @@ namespace Infrastructure.Middleware
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Unhandled exception caught by GlobalExceptionMiddleware");
+                httpContext.Response.StatusCode = 500;
+                httpContext.Response.ContentType = "text/plain";
+                await httpContext.Response.WriteAsync("An unexpected error occurred.");
+                // Do not re-throw!
                 await HandleExceptionAsync(httpContext, ex);
             }
         }

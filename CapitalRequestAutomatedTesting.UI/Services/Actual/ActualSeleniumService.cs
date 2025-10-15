@@ -220,23 +220,51 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                 });
 
+                // Step: Enter requested information (do not submit yet)
                 actualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = ++stepNumber,
-                    Description = $"Enter requested information press submit and verify success message",
+                    Description = "Enter requested information (do not submit yet)",
                     Action = new SeleniumDsl()
-                    .BeginWith(Execute.EnterRequestedInformation(scenarioDetail.RequestedInformation))
-                    .Then(Execute.ClickButtonById("btnSubmitMoreInfo", "Submit button"))
-                    .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT, "Submission success message"))
-                    .Build("Entered requested information and clicked Submit button")
-
+                        .BeginWith(Execute.EnterRequestedInformation(scenarioDetail.RequestedInformation))
+                        .Build("Entered requested information")
                 });
 
+                // Optional pause for user to review or manually submit
+                if (scenarioDetail.PauseBeforeSubmit)
+                {
+                    actualSteps.Add(new SeleniumScenarioStep
+                    {
+                        StepNumber = ++stepNumber,
+                        Description = "Pause for user to manually submit the form",
+                        Action = driver =>
+                        {
+                            Console.WriteLine("Paused: Please manually submit the form in the browser, then press Enter to continue...");
+                            Console.ReadLine();
+                            return Task.FromResult(SeleniumStepResult.Pass("User submitted form manually."));
+                        }
+                    });
+                }
+                else
+                {
+                    // Step: Click submit and validate
+                    actualSteps.Add(new SeleniumScenarioStep
+                    {
+                        StepNumber = ++stepNumber,
+                        Description = "Press submit and verify success message",
+                        Action = new SeleniumDsl()
+                            .BeginWith(Execute.ClickButtonById("btnSubmitMoreInfo", "Submit button"))
+                            .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT, "Submission success message"))
+                            .Build("Clicked Submit button and verified success message")
+                    });
+                }
+
+                // Continue with dashboard validation step as before
                 var conditionalDashboardSteps = new SeleniumDsl()
                     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
                     .Then(Conditional.If(
                         reviewerHasNoRequests,
-                        Validate.NoRequestsMessage(), // When no requests
+                        Validate.NoRequestsMessage(),
                         new SeleniumDsl()
                             .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
                             .Then(Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now))
@@ -252,7 +280,39 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     Retryable = true
                 });
 
-                
+                //actualSteps.Add(new SeleniumScenarioStep
+                //{
+                //    StepNumber = ++stepNumber,
+                //    Description = $"Enter requested information press submit and verify success message",
+                //    Action = new SeleniumDsl()
+                //    .BeginWith(Execute.EnterRequestedInformation(scenarioDetail.RequestedInformation))
+                //    .Then(Execute.ClickButtonById("btnSubmitMoreInfo", "Submit button"))
+                //    .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT, "Submission success message"))
+                //    .Build("Entered requested information and clicked Submit button")
+
+                //});
+
+                //var conditionalDashboardSteps = new SeleniumDsl()
+                //    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
+                //    .Then(Conditional.If(
+                //        reviewerHasNoRequests,
+                //        Validate.NoRequestsMessage(), // When no requests
+                //        new SeleniumDsl()
+                //            .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
+                //            .Then(Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now))
+                //            .Build("Dashboard Search + Status Validation")
+                //    ))
+                //    .Build("Navigate to Home Dashboard and validate group status");
+
+                //actualSteps.Add(new SeleniumScenarioStep
+                //{
+                //    StepNumber = ++stepNumber,
+                //    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
+                //    Action = conditionalDashboardSteps,
+                //    Retryable = true
+                //});
+
+
             }
             else if (scenarioId == "SCN002")
             {
@@ -265,17 +325,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 workflowPortion = $"{replyingGroup.StepNumber} -{replyingGroup.Name}";
                 maxRetries = 3;
 
-                scenarioDetail.FileUploadPaths = scenarioDetail.AttachmentFiles?
-                    .Select(file =>
-                    {
-                        var tempPath = Path.Combine(Path.GetTempPath(), file.FileName);
-                        using (var stream = new FileStream(tempPath, FileMode.Create))
-                        {
-                            file.CopyTo(stream);
-                        }
-                        return tempPath;
-                    })
-                    .ToList();
+                //scenarioDetail.FileUploadPaths = scenarioDetail.AttachmentFiles?
+                //    .Select(file =>
+                //    {
+                //        var tempPath = Path.Combine(Path.GetTempPath(), file.FileName);
+                //        using (var stream = new FileStream(tempPath, FileMode.Create))
+                //        {
+                //            file.CopyTo(stream);
+                //        }
+                //        return tempPath;
+                //    })
+                //    .ToList();
+
+                scenarioDetail.FileUploadPaths = scenarioDetail.FileUploads
+                   .Select(f => f.TempFilePath)
+                   .Where(path => !string.IsNullOrEmpty(path))
+                   .ToList();
 
                 actualSteps.Add(new SeleniumScenarioStep
                 {
@@ -329,24 +394,52 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     }
                 }
 
+                // Step: Enter returned information
                 actualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = ++stepNumber,
-                    Description = $"Enter returned information press submit and verify success message",
-                    IsCommitStep = true,
+                    Description = "Enter returned information (do not submit yet)",
                     Action = new SeleniumDsl()
-                    .BeginWith(Execute.EnterReturnedInformation(scenarioDetail.ReturnedInformation))
-                    .Then(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
-                    .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
-                    .Build("Entered requested information and clicked Submit button")
-
+                        .BeginWith(Execute.EnterReturnedInformation(scenarioDetail.ReturnedInformation))
+                        .Build("Entered returned information")
                 });
 
+                // Optional pause for user to review or manually submit
+                if (scenarioDetail.PauseBeforeSubmit)
+                {
+                    actualSteps.Add(new SeleniumScenarioStep
+                    {
+                        StepNumber = ++stepNumber,
+                        Description = "Pause for user to manually submit the form",
+                        Action = driver =>
+                        {
+                            Console.WriteLine("Paused: Please manually submit the form in the browser, then press Enter to continue...");
+                            Console.ReadLine();
+                            return Task.FromResult(SeleniumStepResult.Pass("User submitted form manually."));
+                        }
+                    });
+                }
+                else
+                {
+                    // Step: Click submit and validate
+                    actualSteps.Add(new SeleniumScenarioStep
+                    {
+                        StepNumber = ++stepNumber,
+                        Description = "Press submit and verify success message",
+                        IsCommitStep = true,
+                        Action = new SeleniumDsl()
+                            .BeginWith(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
+                            .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
+                            .Build("Clicked Submit button and verified success message")
+                    });
+                }
+
+                // Continue with dashboard validation step as before
                 var conditionalDashboardSteps = new SeleniumDsl()
                     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
                     .Then(Conditional.If(
                         reviewerHasNoRequests,
-                        Validate.NoRequestsMessage(), // When no requests
+                        Validate.NoRequestsMessage(),
                         new SeleniumDsl()
                             .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
                             .Then(Validate.DashboardStatus(dashboardOrder, string.Empty, null))
@@ -361,6 +454,39 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     Action = conditionalDashboardSteps,
                     Retryable = true
                 });
+
+                //actualSteps.Add(new SeleniumScenarioStep
+                //{
+                //    StepNumber = ++stepNumber,
+                //    Description = $"Enter returned information press submit and verify success message",
+                //    IsCommitStep = true,
+                //    Action = new SeleniumDsl()
+                //    .BeginWith(Execute.EnterReturnedInformation(scenarioDetail.ReturnedInformation))
+                //    .Then(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
+                //    .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
+                //    .Build("Entered requested information and clicked Submit button")
+
+                //});
+
+                //var conditionalDashboardSteps = new SeleniumDsl()
+                //    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
+                //    .Then(Conditional.If(
+                //        reviewerHasNoRequests,
+                //        Validate.NoRequestsMessage(), // When no requests
+                //        new SeleniumDsl()
+                //            .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
+                //            .Then(Validate.DashboardStatus(dashboardOrder, string.Empty, null))
+                //            .Build("Dashboard Search + Status Validation")
+                //    ))
+                //    .Build("Navigate to Home Dashboard and validate group status");
+
+                //actualSteps.Add(new SeleniumScenarioStep
+                //{
+                //    StepNumber = ++stepNumber,
+                //    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
+                //    Action = conditionalDashboardSteps,
+                //    Retryable = true
+                //});
 
             }
 

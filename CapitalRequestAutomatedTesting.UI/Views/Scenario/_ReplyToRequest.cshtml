@@ -49,18 +49,24 @@
         <textarea asp-for="ReturnedInformation" class="form-control"></textarea>
     </div>
 
-
     <div class="form-group">
         <label>Select Files One at a Time</label>
-        @* <input type="file" id="filePicker" class="form-control" /> *@
-        <input type="file" asp-for="AddInfoFiles" class="form-control" />
+        <input type="file" id="filePicker" class="form-control" />
         <button type="button" id="addFileButton">Add File</button>
+
+        <!-- Hidden input that actually gets submitted with the form -->
+        <input type="file" asp-for="AddInfoFiles" id="AddInfoFiles" style="display: none;" multiple />
     </div>
 
     <ul id="fileList" class="list-group mt-2">
         <!-- JavaScript will populate this -->
     </ul>
 
-
+    <div class="form-check">
+        <input asp-for="PauseBeforeSubmit" class="form-check-input" type="checkbox" id="PauseBeforeSubmit" />
+        <label class="form-check-label" for="PauseBeforeSubmit">
+            Pause before submit (manual interaction)
+        </label>
+    </div>
 </div>
 

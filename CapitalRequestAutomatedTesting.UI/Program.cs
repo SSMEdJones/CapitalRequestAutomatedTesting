@@ -39,11 +39,11 @@ try
     builder.Host.UseNLog();
 
     //Persist DataProtection keys to a location outside the temp folder for load-balanced scenarios
-    var appName = Assembly.GetEntryAssembly()?.GetName().Name;
+    //var appName = Assembly.GetEntryAssembly()?.GetName().Name;
 
-    builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Path.GetTempPath(), $"{appName}-Keys")))
-        .SetApplicationName(appName);
+    //builder.Services.AddDataProtection()
+    //    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(Path.GetTempPath(), $"{appName}-Keys")))
+    //    .SetApplicationName(appName);
 
 
     // Add services to the container.
@@ -100,13 +100,13 @@ try
     builder.Logging.AddDebug();
     var app = builder.Build();
 
-    //TODO Uncomment when debugging complete
+    ////TODO Uncomment when debugging complete
 
     app.UseMiddleware<GlobalExceptionMiddleware>();
-    app.UseStatusCodePagesWithReExecute("/Error/Error/{0}");
+    //app.UseStatusCodePagesWithReExecute("/Error/Error/{0}");
 
 
-    //TODO Comment when debugging complete
+    ////TODO Comment when debugging complete
     //if (app.Environment.IsDevelopment())
     //{
     //    app.UseDeveloperExceptionPage();

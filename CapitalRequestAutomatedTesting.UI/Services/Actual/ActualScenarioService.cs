@@ -123,6 +123,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 serviceType = typeof(IActualEmailNotificationService);
             else if (serviceName == $"{nameSpace}IActualScenarioService")
                 serviceType = typeof(IActualScenarioService);
+            else if (serviceName == $"{nameSpace}IActualAttachmentService")
+                serviceType = typeof(IActualAttachmentService);
 
             if (serviceType == null) return scenarioDataViewModel;
 
