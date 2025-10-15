@@ -323,7 +323,7 @@ export const ScenarioBinder = {
 
             fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&requestingGroupId=${requestingGroupId}`)
                 .then(response => response.json())
-                .then data => {
+                .then(data => {
                     targetGroupSelect.innerHTML = '<option value="">--Select One--</option>';
                     data.targetGroups.forEach(group => {
                         const option = document.createElement("option");
