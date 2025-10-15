@@ -489,8 +489,137 @@ export const ScenarioBinder = {
 
         const siblingId = baseField.id.replace(fromKey, toKey);
         return partial.querySelector(`#${siblingId}`);
-    }
+    },
 
+    getField(container, key) {
+        const normalizedKey = key.toLowerCase();
+        DevLogger.info(`🔍 Looking for field with key: "${key}" (normalized: "${normalizedKey}")`);
+
+        const allElements = Array.from(container.querySelectorAll("select, input, textarea"));
+        DevLogger.info(`📊 Found ${allElements.length} potential fields:`);
+
+        allElements.forEach(el => {
+            DevLogger.info(`➡️ ID: ${el.id} | NAME: ${el.name}`);
+        });
+
+        const directMatch = allElements.find(el =>
+            el.id && el.id.toLowerCase().endsWith(normalizedKey)
+        );
+        if (directMatch) {
+            DevLogger.info("✅ Direct match found by ID suffix:", directMatch);
+            return directMatch;
+        }
+
+        const aspMatch = allElements.find(el =>
+            el.id && el.id.toLowerCase().includes(`__${normalizedKey}`)
+        );
+        if (aspMatch) {
+            DevLogger.info("✅ Match found by ASP.NET-style ID pattern:", aspMatch);
+            return aspMatch;
+        }
+
+        const nameMatch = allElements.find(el =>
+            el.name && el.name.toLowerCase().endsWith(`.${normalizedKey}`)
+        );
+        if (nameMatch) {
+            DevLogger.info("✅ Match found by name attribute:", nameMatch);
+            return nameMatch;
+        }
+
+        DevLogger.warn("❌ No match found for key:", key);
+        return null;
+    },
+
+    bindScenario(partial, proposalId) {
+        const requestingGroupSelect = this.getField(partial, "requestingGroupId");
+        const replyingGroupSelect = this.getField(partial, "replyingGroupId");
+
+        if (requestingGroupSelect) {
+            this.bindGroupChange(partial, proposalId, "requesting");
+        }
+
+        if (replyingGroupSelect) {
+            this.bindGroupChange(partial, proposalId, "replying");
+        }
+    },
+
+    bindReviewerChange(partial, proposalId) {
+        const reviewerSelect = this.getField(partial, "reviewerId");
+        if (!reviewerSelect) return;
+
+        reviewerSelect.addEventListener("change", () => {
+            const reviewerId = reviewerSelect.value;
+            const requestingGroupField = this.getField(partial, "requestingGroupId");
+            const requestingGroupId = requestingGroupField?.value;
+            const targetGroupId = this.getField(partial, "targetGroupId")?.value || null;
+            const replyingGroupId = this.getField(partial, "replyingGroupId")?.value || null;
+
+            const scenarioId = partial.id.replace("partial-", "");
+            const checkbox = document.querySelector(`input[type="checkbox"][value="${scenarioId}"]`);
+            const displayText = checkbox?.parentElement?.textContent?.trim();
+
+            const params = new URLSearchParams({
+                reviewerId,
+                proposalId,
+                requestingGroupId,
+                targetGroupId,
+                replyingGroupId,
+                displayText
+            });
+
+            fetch(`/Scenario/GetReviewerDetails?${params}`)
+                .then(res => res.json())
+                .then(data => {
+                    const fields = [
+                        this.getField(partial, "reviewerEmail"),
+                        this.getField(partial, "reviewerUserId"),
+                        this.getField(partial, "requestedInformation"),
+                        this.getField(partial, "returnedInformation"),
+                        this.getField(partial, "requestedInfoId"),
+                        requestingGroupField
+                    ];
+
+                    const values = [
+                        data.reviewerEmail,
+                        data.reviewerUserId,
+                        data.requestedInformation,
+                        data.returnedInformation,
+                        data.requestedInfoId,
+                        data.requestingGroupId
+                    ];
+
+                    fields.forEach((field, i) => {
+                        if (!field) return;
+
+                        // Only assign requestingGroupId if it's non-empty
+                        if (field === requestingGroupField) {
+                            if (data.requestingGroupId) {
+                                field.value = data.requestingGroupId;
+                            }
+                        } else {
+                            field.value = values[i];
+                        }
+                    });
+
+                    // Auto-select requesting group only if not already selected
+                    if (
+                        requestingGroupField &&
+                        requestingGroupField.options.length === 2 &&
+                        requestingGroupField.value === ""
+                    ) {
+                        requestingGroupField.selectedIndex = 1;
+                    }
+
+                    DevLogger.info("Fields populated from reviewer data", {
+                        email: data.reviewerEmail,
+                        requestedInfoId: data.requestedInfoId,
+                        requestedInformation: data.requestedInformation,
+                        returnedInformation: data.returnedInformation,
+                        requestingGroupId: data.requestingGroupId
+                    });
+                });
+        });
+    }
 };
 
 
