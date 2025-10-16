@@ -375,11 +375,19 @@ const observer = new MutationObserver((mutations, obs) => {
     }
 });
 
-document.addEventListener('change', async function (e) {
-    if (e.target.name !== 'SelectedScenarioIds') return;
+// Replace your current incomplete scenario toggle event with this complete version:
+document.addEventListener('change', async (e) => {
+    if (!e.target.matches('.scenario-checkbox')) return;
+
+    // 🔥 PREVENT DUPLICATE PROCESSING
+    if (e.target.dataset.processing === 'true') {
+        DevLogger.info("Scenario already processing - ignoring duplicate", e.target.value);
+        return;
+    }
+    e.target.dataset.processing = 'true';
 
     const scenarioId = e.target.value;
-    const targetId = e.target.getAttribute('data-target');
+    const targetId = `partial-${scenarioId}`;
     const requestSelect = document.getElementById("RequestId");
     const proposalId = requestSelect?.value;
 
@@ -388,32 +396,32 @@ document.addEventListener('change', async function (e) {
     DevLogger.info("Scenario toggled", scenarioId);
     DevLogger.info("Target ID", targetId);
     DevLogger.info("Request/Proposal ID", proposalId);
-    DevLogger.info("Request element found", !!requestSelect);
     DevLogger.groupEnd();
 
     // Enhanced validation
     if (!proposalId || proposalId === "0" || proposalId === 0) {
         DevLogger.warn("Valid Proposal ID not found or is zero", proposalId);
+        e.target.dataset.processing = 'false'; // Clear flag
         return;
     }
 
     const partial = document.getElementById(targetId);
     const show = e.target.checked;
 
-    // If showing and partial doesn't have content, fetch it
-    if (show && partial && partial.children.length === 0) {
-        try {
+    try {
+        // 🔥 COMPLETE THE LOGIC - This was missing!
+        if (show && partial && partial.children.length === 0) {
+            // Load the partial if it's empty
             DevLogger.info("Fetching partial view for scenario", scenarioId);
             showLoadingDelayed("Loading Scenario...", 200);
 
-            // Use requestId parameter name to match controller expectation
             const params = new URLSearchParams({
                 scenarioId,
-                requestId: proposalId  // Changed from proposalId to requestId
+                requestId: proposalId
             });
 
-            const html = await fetch(`/Scenario/GetPartialViewForScenario?${params}`)
-                .then(r => r.text());
+            const response = await fetch(`/Scenario/GetPartialViewForScenario?${params}`);
+            const html = await response.text();
 
             partial.innerHTML = html;
             partial.style.display = 'block';
@@ -421,18 +429,23 @@ document.addEventListener('change', async function (e) {
             DevLogger.info("Partial view injected successfully", targetId);
             cancelDelayedLoading();
 
-            // Bind events to the newly loaded partial
+            // Bind events to the newly loaded partial - IMPORT MISSING!
+            const { ScenarioBinder } = await import('./ScenarioBinder.js');
             ScenarioBinder.bindScenarioPartial(partial, proposalId);
 
-        } catch (err) {
-            DevLogger.error("Error loading scenario partial", err);
-            cancelDelayedLoading();
-            return;
+        } else if (partial) {
+            // Just toggle visibility for already loaded partials
+            partial.style.display = show ? "block" : "none";
+            DevLogger.info(`Scenario partial ${show ? 'shown' : 'hidden'}`, targetId);
         }
-    } else if (partial) {
-        // Just toggle visibility for already loaded partials
-        partial.style.display = show ? "block" : "none";
-        DevLogger.info(`Scenario partial ${show ? 'shown' : 'hidden'}`, targetId);
+    } catch (err) {
+        DevLogger.error("Error loading scenario partial", err);
+        cancelDelayedLoading();
+    } finally {
+        // 🔥 CLEAR PROCESSING FLAG
+        setTimeout(() => {
+            e.target.dataset.processing = 'false';
+        }, 100);
     }
 });
 

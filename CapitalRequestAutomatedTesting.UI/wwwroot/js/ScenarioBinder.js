@@ -7,7 +7,7 @@ export const ScenarioBinder = {
     init() {
         DevLogger.info("Initializing ScenarioBinder", "🚀");
         this.bindRequestIdEvents(); // Bind the dropdown listener
-    },    
+    },
     bindRequestIdEvents() {
         const requestSelect = document.getElementById("RequestId");
         const scenarioContainer = document.getElementById("scenarioContainer");
@@ -56,51 +56,117 @@ export const ScenarioBinder = {
                 });
         });
     },
+
     bindScenarioPartial(partial, proposalId) {
-        if (!partial || !proposalId) {
-            DevLogger.warn("Cannot bind scenario partial", {
-                partialExists: !!partial,
-                proposalId
-            });
+        if (!partial || !proposalId || partial._scenarioBound) {
+            if (partial._scenarioBound) {
+                DevLogger.info("Scenario partial already bound - skipping", partial.id);
+            }
             return;
         }
 
-        // Check if partial is empty - if so, wait for content
+        partial._scenarioBound = true;
+
         if (!partial.children.length) {
             DevLogger.info("Empty partial - waiting for content", partial.id);
+            partial._scenarioBound = false;
             return;
         }
 
         const scenarioId = partial.id?.replace("partial-", "") || "Unknown";
-        DevLogger.group(`Binding Partial for Scenario ${scenarioId}`);
+        DevLogger.info(`Binding Partial for Scenario ${scenarioId}`);
 
-        // Continue with existing binding logic...
-        const requestingGroupSelect = this.getField(partial, "requestingGroupId");
         const replyingGroupSelect = this.getField(partial, "replyingGroupId");
-        
-        // Bind appropriate events based on scenario type
-        if (requestingGroupSelect) {
-            // Check if this is a replying scenario by looking for the replyingGroupId field
-            const replyingGroupField = this.getField(partial, "replyingGroupId");
-            const isReplyingScenario = !!replyingGroupField;
-
-            // Skip binding requesting group for replying scenarios
-            if (isReplyingScenario) {
-                DevLogger.info("Skipping binding for requesting group in replying scenario", partial.id);
-            } else {
-                this.bindGroupChange(partial, proposalId, "requesting");
-            }
-        }
 
         if (replyingGroupSelect) {
             this.bindGroupChange(partial, proposalId, "replying");
+
+            // 🔥 SIMPLE: One auto-selection check
+            if (replyingGroupSelect.options.length === 2 && replyingGroupSelect.value === "") {
+                DevLogger.info("Auto-selecting single replying group", replyingGroupSelect.options[1].text);
+                replyingGroupSelect.selectedIndex = 1;
+                replyingGroupSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
 
-        // 🆕 Bind file upload events for this partial
-        this.bindFileUploadEvents(partial, scenarioId);
+        const requestingGroupSelect = this.getField(partial, "requestingGroupId");
+        if (requestingGroupSelect && !replyingGroupSelect) {
+            this.bindGroupChange(partial, proposalId, "requesting");
+        }
 
-        DevLogger.groupEnd();
+        this.bindFileUploadEvents(partial, scenarioId);
     },
+    //bindScenarioPartial(partial, proposalId) {
+    //    if (!partial || !proposalId) {
+    //        DevLogger.warn("Cannot bind scenario partial", {
+    //            partialExists: !!partial,
+    //            proposalId
+    //        });
+    //        return;
+    //    }
+
+    //    // 🔥 FIX: Set bound flag IMMEDIATELY to prevent any race conditions
+    //    if (partial._scenarioBound) {
+    //        DevLogger.info("Scenario partial already bound - skipping", partial.id);
+    //        return;
+    //    }
+    //    partial._scenarioBound = true; // Set this FIRST thing
+
+    //    // Check if partial is empty - if so, wait for content
+    //    if (!partial.children.length) {
+    //        DevLogger.info("Empty partial - waiting for content", partial.id);
+    //        partial._scenarioBound = false; // Reset if empty
+    //        return;
+    //    }
+
+    //    const scenarioId = partial.id?.replace("partial-", "") || "Unknown";
+    //    DevLogger.group(`Binding Partial for Scenario ${scenarioId}`);
+
+    //    // Continue with existing binding logic...
+    //    const requestingGroupSelect = this.getField(partial, "requestingGroupId");
+    //    const replyingGroupSelect = this.getField(partial, "replyingGroupId");
+
+    //    // Bind appropriate events based on scenario type
+    //    if (requestingGroupSelect) {
+    //        const replyingGroupField = this.getField(partial, "replyingGroupId");
+    //        const isReplyingScenario = !!replyingGroupField;
+
+    //        if (isReplyingScenario) {
+    //            DevLogger.info("Skipping binding for requesting group in replying scenario", partial.id);
+    //        } else {
+    //            this.bindGroupChange(partial, proposalId, "requesting");
+    //        }
+    //    }
+
+    //    if (replyingGroupSelect) {
+    //        this.bindGroupChange(partial, proposalId, "replying");
+            
+    //        // 🔥 SINGLE auto-selection timeout
+    //        setTimeout(() => {
+    //            DevLogger.info("Checking replying group for auto-selection", {
+    //                optionsLength: replyingGroupSelect.options.length,
+    //                currentValue: replyingGroupSelect.value
+    //            });
+
+    //            // Only auto-select if there are exactly 2 options and nothing selected
+    //            if (replyingGroupSelect.options.length === 2 && replyingGroupSelect.value === "") {
+    //                partial.style.visibility = 'hidden';
+    //                DevLogger.info("Auto-selecting single replying group", replyingGroupSelect.options[1].text);
+    //                replyingGroupSelect.selectedIndex = 1;
+    //                replyingGroupSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    
+    //                setTimeout(() => {
+    //                    partial.style.visibility = 'visible';
+    //                }, 800);
+    //            } else {
+    //                DevLogger.info("Skipping auto-selection - already selected or multiple options");
+    //            }
+    //        }, 50);
+    //    }
+
+    //    this.bindFileUploadEvents(partial, scenarioId);
+    //    DevLogger.groupEnd();
+    //},
 
     // 🆕 Add this new method to handle file upload events
     bindFileUploadEvents(partial, scenarioId) {
@@ -137,10 +203,10 @@ export const ScenarioBinder = {
             }
 
             // Check if file already added
-            const existingFile = partial._selectedFiles.find(f => 
+            const existingFile = partial._selectedFiles.find(f =>
                 f.name === file.name && f.size === file.size
             );
-            
+
             if (existingFile) {
                 DevLogger.warn("File already added", file.name);
                 return;
@@ -148,16 +214,16 @@ export const ScenarioBinder = {
 
             // Add file to array
             partial._selectedFiles.push(file);
-            
+
             // Update the UI
             this.updateFileList(partial, fileList);
-            
+
             // Update hidden input for form submission
             this.updateFileUploadPaths(partial, fileUploadPathsInput);
-            
+
             // Clear the file picker
             filePicker.value = "";
-            
+
             DevLogger.info("File added", file.name);
         });
 
@@ -175,11 +241,11 @@ export const ScenarioBinder = {
         if (!partial._selectedFiles || !fileList) return;
 
         fileList.innerHTML = "";
-        
+
         partial._selectedFiles.forEach((file, index) => {
             const listItem = document.createElement("li");
             listItem.className = "list-group-item d-flex justify-content-between align-items-center";
-            
+
             listItem.innerHTML = `
                 <span>
                     <i class="fas fa-file me-2"></i>
@@ -189,13 +255,13 @@ export const ScenarioBinder = {
                     <i class="fas fa-times"></i> Remove
                 </button>
             `;
-            
+
             // Add remove button handler
             const removeButton = listItem.querySelector("button");
             removeButton.addEventListener("click", () => {
                 this.removeFile(partial, index, fileList);
             });
-            
+
             fileList.appendChild(listItem);
         });
     },
@@ -203,10 +269,10 @@ export const ScenarioBinder = {
     // 🆕 Remove file from list
     removeFile(partial, index, fileList) {
         if (!partial._selectedFiles) return;
-        
+
         const removedFile = partial._selectedFiles.splice(index, 1)[0];
         DevLogger.info("File removed", removedFile.name);
-        
+
         // Update UI and hidden input
         this.updateFileList(partial, fileList);
         const fileUploadPathsInput = this.getField(partial, "FileUploadPaths");
@@ -216,11 +282,11 @@ export const ScenarioBinder = {
     // 🆕 Update hidden input for form submission
     updateFileUploadPaths(partial, fileUploadPathsInput) {
         if (!partial._selectedFiles || !fileUploadPathsInput) return;
-        
+
         // For now, just store file names - you may need to upload files to server first
         const filePaths = partial._selectedFiles.map(file => file.name);
         fileUploadPathsInput.value = JSON.stringify(filePaths);
-        
+
         DevLogger.info("FileUploadPaths updated", filePaths);
     },
 
@@ -251,13 +317,14 @@ export const ScenarioBinder = {
         groupSelect.addEventListener("change", () => {
             const groupId = groupSelect.value;
             if (!groupId || !proposalId) return;
-            
+
             DevLogger.info(`${groupType} group changed to`, groupId);
 
             fetch(`/Scenario/GetTargetGroupsAndReviewers?proposalId=${proposalId}&groupId=${groupId}&groupType=${groupType}`)
                 .then(res => res.json())
                 .then(data => {
-                    const targetGroupSelect = this.getField(partial, "targetGroupId");
+                    // 🔥 FIX: Only look for targetGroupId in Request scenarios
+                    const targetGroupSelect = groupType !== "replying" ? this.getField(partial, "targetGroupId") : null;
                     const reviewerSelect = this.getField(partial, "reviewerId");
 
                     if (groupType === "replying") {
@@ -276,14 +343,13 @@ export const ScenarioBinder = {
                         }
                     }
 
-                    // Only populate targetGroupSelect if it's not a reply scenario
-                    if (targetGroupSelect && groupType !== "replying") {
+                    // 🔥 FIX: Only populate targetGroupSelect for Request scenarios
+                    if (targetGroupSelect && groupType === "requesting") {
                         populateDropdown(targetGroupSelect, data.targetGroups, "--Select One--");
                     }
 
                     if (reviewerSelect) {
                         populateDropdown(reviewerSelect, data.reviewers, "--Select Reviewer--");
-
                         this.bindReviewerChange(partial, proposalId, groupType);
                         DevLogger.info("Reviewer change event bound for groupType", groupType);
                     }
@@ -299,16 +365,16 @@ export const ScenarioBinder = {
                     optionsLength: groupSelect.options.length,
                     currentValue: groupSelect.value
                 });
-                
+
                 // Only auto-select if there are exactly 2 options (default + one option) and nothing selected
                 if (groupSelect.options.length === 2 && groupSelect.value === "") {
                     // Hide the partial temporarily to prevent flashing
                     partial.style.visibility = 'hidden';
-                    
+
                     DevLogger.info("Auto-selecting single replying group", groupSelect.options[1].text);
                     groupSelect.selectedIndex = 1;
                     groupSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                    
+
                     // Show it again after processing
                     setTimeout(() => {
                         partial.style.visibility = 'visible';
@@ -425,7 +491,7 @@ export const ScenarioBinder = {
                     cancelDelayedLoading();
                 });
         });
-    },  
+    },
     toggleFormGroupByFieldId(fieldId, show, container) {
         if (!fieldId || !container) {
             DevLogger.warn("Missing field ID or container for toggle");
@@ -448,7 +514,7 @@ export const ScenarioBinder = {
         DevLogger.info(`Form group for "${fieldId}" set to`, show ? "visible" : "hidden");
     },
 
-    
+
 
     observeDynamicPartials(proposalId) {
         if (!proposalId) {
@@ -457,7 +523,7 @@ export const ScenarioBinder = {
         }
 
         DevLogger.info("Setting up mutation observer for proposal", proposalId);
-        
+
         const observer = new MutationObserver((mutations) => {
             mutations.forEach(mutation => {
                 mutation.addedNodes.forEach(node => {
@@ -527,7 +593,7 @@ export const ScenarioBinder = {
             el.id && el.id.toLowerCase().endsWith(normalizedKey)
         );
         if (directMatch) {
-            DevLogger.info("✅ Direct match found by ID suffix:", directMatch);
+            DevLogger.info("✅ Direct match found by ID suffix:", directMatch.id);
             return directMatch;
         }
 
@@ -535,7 +601,7 @@ export const ScenarioBinder = {
             el.id && el.id.toLowerCase().includes(`__${normalizedKey}`)
         );
         if (aspMatch) {
-            DevLogger.info("✅ Match found by ASP.NET-style ID pattern:", aspMatch);
+            DevLogger.info("✅ Match found by ASP.NET-style ID pattern:", aspMatch.id);
             return aspMatch;
         }
 
@@ -543,11 +609,21 @@ export const ScenarioBinder = {
             el.name && el.name.toLowerCase().endsWith(`.${normalizedKey}`)
         );
         if (nameMatch) {
-            DevLogger.info("✅ Match found by name attribute:", nameMatch);
+            DevLogger.info("✅ Match found by name attribute:", nameMatch.name);
             return nameMatch;
         }
 
+        // 🔥 ADD MORE DEBUG - Let's see what's actually being compared
         DevLogger.warn("❌ No match found for key:", key);
+        DevLogger.info("🐛 DEBUG: Detailed matching attempts:");
+        allElements.forEach(el => {
+            if (el.id) {
+                const idLower = el.id.toLowerCase();
+                DevLogger.info(`🔍 Testing ID: "${el.id}" (lowercase: "${idLower}")`);
+                DevLogger.info(`   - endsWith("${normalizedKey}"): ${idLower.endsWith(normalizedKey)}`);
+                DevLogger.info(`   - includes("__${normalizedKey}"): ${idLower.includes(`__${normalizedKey}`)}`);
+            }
+        });
         return null;
     },
 
@@ -562,6 +638,45 @@ export const ScenarioBinder = {
         if (replyingGroupSelect) {
             this.bindGroupChange(partial, proposalId, "replying");
         }
+    },
+    bindScenarioPartial(partial, proposalId) {
+        if (!partial || !proposalId || partial._scenarioBound) {
+            if (partial._scenarioBound) {
+                DevLogger.info("Scenario partial already bound - skipping", partial.id);
+            }
+            return;
+        }
+
+        partial._scenarioBound = true;
+
+        if (!partial.children.length) {
+            DevLogger.info("Empty partial - waiting for content", partial.id);
+            partial._scenarioBound = false;
+            return;
+        }
+
+        const scenarioId = partial.id?.replace("partial-", "") || "Unknown";
+        DevLogger.info(`Binding Partial for Scenario ${scenarioId}`);
+
+        const replyingGroupSelect = this.getField(partial, "replyingGroupId");
+
+        if (replyingGroupSelect) {
+            this.bindGroupChange(partial, proposalId, "replying");
+
+            // 🔥 SIMPLE: One auto-selection check
+            if (replyingGroupSelect.options.length === 2 && replyingGroupSelect.value === "") {
+                DevLogger.info("Auto-selecting single replying group", replyingGroupSelect.options[1].text);
+                replyingGroupSelect.selectedIndex = 1;
+                replyingGroupSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+
+        const requestingGroupSelect = this.getField(partial, "requestingGroupId");
+        if (requestingGroupSelect && !replyingGroupSelect) {
+            this.bindGroupChange(partial, proposalId, "requesting");
+        }
+
+        this.bindFileUploadEvents(partial, scenarioId);
     },
 
     bindReviewerChange(partial, proposalId) {
@@ -642,16 +757,4 @@ export const ScenarioBinder = {
         });
     }
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
