@@ -1,7 +1,10 @@
-﻿import { ScenarioBinder } from './ScenarioBinder.js';
+﻿import { showLoadingDelayed, cancelDelayedLoading, showLoading, hideLoading, showSpinner, hideSpinner } from './utils.js';
+import { ScenarioBinder } from './ScenarioBinder.js'; // Now static import
 import { DevLogger } from './logger.js';
 import { fetchJsonOrRenderError } from './fetchHelpers.js';
-// Enable logging if not already set
+
+// Remove the dynamic import and use static import instead
+
 window.DEBUG = window.DEBUG || true;
 
 const ScenarioInitializer = {
@@ -69,10 +72,10 @@ document.addEventListener("DOMContentLoaded", () => {
     ScenarioBinder.init();
     ScenarioInitializer.init();
 
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+    //observer.observe(document.body, {
+    //    childList: true,
+    //    subtree: true
+    //});
 
     const form = document.getElementById("scenarioForm");
     if (!form) {
@@ -84,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault(); // Prevent default form submission
 
         const actionType = document.getElementById("actionType")?.value;
-        if (actionType === "RunSelected" ) {
+        if (actionType === "RunSelected") {
             await runSelectedScenarios(form);
         }
     });
@@ -158,7 +161,6 @@ async function initializeSignalR() {
     }
 }
 
-// New function to handle running selected scenarios with progress tracking
 async function runSelectedScenarios(form) {
     const requestSelect = document.getElementById("RequestId");
     const requestId = requestSelect?.value;
@@ -197,7 +199,13 @@ async function runSelectedScenarios(form) {
     try {
         const formData = new FormData(form);
         formData.append("actionType", "RunSelected");
-        formData.append("connectionId", connectionId); // Pass connection ID
+        formData.append("connectionId", connectionId);
+
+        DevLogger.info("Sending form data to server", {
+            actionType: "RunSelected",
+            connectionId: connectionId,
+            formDataEntries: Array.from(formData.entries()).length
+        });
 
         // Show initial progress
         updateScenarioProgress(0, selectedScenarios.length, "System", "Starting scenario execution");
@@ -209,7 +217,14 @@ async function runSelectedScenarios(form) {
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            // Get more detailed error information
+            const errorText = await response.text();
+            DevLogger.error("Server response error", {
+                status: response.status,
+                statusText: response.statusText,
+                responseText: errorText
+            });
+            throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
         }
 
         // Check if response is HTML (redirect) or JSON
@@ -246,7 +261,7 @@ function getSelectedScenarioDetails(checkboxes) {
             id: checkbox.value,
             name: scenarioName,
             element: checkbox
-        };
+        };I 
     });
 }
 
@@ -351,29 +366,29 @@ function isValidRequestId(id) {
     return id && id !== "" && id !== "0" && id !== 0;
 }
 
-const observer = new MutationObserver((mutations, obs) => {
-    const requestSelect = document.getElementById("RequestId");
-    const requestingGroupSelect = document.getElementById("RequestingGroupId");
-    const replyingGroupSelect = document.getElementById("ReplyingGroupId");
-    const targetGroupSelect = document.getElementById("TargetGroupId");
-    const reviewerSelect = document.getElementById("ReviewerId");
+//const observer = new MutationObserver((mutations, obs) => {
+//    const requestSelect = document.getElementById("RequestId");
+//    const requestingGroupSelect = document.getElementById("RequestingGroupId");
+//    const replyingGroupSelect = document.getElementById("ReplyingGroupId");
+//    const targetGroupSelect = document.getElementById("TargetGroupId");
+//    const reviewerSelect = document.getElementById("ReviewerId");
 
-    // Find the container where the elements were added
-    let container = null;
-    if (mutations.length > 0 && mutations[0].target) {
-        container = mutations[0].target.closest('.scenario-partial') || document.body;
-    }
+//    // Find the container where the elements were added
+//    let container = null;
+//    if (mutations.length > 0 && mutations[0].target) {
+//        container = mutations[0].target.closest('.scenario-partial') || document.body;
+//    }
 
-    if ((requestingGroupSelect && targetGroupSelect) || replyingGroupSelect) {
-        DevLogger.info("DOM changed - binding selected group events", "🔄");
-        ScenarioBinder.bindSelectedGroupEvents(container); // Pass container
-    }
+//    if ((requestingGroupSelect && targetGroupSelect) || replyingGroupSelect) {
+//        DevLogger.info("DOM changed - binding selected group events", "🔄");
+//        ScenarioBinder.bindSelectedGroupEvents(container); // Pass container
+//    }
 
-    if (reviewerSelect) {
-        DevLogger.info("DOM changed - binding reviewer events", "👤");
-        ScenarioBinder.bindReviewerEvents(container); // Pass container
-    }
-});
+//    if (reviewerSelect) {
+//        DevLogger.info("DOM changed - binding reviewer events", "👤");
+//        ScenarioBinder.bindReviewerEvents(container); // Pass container
+//    }
+//});
 
 // Replace your current incomplete scenario toggle event with this complete version:
 document.addEventListener('change', async (e) => {
@@ -429,8 +444,6 @@ document.addEventListener('change', async (e) => {
             DevLogger.info("Partial view injected successfully", targetId);
             cancelDelayedLoading();
 
-            // Bind events to the newly loaded partial - IMPORT MISSING!
-            const { ScenarioBinder } = await import('./ScenarioBinder.js');
             ScenarioBinder.bindScenarioPartial(partial, proposalId);
 
         } else if (partial) {
@@ -478,58 +491,47 @@ export function populateDropdown(select, items, defaultText) {
     // }));
 }
 
-let spinnerTimeout;
+//let spinnerTimeout;
 
-export function showLoadingDelayed(message = "Loading...", delay = 200) {
-    DevLogger.info("Showing delayed loading indicator", message);
-    spinnerTimeout = setTimeout(() => showLoading(message), delay);
-}
+//function showLoading(message = 'Loading...') {
+//    const modal = document.getElementById('loadingModal');
+//    const messageElem = document.getElementById('loadingMessage');
+//    if (modal && messageElem) {
+//        messageElem.textContent = message;
+//        modal.style.display = 'flex';
+//        DevLogger.info("Loading indicator displayed", message);
+//    } else {
+//        DevLogger.warn("Cannot show loading - modal elements not found", "⚠️");
+//    }
+//}
 
-export function cancelDelayedLoading() {
-    DevLogger.info("Canceling delayed loading indicator", "✓");
-    clearTimeout(spinnerTimeout);
-    hideLoading();
-}
+//function hideLoading() {
+//    const modal = document.getElementById('loadingModal');
+//    if (modal) {
+//        modal.style.display = 'none';
+//        DevLogger.info("Loading indicator hidden", "✓");
+//    } else {
+//        DevLogger.warn("Cannot hide loading - modal element not found", "⚠️");
+//    }
+//}
 
-function showLoading(message = 'Loading...') {
-    const modal = document.getElementById('loadingModal');
-    const messageElem = document.getElementById('loadingMessage');
-    if (modal && messageElem) {
-        messageElem.textContent = message;
-        modal.style.display = 'flex';
-        DevLogger.info("Loading indicator displayed", message);
-    } else {
-        DevLogger.warn("Cannot show loading - modal elements not found", "⚠️");
-    }
-}
+//function showSpinner(message = "Loading...") {
+//    const modal = document.getElementById("loadingModal");
+//    const messageEl = document.getElementById("loadingMessage");
+//    if (modal && messageEl) {
+//        messageEl.textContent = message;
+//        modal.style.display = "flex";
+//        DevLogger.info("Spinner displayed", message);
+//    }
+//}
 
-function hideLoading() {
-    const modal = document.getElementById('loadingModal');
-    if (modal) {
-        modal.style.display = 'none';
-        DevLogger.info("Loading indicator hidden", "✓");
-    } else {
-        DevLogger.warn("Cannot hide loading - modal element not found", "⚠️");
-    }
-}
-
-function showSpinner(message = "Loading...") {
-    const modal = document.getElementById("loadingModal");
-    const messageEl = document.getElementById("loadingMessage");
-    if (modal && messageEl) {
-        messageEl.textContent = message;
-        modal.style.display = "flex";
-        DevLogger.info("Spinner displayed", message);
-    }
-}
-
-function hideSpinner() {
-    const modal = document.getElementById("loadingModal");
-    if (modal) {
-        modal.style.display = "none";
-        DevLogger.info("Spinner hidden", "✓");
-    }
-}
+//function hideSpinner() {
+//    const modal = document.getElementById("loadingModal");
+//    if (modal) {
+//        modal.style.display = "none";
+//        DevLogger.info("Spinner hidden", "✓");
+//    }
+//}
 
 
 

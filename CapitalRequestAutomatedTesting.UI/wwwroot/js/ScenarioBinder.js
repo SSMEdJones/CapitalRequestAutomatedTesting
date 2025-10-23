@@ -1,5 +1,6 @@
-﻿import { showLoadingDelayed, cancelDelayedLoading, populateDropdown} from './scenario.js';
+﻿import { showLoadingDelayed, cancelDelayedLoading, populateDropdown } from './utils.js';
 import { DevLogger } from './logger.js';
+// Remove the import from scenario.js
 // Enable logging
 window.DEBUG = true; // Set to true to enable logging, false to disable
 
@@ -280,12 +281,35 @@ export const ScenarioBinder = {
     },
 
     // 🆕 Update hidden input for form submission
+    // 🆕 Update hidden input for form submission
     updateFileUploadPaths(partial, fileUploadPathsInput) {
-        if (!partial._selectedFiles || !fileUploadPathsInput) return;
+        if (!partial._selectedFiles) return;
 
-        // For now, just store file names - you may need to upload files to server first
+        // Store file names for the paths
         const filePaths = partial._selectedFiles.map(file => file.name);
-        fileUploadPathsInput.value = JSON.stringify(filePaths);
+        if (fileUploadPathsInput) {
+            fileUploadPathsInput.value = JSON.stringify(filePaths);
+        }
+
+        // 🔥 CRITICAL: Update the actual AddInfoFiles input for model binding
+        const addInfoFilesInput = this.getField(partial, "AddInfoFiles");
+        if (addInfoFilesInput && partial._selectedFiles.length > 0) {
+            // Create a new FileList from selected files
+            const dt = new DataTransfer();
+            partial._selectedFiles.forEach(file => {
+                dt.items.add(file);
+            });
+            addInfoFilesInput.files = dt.files;
+
+            DevLogger.info("✅ AddInfoFiles updated with actual files", {
+                fileCount: partial._selectedFiles.length,
+                fileNames: partial._selectedFiles.map(f => f.name)
+            });
+        } else if (addInfoFilesInput) {
+            // Clear files if none selected
+            addInfoFilesInput.files = new DataTransfer().files;
+            DevLogger.info("🧹 AddInfoFiles cleared");
+        }
 
         DevLogger.info("FileUploadPaths updated", filePaths);
     },

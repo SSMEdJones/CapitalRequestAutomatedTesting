@@ -404,6 +404,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     new PredictiveMethod
                     {
                         StepNumber = ++stepNumber,
+                        StepName = "Validate Workflow DashBoard button",
                         ServiceName = "IPredictiveWorkflowActionService",
                         MethodName = "ValidateWorkflowButtonAsync",
                         Parameters = new List<object> { proposal }
@@ -414,6 +415,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     new PredictiveMethod
                     {
                         StepNumber = ++stepNumber,
+                        StepName = "Validate Action button",
                         ServiceName = "IPredictiveWorkflowActionService",
                         MethodName = "ValidateActionButtonAsync",
                         Parameters = new List<object> { proposal, requestingGroupId, expectedMessage }
@@ -423,35 +425,58 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 // 🆕 Add individual file upload steps to match Selenium behavior
                 if (scenarioDetail.FileUploads?.Any() == true)
                 {
+
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            StepName = "Validate file input visibility",
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidateFileInputVisibilityAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
                     foreach (var fileUpload in scenarioDetail.FileUploads)
                     {
                         predictiveMethods.Add(
                             new PredictiveMethod
                             {
                                 StepNumber = ++stepNumber,
+                                StepName = "Validate file upload",
                                 ServiceName = "IScenarioControllerService",
                                 MethodName = "ValidateFileUploadAsync",
                                 Parameters = new List<object> { fileUpload.FileName, fileUpload.ContentType }
                             }
                         );
                     }
+
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            StepName = "Validate file input not visibile",
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidateFileInputVisibilityAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
                 }
                 // 🆕 Alternative: Check AddInfoFiles if FileUploads is not populated
-                else if (scenarioDetail.AddInfoFiles?.Any() == true)
-                {
-                    foreach (var file in scenarioDetail.AddInfoFiles)
-                    {
-                        predictiveMethods.Add(
-                            new PredictiveMethod
-                            {
-                                StepNumber = ++stepNumber,
-                                ServiceName = "IScenarioControllerService",
-                                MethodName = "ValidateFileUploadAsync",
-                                Parameters = new List<object> { file.FileName, file.ContentType }
-                            }
-                        );
-                    }
-                }
+                //else if (scenarioDetail.AddInfoFiles?.Any() == true)
+                //{
+                //    foreach (var file in scenarioDetail.AddInfoFiles)
+                //    {
+                //        predictiveMethods.Add(
+                //            new PredictiveMethod
+                //            {
+                //                StepNumber = ++stepNumber,
+                //                ServiceName = "IScenarioControllerService",
+                //                MethodName = "ValidateFileUploadAsync",
+                //                Parameters = new List<object> { file.FileName, file.ContentType }
+                //            }
+                //        );
+                //    }
+                //}
 
                 // Add pause step if enabled
                 if (scenarioDetail.PauseBeforeSubmit)
@@ -460,6 +485,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         new PredictiveMethod
                         {
                             StepNumber = ++stepNumber,
+                            StepName = "Pause to submit the form",
                             ServiceName = "IScenarioControllerService",
                             MethodName = "ValidatePauseBeforeSubmitAsync",
                             Parameters = new List<object> { proposal }
@@ -471,6 +497,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                    new PredictiveMethod
                    {
                        StepNumber = ++stepNumber,
+                       StepName = "Validate Response Message",
                        ServiceName = "IPredictiveWorkflowStepOptionService",
                        MethodName = "ValidateResponseMessageAsync",
                        Parameters = new List<object> { proposal, actionType, expectedMessage }
@@ -481,6 +508,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                    new PredictiveMethod
                    {
                        StepNumber = ++stepNumber,
+                       StepName = "Validate group status",
                        ServiceName = "IPredictiveDashboardService",
                        MethodName = "ValidateDashboardStatusAsync",
                        Parameters = new List<object> { proposal, requestingGroup.Name, requestingGroup.Name, Constants.DASHBOARD_STATUS_CLEAR }

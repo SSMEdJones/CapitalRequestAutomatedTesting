@@ -6,6 +6,8 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
     {
         public int Id { get; set; }
         public int StepNumber { get; set; }
+        public string StepName { get; set; }
+
         public int Order { get; set; }
 
         public string ScenarioId { get; set; }

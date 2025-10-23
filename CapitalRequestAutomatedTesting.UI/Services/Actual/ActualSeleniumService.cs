@@ -26,47 +26,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private readonly ILogger<ActualSeleniumService> _logger;
         private readonly IMapper _mapper;
 
-        //private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        //private readonly IActualRequestedInfoService _actualRequestedInfoService;
-        //private readonly IActualWorkflowStepResponderService _actualWorkflowStepResponderService;
-        //private readonly IActualWorkflowStepOptionService _actualWorkflowStepOptionService;
-        //private readonly IActualEmailNotificationService _actualEmailNotificationService;
-        //private readonly IUserContextService _userContextService;
-        //private readonly IServiceScopeFactory _scopeFactory;
-        //private readonly IRollbackService _rollbackService;
-        //private readonly IFormDataContext _formDataContext;
-
         public ActualSeleniumService(ILogger<ActualSeleniumService> logger,
             ICapitalRequestServices capitalRequestServices,
             IWorkflowControllerService workflowControllerService,
             IActualDashboardService actualDashboardService,
             IMapper mapper)
-            //ISSMWorkflowServices ssmWorkflowServices,
-            //IActualRequestedInfoService actualRequestedInfoService,
-            //IActualWorkflowStepResponderService actualWorkflowStepResponderService,
-            //IActualWorkflowStepOptionService actualWorkflowStepOptionService,
-            //IActualEmailNotificationService actualEmailNotificationService,
-            //IUserContextService userContextService,
-            //IServiceScopeFactory scopeFactory,
-            //IRollbackService rollbackService,
-            //IFormDataContext formDataContext,
-            //)
         {
             _logger = logger;
             _capitalRequestServices = capitalRequestServices;
             _workflowControllerService = workflowControllerService;
             _actualDashboardService = actualDashboardService;
             _mapper = mapper;
-            
-            //_ssmWorkflowServices = ssmWorkflowServices;
-            //_actualRequestedInfoService = actualRequestedInfoService;
-            //_actualWorkflowStepResponderService = actualWorkflowStepResponderService;
-            //_actualWorkflowStepOptionService = actualWorkflowStepOptionService;
-            //_actualEmailNotificationService = actualEmailNotificationService;
-            //_userContextService = userContextService;
-            //_scopeFactory = scopeFactory;
-            //_rollbackService = rollbackService;
-            //_formDataContext = formDataContext;
         }
 
         public async Task<SeleniumScenarioOutcome> GenerateSeleniumOutcomeAsync(ScenarioDetailsViewModel scenarioDetail)
@@ -230,24 +200,46 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         .Build("Entered requested information")
                 });
 
-                // Optional pause for user to review or manually submit
+                // For SCN001 - Replace the pause section:
                 if (scenarioDetail.PauseBeforeSubmit)
                 {
                     actualSteps.Add(new SeleniumScenarioStep
                     {
                         StepNumber = ++stepNumber,
-                        Description = "Pause for user to manually submit the form",
-                        Action = driver =>
+                        Description = "Pause for user to manually submit the form and validate success",
+                        Action = async driver =>
                         {
                             Console.WriteLine("Paused: Please manually submit the form in the browser, then press Enter to continue...");
                             Console.ReadLine();
-                            return Task.FromResult(SeleniumStepResult.Pass("User submitted form manually."));
+                            
+                            // 🔥 CRITICAL: Validate the success message after manual submission
+                            try
+                            {
+                                // Wait a bit for the page to update after submission
+                                await Task.Delay(1000);
+                                
+                                var element = driver.FindElement(By.Id("responseMessage"));
+                                var actualText = element.Text?.Trim();
+                                
+                                if (actualText?.Contains(Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT) == true)
+                                {
+                                    return SeleniumStepResult.Pass($"User submitted form manually. Success message verified: {actualText}");
+                                }
+                                else
+                                {
+                                    return SeleniumStepResult.Fail($"Expected success message not found after manual submission. Actual: {actualText}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                return SeleniumStepResult.Fail($"Failed to validate success message after manual submission: {ex.Message}");
+                            }
                         }
                     });
                 }
                 else
                 {
-                    // Step: Click submit and validate
+                    // Automated submission path
                     actualSteps.Add(new SeleniumScenarioStep
                     {
                         StepNumber = ++stepNumber,
@@ -259,7 +251,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     });
                 }
 
-                // Continue with dashboard validation step as before
+                // 🔥 IMPORTANT: Dashboard validation should ALWAYS execute after either path
                 var conditionalDashboardSteps = new SeleniumDsl()
                     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
                     .Then(Conditional.If(
@@ -279,40 +271,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     Action = conditionalDashboardSteps,
                     Retryable = true
                 });
-
-                //actualSteps.Add(new SeleniumScenarioStep
-                //{
-                //    StepNumber = ++stepNumber,
-                //    Description = $"Enter requested information press submit and verify success message",
-                //    Action = new SeleniumDsl()
-                //    .BeginWith(Execute.EnterRequestedInformation(scenarioDetail.RequestedInformation))
-                //    .Then(Execute.ClickButtonById("btnSubmitMoreInfo", "Submit button"))
-                //    .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT, "Submission success message"))
-                //    .Build("Entered requested information and clicked Submit button")
-
-                //});
-
-                //var conditionalDashboardSteps = new SeleniumDsl()
-                //    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
-                //    .Then(Conditional.If(
-                //        reviewerHasNoRequests,
-                //        Validate.NoRequestsMessage(), // When no requests
-                //        new SeleniumDsl()
-                //            .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
-                //            .Then(Validate.DashboardStatus(dashboardOrder, targetGroup.Name, DateTime.Now))
-                //            .Build("Dashboard Search + Status Validation")
-                //    ))
-                //    .Build("Navigate to Home Dashboard and validate group status");
-
-                //actualSteps.Add(new SeleniumScenarioStep
-                //{
-                //    StepNumber = ++stepNumber,
-                //    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
-                //    Action = conditionalDashboardSteps,
-                //    Retryable = true
-                //});
-
-
             }
             else if (scenarioId == "SCN002")
             {
@@ -345,6 +303,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 actualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = ++stepNumber,
+                    StepName = "Validate Workflow DashBoard button",
                     Description = "Validate Workflow DashBoard button click and validate Replying Reviewer Group Reply button",
                     Action = new SeleniumDsl()
                     .BeginWith(Execute.NavigateTo(viewProposalUrl))
@@ -359,6 +318,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 actualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = ++stepNumber,
+                    StepName = $"Click '{buttonText}' in row with WorkflowPortion",
                     Description = $"Click '{buttonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
                     Action = new SeleniumDsl()
                     .BeginWith(Execute.RobustClickReplyInRow(workflowPortion, requestedInfoId, description, buttonText, maxRetries))
@@ -374,6 +334,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     actualSteps.Add(new SeleniumScenarioStep
                     {
                         StepNumber = ++stepNumber,
+                        StepName = "Make file input visible",
                         Description = "Make file input visible",
                         Action = new SeleniumDsl()
                             .BeginWith(Execute.RunJavaScript("document.getElementById('btnFilePicker').style.display = 'block';", "Reveal hidden file input"))
@@ -386,18 +347,31 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         actualSteps.Add(new SeleniumScenarioStep
                         {
                             StepNumber = ++stepNumber,
+                            StepName = $"Upload file: {Path.GetFileName(filePath)}",
                             Description = $"Upload file: {Path.GetFileName(filePath)}",
                             Action = new SeleniumDsl()
                                 .BeginWith(Execute.UploadFileById("btnFilePicker", filePath, "File Picker"))
                                 .Build($"Appended {Path.GetFileName(filePath)} to upload list")
                         });
                     }
+
+                    // Step 3: Hide the file input to restore original appearance
+                    actualSteps.Add(new SeleniumScenarioStep
+                    {
+                        StepNumber = ++stepNumber,
+                        StepName = "Hide file input",
+                        Description = "Hide file input to restore original application appearance",
+                        Action = new SeleniumDsl()
+                            .BeginWith(Execute.RunJavaScript("document.getElementById('btnFilePicker').style.display = 'none';", "Hide file input"))
+                            .Build("File input hidden")
+                    });
                 }
 
                 // Step: Enter returned information
                 actualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = ++stepNumber,
+                    StepName = "Enter returned information",
                     Description = "Enter returned information (do not submit yet)",
                     Action = new SeleniumDsl()
                         .BeginWith(Execute.EnterReturnedInformation(scenarioDetail.ReturnedInformation))
@@ -410,12 +384,62 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     actualSteps.Add(new SeleniumScenarioStep
                     {
                         StepNumber = ++stepNumber,
-                        Description = "Pause for user to manually submit the form",
-                        Action = driver =>
+                        StepName = "Pause to manually submit the form",
+                        Description = "Pause for user to manually submit the form and handle any redirects",
+                        Action = async driver =>
                         {
-                            Console.WriteLine("Paused: Please manually submit the form in the browser, then press Enter to continue...");
+                            Console.WriteLine("🔄 Paused: Please manually submit the form in the browser, then press Enter to continue...");
+                            Debug.WriteLine($"🔄 SCN002: Current URL before manual submission: {driver.Url}");
+                            
                             Console.ReadLine();
-                            return Task.FromResult(SeleniumStepResult.Pass("User submitted form manually."));
+                            
+                            Console.WriteLine("🔄 User pressed Enter, checking browser state...");
+                            Debug.WriteLine($"🔄 SCN002: Current URL after manual submission: {driver.Url}");
+                            
+                            try
+                            {
+                                // Wait a bit for any page updates/redirects after submission
+                                await Task.Delay(2000);
+                                
+                                var currentUrl = driver.Url;
+                                Debug.WriteLine($"🔄 SCN002: Final URL after delay: {currentUrl}");
+                                
+                                // 🔥 Check if we've been redirected to home page
+                                if (currentUrl.Contains("/Home") || currentUrl.EndsWith($"{reviewer.UserId}") || !currentUrl.Contains("WorkflowActions"))
+                                {
+                                    Debug.WriteLine("⚠️ SCN002: Detected redirect to home page - this is expected behavior after successful submission");
+                                    return SeleniumStepResult.Pass("Form submitted successfully. Application redirected to home page as expected.");
+                                }
+                                
+                                // If we're still on the form page, try to find success message
+                                try
+                                {
+                                    var element = driver.FindElement(By.Id("responseMessage"));
+                                    var actualText = element.Text?.Trim();
+                                    Debug.WriteLine($"🔄 SCN002: Found response message: {actualText}");
+                                    
+                                    if (actualText?.Contains(Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT) == true)
+                                    {
+                                        Debug.WriteLine("✅ SCN002: Success message verified after manual submission");
+                                        return SeleniumStepResult.Pass($"User submitted form manually. Success message verified: {actualText}");
+                                    }
+                                    else
+                                    {
+                                        Debug.WriteLine($"❌ SCN002: Unexpected message content: {actualText}");
+                                        return SeleniumStepResult.Fail($"Expected success message not found after manual submission. Actual: {actualText}");
+                                    }
+                                }
+                                catch (NoSuchElementException)
+                                {
+                                    Debug.WriteLine("⚠️ SCN002: No response message element found - assuming successful submission with redirect");
+                                    return SeleniumStepResult.Pass("User indicated form was submitted manually. No response message found (likely redirected).");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"💥 SCN002: Error checking browser state after manual pause: {ex.Message}");
+                                return SeleniumStepResult.Fail($"Error verifying submission state: {ex.Message}");
+                            }
                         }
                     });
                 }
@@ -425,6 +449,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     actualSteps.Add(new SeleniumScenarioStep
                     {
                         StepNumber = ++stepNumber,
+                        StepName = "Press submit",
                         Description = "Press submit and verify success message",
                         IsCommitStep = true,
                         Action = new SeleniumDsl()
@@ -450,6 +475,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 actualSteps.Add(new SeleniumScenarioStep
                 {
                     StepNumber = ++stepNumber,
+                    StepName = "Validate group status",
                     Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
                     Action = conditionalDashboardSteps,
                     Retryable = true
@@ -487,6 +513,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 //    Action = conditionalDashboardSteps,
                 //    Retryable = true
                 //});
+
 
             }
 
