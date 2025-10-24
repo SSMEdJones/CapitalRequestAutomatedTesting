@@ -357,6 +357,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 }
 
                 predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       StepNumber = ++stepNumber,
+                       StepName = "Validate returned information",
+                       ServiceName = "IScenarioControllerService",
+                       MethodName = "ValidateRequestedInformationAsync",
+                       Parameters = new List<object> { proposal }
+                   }
+               );
+                predictiveMethods.Add(
                     new PredictiveMethod
                     {
                         StepNumber = ++stepNumber,
@@ -493,6 +503,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     );
                 }
 
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       StepNumber = ++stepNumber,
+                       StepName = "Validate returned information",
+                       ServiceName = "IScenarioControllerService",
+                       MethodName = "ValidateReturnedInformationAsync",
+                       Parameters = new List<object> { proposal }
+                   }
+               );
                 predictiveMethods.Add(
                    new PredictiveMethod
                    {

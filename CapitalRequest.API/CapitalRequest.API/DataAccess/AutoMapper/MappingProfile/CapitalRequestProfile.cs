@@ -43,6 +43,7 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
             CreateMap<dto.Reviewer, vm.Reviewer>();
             CreateMap<dto.Wbs, vm.Wbs>();
             CreateMap<dto.Attachment, vm.Attachment>();
+            CreateMap<vm.Attachment, dto.Attachment>();
             CreateMap<dto.Quote, vm.Quote>();
             CreateMap<dto.WorkflowTemplate, vm.WorkflowTemplate>();
             CreateMap<dto.WorkflowAction, vm.WorkflowAction>();

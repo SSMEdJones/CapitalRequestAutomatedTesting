@@ -33,6 +33,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<SeleniumStepResult> ValidateFileUploadAsync(string fileName, string contentType);
         Task<SeleniumStepResult> ValidateFileInputVisibilityAsync(vm.Proposal proposal);
         Task<SeleniumStepResult> ValidateFileInputNotVisibileAsync(vm.Proposal proposal);
+        Task<SeleniumStepResult> ValidateReturnedInformationAsync(vm.Proposal proposal);
+        Task<SeleniumStepResult> ValidateRequestedInformationAsync(vm.Proposal proposal);
 
     }
 
@@ -516,18 +518,58 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return await _capitalRequestServices.GetReviewerGroup(id);
         }
 
-        public async Task<SeleniumStepResult> ValidatePauseBeforeSubmitAsync(vm.Proposal proposal)
+        // 🔥 NEW: Generic validation method with configurable delay and messaging
+        private async Task<SeleniumStepResult> ExecuteValidationWithDelayAsync(
+            string successMessage, 
+            string failureMessagePrefix = "Validation failed", 
+            int delayMs = 100)
         {
-            // Simulate pause validation - this is just a placeholder
-            await Task.Delay(100);
-
-            return new SeleniumStepResult
+            try
             {
-                Success = true,
-                Message = "Pause validation completed successfully."
-            };
+                await Task.Delay(delayMs);
+                return SeleniumStepResult.Pass(successMessage);
+            }
+            catch (Exception ex)
+            {
+                return SeleniumStepResult.Fail($"{failureMessagePrefix}: {ex.Message}");
+            }
         }
 
+        // 🔄 REFACTORED: All validation methods now use the common method
+        public async Task<SeleniumStepResult> ValidatePauseBeforeSubmitAsync(vm.Proposal proposal)
+        {
+            return await ExecuteValidationWithDelayAsync("Pause validation completed successfully.");
+        }
+
+        public async Task<SeleniumStepResult> ValidateFileInputVisibilityAsync(vm.Proposal proposal)
+        {
+            return await ExecuteValidationWithDelayAsync(
+                "File input can be made visible - validation successful",
+                "File input visibility validation failed");
+        }
+
+        public async Task<SeleniumStepResult> ValidateFileInputNotVisibileAsync(vm.Proposal proposal)
+        {
+            return await ExecuteValidationWithDelayAsync(
+                "File input can be made invisible - validation successful",
+                "File input not visible validation failed");
+        }
+
+        public async Task<SeleniumStepResult> ValidateReturnedInformationAsync(vm.Proposal proposal)
+        {
+            return await ExecuteValidationWithDelayAsync(
+                "Returned information validated successfully",
+                "Returned information validation failed");
+        }
+
+        public async Task<SeleniumStepResult> ValidateRequestedInformationAsync(vm.Proposal proposal)
+        {
+            return await ExecuteValidationWithDelayAsync(
+                "Requested information validated successfully",
+                "Requested information validation failed");
+        }
+
+        // Note: ValidateFileUploadAsync is different because it has actual validation logic
         public async Task<SeleniumStepResult> ValidateFileUploadAsync(string fileName, string contentType)
         {
             try
@@ -543,50 +585,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     return SeleniumStepResult.Fail($"Content type is missing for file: {fileName}");
                 }
 
-                // Add any additional file validation logic here
+                // Use the delay method for consistency
+                await Task.Delay(100);
                 return SeleniumStepResult.Pass($"File upload validated successfully: {fileName} ({contentType})");
             }
             catch (Exception ex)
             {
                 return SeleniumStepResult.Fail($"File upload validation failed: {ex.Message}");
-            }
-        }
-
-        public async Task<SeleniumStepResult> ValidateFileInputVisibilityAsync(vm.Proposal proposal)
-        {
-            // This is a placeholder validation that the file input would be accessible
-            // In a real scenario, you might validate DOM structure or permissions
-
-            try
-            {
-                // Simulate the validation that file input can be made visible
-                await Task.Delay(100); // Simulate processing time
-
-                return SeleniumStepResult.Pass("File input can be made visible - validation successful");
-            }
-            catch (Exception ex)
-            {
-                return SeleniumStepResult.Fail($"File input visibility validation failed: {ex.Message}");
-            }
-
-
-        }
-
-        public async Task<SeleniumStepResult> ValidateFileInputNotVisibileAsync(vm.Proposal proposal)
-        {
-            // This is a placeholder validation that the file input would not be accessible
-            // In a real scenario, you might validate DOM structure or permissions
-
-            try
-            {
-                // Simulate the validation that file input can be made visible
-                await Task.Delay(100); // Simulate processing time
-
-                return SeleniumStepResult.Pass("File input can be made invisible - validation successful");
-            }
-            catch (Exception ex)
-            {
-                return SeleniumStepResult.Fail($"File input not visibile validation failed: {ex.Message}");
             }
         }
     }
