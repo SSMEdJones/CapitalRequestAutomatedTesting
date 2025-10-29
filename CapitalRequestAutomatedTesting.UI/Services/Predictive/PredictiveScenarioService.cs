@@ -371,8 +371,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 var actionType = proposal.ActionType;
                 var expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
 
-                //TODO remove once selenium code is updated
-                proposal.Attachment = null;
+                if (proposal.AddInfoFiles != null)
+                {
+                    proposal.Attachment = new CapitalRequest.API.Models.Attachment();
+                }
+
                 var lookupKey = Constants.UPLOAD_DIRECTORY_ATTACHMENTS;
 
                 List<FileUploadData> files = detail.FileUploads;

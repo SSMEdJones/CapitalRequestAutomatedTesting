@@ -305,7 +305,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ActionType = Constants.ACTION_TYPE_VERIFY;
                 actionType = proposal.ActionType;
                 expectedMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
-                
+
                 var increment = 1;
 
                 proposal.RequestedInfo.Id = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id) + increment; ;
@@ -396,6 +396,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
                 var replyingGroupId = detail.ReplyingGroupId;
                 var replyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
+                proposal.Attachment = null;
 
                 var filter = new RequestedInfoSearchFilter
                 {
@@ -409,7 +410,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 {
                     proposal.RequestedInfo = requestedInfo;
                 }
-                    
+
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
@@ -435,6 +436,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 // 🆕 Add individual file upload steps to match Selenium behavior
                 if (scenarioDetail.FileUploads?.Any() == true)
                 {
+
+                    proposal.Attachment = new vm.Attachment();
 
                     predictiveMethods.Add(
                         new PredictiveMethod

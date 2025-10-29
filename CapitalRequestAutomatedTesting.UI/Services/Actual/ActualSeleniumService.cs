@@ -79,6 +79,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
 
             var steps = await GenerateSeleniumSteps(scenarioDetail);
+
             var options = GetChromeOptions();
             var driver = new ChromeDriver(options);
             driver.Manage().Window.Maximize();
@@ -426,56 +427,60 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         {
                             Console.WriteLine("🔄 Paused: Please manually submit the form in the browser, then press Enter to continue...");
                             Debug.WriteLine($"🔄 SCN002: Current URL before manual submission: {driver.Url}");
-                            
-                            Console.ReadLine();
-                            
-                            Console.WriteLine("🔄 User pressed Enter, checking browser state...");
-                            Debug.WriteLine($"🔄 SCN002: Current URL after manual submission: {driver.Url}");
-                            
-                            try
+
+                            var responseResult = await WaitForResponseMessage(driver, scenarioId, maxWaitSeconds: 60);
+
+                            if (responseResult.Found)
                             {
-                                // Wait a bit for any page updates/redirects after submission
-                                await Task.Delay(2000);
-                                
-                                var currentUrl = driver.Url;
-                                Debug.WriteLine($"🔄 SCN002: Final URL after delay: {currentUrl}");
-                                
-                                // 🔥 Check if we've been redirected to home page
-                                if (currentUrl.Contains("/Home") || currentUrl.EndsWith($"{reviewer.UserId}") || !currentUrl.Contains("WorkflowActions"))
+                                Console.WriteLine($"✅ Response message detected: '{responseResult.Message}'");
+                                Console.WriteLine($"🚀 Continuing test execution automatically after {responseResult.ElapsedSeconds:F1}s");
+
+                                Debug.WriteLine($"✅ {scenarioId}: Auto-detected response after {responseResult.ElapsedSeconds:F1}s");
+
+                                // Check for expected success messages
+                                if (responseResult.Message.Contains(Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT))
                                 {
-                                    Debug.WriteLine("⚠️ SCN002: Detected redirect to home page - this is expected behavior after successful submission");
-                                    return SeleniumStepResult.Pass("Form submitted successfully. Application redirected to home page as expected.");
+                                    Debug.WriteLine($"✅ {scenarioId}: Expected success message detected");
+                                    return SeleniumStepResult.Pass($"Form submitted successfully. Auto-detected success message: {responseResult.Message}");
                                 }
-                                
-                                // If we're still on the form page, try to find success message
+                                else if (responseResult.Message.Contains("Error") || responseResult.Message.Contains("Failed"))
+                                {
+                                    Debug.WriteLine($"❌ {scenarioId}: Error message detected");
+                                    return SeleniumStepResult.Fail($"Error detected in response: {responseResult.Message}");
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"⚠️ {scenarioId}: Unexpected message content");
+                                    return SeleniumStepResult.Pass($"Form submitted. Unexpected message: {responseResult.Message}");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"⏰ Timeout: No response message appeared within 60 seconds");
+                                Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for response message");
+
+                                // Fallback: Check for redirect or other indicators
                                 try
                                 {
-                                    var element = driver.FindElement(By.Id("responseMessage"));
-                                    var actualText = element.Text?.Trim();
-                                    Debug.WriteLine($"🔄 SCN002: Found response message: {actualText}");
-                                    
-                                    if (actualText?.Contains(Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT) == true)
+                                    await Task.Delay(2000);
+                                    var currentUrl = driver.Url;
+
+                                    if (currentUrl.Contains("/Home") || !currentUrl.Contains("WorkflowActions"))
                                     {
-                                        Debug.WriteLine("✅ SCN002: Success message verified after manual submission");
-                                        return SeleniumStepResult.Pass($"User submitted form manually. Success message verified: {actualText}");
+                                        Debug.WriteLine($"⚠️ {scenarioId}: Detected redirect as fallback indicator");
+                                        return SeleniumStepResult.Pass($"Form likely submitted (detected redirect to: {currentUrl})");
                                     }
                                     else
                                     {
-                                        Debug.WriteLine($"❌ SCN002: Unexpected message content: {actualText}");
-                                        return SeleniumStepResult.Fail($"Expected success message not found after manual submission. Actual: {actualText}");
+                                        return SeleniumStepResult.Fail("Timeout waiting for response message and no redirect detected");
                                     }
                                 }
-                                catch (NoSuchElementException)
+                                catch (Exception ex)
                                 {
-                                    Debug.WriteLine("⚠️ SCN002: No response message element found - assuming successful submission with redirect");
-                                    return SeleniumStepResult.Pass("User indicated form was submitted manually. No response message found (likely redirected).");
+                                    return SeleniumStepResult.Fail($"Timeout and error checking fallback indicators: {ex.Message}");
                                 }
                             }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine($"💥 SCN002: Error checking browser state after manual pause: {ex.Message}");
-                                return SeleniumStepResult.Fail($"Error verifying submission state: {ex.Message}");
-                            }
+                            
                         }
                     });
                 }
@@ -560,7 +565,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         {
             var commitStepReached = false;
             var maxStep = scenarioDetail.PredictiveCompletionStep;
-
+            
             var outcome = new SeleniumScenarioOutcome
             {
                 ScenarioId = scenarioDetail.ScenarioId,

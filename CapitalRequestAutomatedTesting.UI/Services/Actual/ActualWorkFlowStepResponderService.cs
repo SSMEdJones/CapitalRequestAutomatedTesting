@@ -60,10 +60,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var workflowStepOptions = proposal.WorkflowStepOptions;
             WorkFlowStepOptionViewModel? workflowStepOption = null;
 
+            var isTerminated = false;
+
             var reviewerGroupId = optionType == Constants.ACTION_TYPE_ADD_INFO ? proposal.ReviewerGroupId : proposal.RequestingGroupId;
             if (workflowStepOptions.Any())
             {
-
                 var optionsByGroup = workflowStepOptions
                     .Where(x => x.ReviewerGroupId == reviewerGroupId);
 
@@ -73,6 +74,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     workflowStepOption = optionsByGroup
                         .Where(x => x.OptionType == optionType &&
                             x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower() &&
+                            x.IsTerminate == false &&
                             x.RequestedInfoId == requestedInfoId)
                         .FirstOrDefault();
 
