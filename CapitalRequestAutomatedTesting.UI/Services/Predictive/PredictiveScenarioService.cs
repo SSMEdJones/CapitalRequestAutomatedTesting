@@ -6,7 +6,6 @@ using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
@@ -369,7 +368,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 proposal.AddInfoFiles = detail.AddInfoFiles;
                 var actionType = proposal.ActionType;
-                var expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
+                //var expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
 
                 if (proposal.AddInfoFiles != null)
                 {
@@ -389,8 +388,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 var stepNumber = 0;
 
-                //CreateAttachmentsAsync(string lookupKey, vm.Proposal proposal, List < FileUploadData > files)
-                //
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {

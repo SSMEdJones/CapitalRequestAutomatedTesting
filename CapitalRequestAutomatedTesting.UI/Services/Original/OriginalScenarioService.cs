@@ -291,7 +291,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             else if (scenarioId == "SCN002")
             {
                 // For "Reply to Request" scenario
-                string fileName = null;
+                //string fileName = null;
                 var fileType = UploadFileType.Attachment;
                 var requestedInfoId = detail.RequestedInfoId;
                 var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);

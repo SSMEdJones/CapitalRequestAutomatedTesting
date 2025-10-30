@@ -2,7 +2,6 @@
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using Infrastructure.ApiDiagnostics;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using SSMWorkflow.API.DataAccess.Models;
@@ -311,26 +310,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
             else if (scenarioId == "SCN002")
             {
-                //var WorkflowDashboardButtonText = Constants.ACTION_TYPE_VERIFY;
-                var replyButton = Constants.RESPONSE_RETURN_MORE_INFORMATION;
+                //var replyButton = Constants.RESPONSE_RETURN_MORE_INFORMATION;
                 var buttonText = Constants.ACTION_TYPE_REPLY;
                 var replyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
                 var requestedInfoId = proposal.RequestedInfoId.ToString();
                 var description = $"Replying to Request Id {requestedInfoId}";
                 workflowPortion = $"{replyingGroup.StepNumber} -{replyingGroup.Name}";
                 maxRetries = 3;
-
-                //scenarioDetail.FileUploadPaths = scenarioDetail.AttachmentFiles?
-                //    .Select(file =>
-                //    {
-                //        var tempPath = Path.Combine(Path.GetTempPath(), file.FileName);
-                //        using (var stream = new FileStream(tempPath, FileMode.Create))
-                //        {
-                //            file.CopyTo(stream);
-                //        }
-                //        return tempPath;
-                //    })
-                //    .ToList();
 
                 scenarioDetail.FileUploadPaths = scenarioDetail.FileUploads
                    .Select(f => f.TempFilePath)
@@ -521,40 +507,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     Action = conditionalDashboardSteps,
                     Retryable = true
                 });
-
-                //actualSteps.Add(new SeleniumScenarioStep
-                //{
-                //    StepNumber = ++stepNumber,
-                //    Description = $"Enter returned information press submit and verify success message",
-                //    IsCommitStep = true,
-                //    Action = new SeleniumDsl()
-                //    .BeginWith(Execute.EnterReturnedInformation(scenarioDetail.ReturnedInformation))
-                //    .Then(Execute.ClickButtonById("btnSendAddedInfo", "Submit button"))
-                //    .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT, "Submission success message"))
-                //    .Build("Entered requested information and clicked Submit button")
-
-                //});
-
-                //var conditionalDashboardSteps = new SeleniumDsl()
-                //    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
-                //    .Then(Conditional.If(
-                //        reviewerHasNoRequests,
-                //        Validate.NoRequestsMessage(), // When no requests
-                //        new SeleniumDsl()
-                //            .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
-                //            .Then(Validate.DashboardStatus(dashboardOrder, string.Empty, null))
-                //            .Build("Dashboard Search + Status Validation")
-                //    ))
-                //    .Build("Navigate to Home Dashboard and validate group status");
-
-                //actualSteps.Add(new SeleniumScenarioStep
-                //{
-                //    StepNumber = ++stepNumber,
-                //    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
-                //    Action = conditionalDashboardSteps,
-                //    Retryable = true
-                //});
-
 
             }
 

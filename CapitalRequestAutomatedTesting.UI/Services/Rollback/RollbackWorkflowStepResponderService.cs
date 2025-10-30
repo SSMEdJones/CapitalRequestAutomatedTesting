@@ -45,7 +45,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Rollback
 
             var workflowStepResponder = await _actualWorkflowStepResponderService.GetWorkflowStepResponderAsync(proposal, responderType, optionType);
 
-            _ssmWorkflowServices.DeleteWorkflowStepResponder(workflowStepResponder.ResponderID);
+            await _ssmWorkflowServices.DeleteWorkflowStepResponder(workflowStepResponder.ResponderID);
 
             return workflowStepResponder;
         }

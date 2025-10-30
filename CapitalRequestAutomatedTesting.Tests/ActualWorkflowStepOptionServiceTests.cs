@@ -105,7 +105,7 @@ namespace CapitalRequestAutomatedTesting.Tests
              */
             // Arrange
             var proposalId = 2936; // Example proposal ID
-            var optionType = Constants.OPTION_TYPE_ADD_INFO;
+            //var optionType = Constants.OPTION_TYPE_ADD_INFO;
             var requestedInfoId = 723;
             //var workflowStepId = Guid.Parse("53E451AC-8057-F011-A31B-0050569736FD");
             var proposal = await _capitalRequestservices.GetProposal(proposalId);
