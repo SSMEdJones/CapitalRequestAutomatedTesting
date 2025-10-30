@@ -1,7 +1,4 @@
-﻿#nullable disable
-
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.RegularExpressions;
+#nullable disable
 
 namespace SSMWorkflow.API.Models
 {

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
@@ -6,7 +6,6 @@ using Newtonsoft.Json;
 using SSMWorkflow.API.DataAccess.ConfigurationSettings;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
-using System.Diagnostics;
 
 namespace SSMWorkflow.API.DataAccess.Services.Api
 {

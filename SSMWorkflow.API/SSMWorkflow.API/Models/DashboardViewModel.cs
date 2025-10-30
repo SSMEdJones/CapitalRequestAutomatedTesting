@@ -1,11 +1,9 @@
-﻿
+#nullable disable
+
 namespace SSMWorkflow.API.Models
 {
     public class DashboardViewModel
     {
-
-        //public AnnualCapitalProcess AnnualCapitalProcess { get; set; }
-
 
         public string ShowAnnualCapitalProcess { get; set; }
 

@@ -1,4 +1,3 @@
-using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.Tests;
 using CapitalRequestAutomatedTesting.UI.Models;
@@ -13,7 +12,6 @@ public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase
 
     private readonly ICapitalRequestServices _capitalRequestservices;
     private readonly ISSMWorkflowServices _ssmWorkflowServices;
-    private readonly IMapper _mapper;
 
     public PredictiveWorkflowStepOptionServiceTests()
     {
@@ -21,7 +19,6 @@ public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase
         _capitalRequestservices = _provider.GetRequiredService<ICapitalRequestServices>();
         _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
         _requestedInfoService = _provider.GetRequiredService<IPredictiveRequestedInfoService>();
-        _mapper = _provider.GetRequiredService<IMapper>();
     }
 
     [Fact]

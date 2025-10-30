@@ -1,0 +1,76 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# All files
+[*]
+indent_style = space
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Code files
+[*.{cs,csx,vb,vbx}]
+indent_size = 4
+charset = utf-8
+
+# XML project files
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+indent_size = 2
+
+# JSON files
+[*.{json,json5}]
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# Web files
+[*.{htm,html,js,ts,tsx,css,sass,scss,less,svg,vue}]
+indent_size = 2
+
+# C# specific rules for unused code detection
+[*.cs]
+# Unused private members
+dotnet_diagnostic.IDE0051.severity = warning
+# Unread private members  
+dotnet_diagnostic.IDE0052.severity = warning
+# Unused parameters
+dotnet_diagnostic.IDE0060.severity = suggestion
+# Remove unnecessary using directives
+dotnet_diagnostic.IDE0005.severity = warning
+# Remove unused variables
+dotnet_diagnostic.IDE0059.suggestion = suggestion
+# Unused local functions
+dotnet_diagnostic.IDE0060.severity = suggestion
+
+# Additional useful rules for code quality
+# Prefer 'var' when type is apparent
+dotnet_diagnostic.IDE0007.severity = suggestion
+# Prefer explicit type when not apparent
+dotnet_diagnostic.IDE0008.severity = suggestion
+# Remove unnecessary cast
+dotnet_diagnostic.IDE0004.severity = warning
+# Remove unnecessary imports
+dotnet_diagnostic.IDE0005.severity = warning
+# Use conditional expression for assignment
+dotnet_diagnostic.IDE0045.severity = suggestion
+# Use conditional expression for return
+dotnet_diagnostic.IDE0046.severity = suggestion
+
+# Naming conventions
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.severity = warning
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.symbols = interface_symbols
+dotnet_naming_rule.interfaces_should_be_prefixed_with_i.style = prefix_interface_with_i
+
+dotnet_naming_symbols.interface_symbols.applicable_kinds = interface
+dotnet_naming_symbols.interface_symbols.applicable_accessibilities = *
+
+dotnet_naming_style.prefix_interface_with_i.required_prefix = I
+dotnet_naming_style.prefix_interface_with_i.capitalization = pascal_case

@@ -14,11 +14,6 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
     private readonly IPredictiveScenarioService _service;
     private readonly ICapitalRequestServices _capitalRequestservices;
     private readonly ISSMWorkflowServices _ssmWorkflowServices;
-    private readonly IWorkflowControllerService _workflowControllerService;
-    private readonly IPredictiveRequestedInfoService _requestedInfoService;
-    private readonly IPredictiveWorkflowStepResponderService _responderService;
-    private readonly IPredictiveWorkflowStepOptionService _optionService;
-    private readonly IPredictiveEmailNotificationService _emailService;
     private readonly IUserContextService _userContextService;
 
     public PredictiveScenarioServiceTests()
@@ -27,11 +22,6 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
         _capitalRequestservices = _provider.GetRequiredService<ICapitalRequestServices>();
         _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
         _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
-        _workflowControllerService = _provider.GetRequiredService<IWorkflowControllerService>();
-        _requestedInfoService = _provider.GetRequiredService<IPredictiveRequestedInfoService>();
-        _responderService = _provider.GetRequiredService<IPredictiveWorkflowStepResponderService>();
-        _optionService = _provider.GetRequiredService<IPredictiveWorkflowStepOptionService>();
-        _emailService = _provider.GetRequiredService<IPredictiveEmailNotificationService>();
         _userContextService = _provider.GetRequiredService<IUserContextService>();
     }
 
@@ -47,7 +37,7 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
 
         proposal.Reviewer = await _capitalRequestservices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
         var increment = 0;
-        var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId))
+        var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
             .Where(x => !x.IsComplete)
             .FirstOrDefault();
 
@@ -94,10 +84,6 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
         }
     }
 
-    public async Task Should_Invoke_ReturnInfo_Methods_Dynamically_And_Return_Valid_Results()
-    {
-
-    }
 
     [Fact]
     public async Task GenerateScenarioDataAsync_ReturnsPredictiveData()

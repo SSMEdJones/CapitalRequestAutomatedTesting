@@ -1,5 +1,3 @@
-﻿using System.ComponentModel.DataAnnotations;
-
 namespace SSMWorkflow.API.DataAccess.Models
 {
     public class WorkFlowInstanceActionHistorySearchFilter

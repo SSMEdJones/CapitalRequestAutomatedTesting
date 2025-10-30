@@ -1,4 +1,3 @@
-using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,13 +8,11 @@ namespace CapitalRequestAutomatedTesting.Tests
     {
         private readonly IActualRequestedInfoService _service;
         private readonly ICapitalRequestServices _capitalRequestServices;
-        private readonly IMapper _mapper;
 
         public ActualRequestedInfoServiceTests()
         {
             _service = _provider.GetRequiredService<IActualRequestedInfoService>();
             _capitalRequestServices = _provider.GetRequiredService<ICapitalRequestServices>();
-            _mapper = _provider.GetRequiredService<IMapper>();
         }
 
         [Fact]

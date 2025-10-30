@@ -30,7 +30,7 @@ public class PredictiveWorkflowStepResponderServiceTests : IntegrationTestBase
         
         var predicted = await _service.CreateWorkflowStepResponderAsync(proposal, Constants.RESPONDER_REQUEST);
 
-        var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
+        var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId);
 
         var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
 

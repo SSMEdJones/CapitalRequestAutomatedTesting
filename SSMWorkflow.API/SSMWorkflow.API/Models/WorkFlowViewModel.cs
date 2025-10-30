@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+#nullable disable
+
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SSMWorkflow.API.Models
 {

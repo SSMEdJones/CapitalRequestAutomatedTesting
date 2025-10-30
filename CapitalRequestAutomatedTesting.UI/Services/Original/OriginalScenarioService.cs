@@ -292,7 +292,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             {
                 // For "Reply to Request" scenario
                 //string fileName = null;
-                var fileType = UploadFileType.Attachment;
+                //var fileType = UploadFileType.Attachment;
                 var requestedInfoId = detail.RequestedInfoId;
                 var requestedInfo = await _capitalRequestServices.GetRequestedInfo(scenarioDetail.RequestedInfoId);
 

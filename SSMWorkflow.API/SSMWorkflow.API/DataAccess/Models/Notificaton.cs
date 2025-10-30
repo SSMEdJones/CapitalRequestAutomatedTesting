@@ -1,4 +1,6 @@
-﻿namespace SSMWorkflow.API.DataAccess.Models
+#nullable disable
+
+namespace SSMWorkflow.API.DataAccess.Models
 {
     public class Notification
     {

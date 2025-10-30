@@ -1,18 +1,6 @@
-﻿using AutoMapper;
-using CapitalRequestAutomatedTesting.Data.Services;
-using CapitalRequestAutomatedTesting.Tests;
-using CapitalRequestAutomatedTesting.UI.Controllers;
-using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using CapitalRequestAutomatedTesting.UI.Services;
-using CapitalRequestAutomatedTesting.UI.Services.Actual;
-using CapitalRequestAutomatedTesting.UI.Services.Original;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Microsoft.Extensions.DependencyInjection;
-using SSMWorkflow.API.DataAccess.Models;
-using SSMWorkflow.API.Models;
-using System.Diagnostics;
-using vm = CapitalRequest.API.Models;
 
 
 namespace CapitalRequestAutomatedTesting.Tests
@@ -20,18 +8,10 @@ namespace CapitalRequestAutomatedTesting.Tests
     public class RollbackServiceTests : IntegrationTestBase
     {
         private readonly IPredictiveScenarioService _predictiveScenarioService;
-        private readonly IRollbackService _service;
-        private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        private readonly ICapitalRequestServices _capitalRequestservices;
-        private readonly IMapper _mapper;
 
         public RollbackServiceTests()
         {
-            _service = _provider.GetRequiredService<IRollbackService>();
             _predictiveScenarioService = _provider.GetRequiredService<IPredictiveScenarioService>();
-            _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
-            _capitalRequestservices = _provider.GetRequiredService<ICapitalRequestServices>();
-            _mapper = _provider.GetRequiredService<IMapper>();
         }
 
 

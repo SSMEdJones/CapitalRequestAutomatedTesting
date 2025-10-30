@@ -1,11 +1,8 @@
-using AutoMapper;
+#nullable disable
 using CapitalRequestAutomatedTesting.Data.Services;
+using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
-using vm = CapitalRequest.API.Models;
-using Xunit;
-using CapitalRequestAutomatedTesting.UI.Models;
 
 namespace CapitalRequestAutomatedTesting.Tests
 {
@@ -14,7 +11,6 @@ namespace CapitalRequestAutomatedTesting.Tests
         private readonly IActualEmailNotificationService _service;
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        private readonly IMapper _mapper;
 
         public ActualEmailNotificationService()
         {
@@ -22,7 +18,6 @@ namespace CapitalRequestAutomatedTesting.Tests
             _capitalRequestServices = _provider.GetRequiredService<ICapitalRequestServices>();
             _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
 
-            _mapper = _provider.GetRequiredService<IMapper>();
         }
 
         

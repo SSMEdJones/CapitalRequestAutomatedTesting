@@ -41,7 +41,7 @@ public class PredictiveEmailNotificationServiceTests : IntegrationTestBase
 
         var predicted = await _service.CreateEmailNotificationsAsync(proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, null);
 
-        var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId);
+        var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId);
         var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
 
         var allNotifications = await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStep.WorkflowStepID });

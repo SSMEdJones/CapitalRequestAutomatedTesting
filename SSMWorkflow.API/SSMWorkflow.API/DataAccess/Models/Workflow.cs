@@ -1,4 +1,5 @@
-﻿namespace SSMWorkflow.API.DataAccess.Models
+
+namespace SSMWorkflow.API.DataAccess.Models
 {
     public class Workflow
     {

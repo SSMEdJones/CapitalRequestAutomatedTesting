@@ -1,9 +1,10 @@
-﻿using Infrastructure.ApiDiagnostics;
+#nullable disable
+
+using Infrastructure.ApiDiagnostics;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using NLog;
 
 namespace Infrastructure.Middleware
 {

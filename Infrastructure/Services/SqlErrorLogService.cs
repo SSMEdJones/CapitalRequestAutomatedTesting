@@ -1,4 +1,5 @@
-﻿using Infrastructure.Middleware;
+
+using Infrastructure.Middleware;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System.Data;

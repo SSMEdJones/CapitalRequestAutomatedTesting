@@ -1,14 +1,6 @@
-﻿using CapitalRequestAutomatedTesting.Data.Services;
-using CapitalRequestAutomatedTesting.Tests;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using CapitalRequestAutomatedTesting.UI.Services;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualBasic;
-using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
-using Newtonsoft.Json;
-using OpenQA.Selenium.BiDi.Modules.Script;
-using SSMWorkflow.API.DataAccess.Models;
 using System.Diagnostics;
 
 namespace CapitalRequestAutomatedTesting.Tests
@@ -16,16 +8,10 @@ namespace CapitalRequestAutomatedTesting.Tests
     public class PredictiveSeleniumServiceTests : IntegrationTestBase
     {
         private readonly IPredictiveSeleniumService _predictiveSeleniumService;
-        private readonly ICapitalRequestServices _capitalRequestServices;
-        private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        private readonly IUserContextService _userContextService;
 
         public PredictiveSeleniumServiceTests()
         {
             _predictiveSeleniumService = _provider.GetRequiredService<IPredictiveSeleniumService>();
-            _capitalRequestServices = _provider.GetRequiredService<ICapitalRequestServices>();
-            _ssmWorkflowServices = _provider.GetRequiredService<ISSMWorkflowServices>();
-            _userContextService = _provider.GetRequiredService<IUserContextService>();
         }
 
         //[Fact]
