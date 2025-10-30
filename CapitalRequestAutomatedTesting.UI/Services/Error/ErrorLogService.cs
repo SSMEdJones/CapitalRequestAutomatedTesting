@@ -1,4 +1,3 @@
-using Infrastructure.Middleware;
 using Microsoft.Data.SqlClient;
 using System.Data;
 

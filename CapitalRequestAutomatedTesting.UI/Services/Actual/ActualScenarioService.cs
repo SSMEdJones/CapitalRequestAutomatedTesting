@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
@@ -7,7 +7,6 @@ using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
-using System.Collections.Generic;
 using System.Reflection;
 using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
 
@@ -308,7 +307,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             {
                 string fileName = null;
                 var fileType = UploadFileType.Attachment;
-                var isOpen = false;
                 var requestedInfoId = detail.RequestedInfoId;
                 var optionType = Constants.OPTION_TYPE_ADD_INFO;
 

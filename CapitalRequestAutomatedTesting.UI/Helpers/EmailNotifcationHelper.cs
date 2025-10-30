@@ -1,6 +1,4 @@
-﻿using CapitalRequestAutomatedTesting.UI.Models;
-using HtmlAgilityPack;
-using Microsoft.VisualBasic;
+using CapitalRequestAutomatedTesting.UI.Models;
 using Scriban;
 using SSMWorkflow.API.Models;
 using System.Text.RegularExpressions;
@@ -45,10 +43,6 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
         {
             try
             {
-                // Remove "EXECUTE dbo.GetCapitalRequestGroupNotifications" and split by commas
-//EXECUTE dbo.GetCapitalRequestGroupNotifications
-//NULL,'57b740bd-1f2a-f011-a318-0050569736fd','3','3','Edward Jones from IT requested more information from Facilities on 5/30/2025.',NULL,'667'
-
                 var parts = emailQuery
                     .Replace("EXECUTE dbo.GetCapitalRequestGroupNotifications", string.Empty)
                     .Trim()
@@ -64,13 +58,13 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                     EmailNotificationId = id.Value,
                     WorkflowStepId = Guid.Parse(parts[1]),
                     EmailTemplateId = int.TryParse(parts[2], out var emailTemplateId) ? emailTemplateId : 0,
-                    ReviewerGroupId = int.TryParse(parts[3], out var reviewerGroupId) ? reviewerGroupId : (int?)null,
+                    ReviewerGroupId = int.TryParse(parts[3], out var reviewerGroupId) ? reviewerGroupId : null,
                     Message = parts[4],
                     OptionId = Guid.Parse(parts[5]),
-                    RequestedInfoId = int.TryParse(parts[6], out var requestedInfoId) ? requestedInfoId : (int?)null
+                    RequestedInfoId = int.TryParse(parts[6], out var requestedInfoId) ? requestedInfoId : null
                 };
             }
-            catch (Exception ex)
+            catch (Exception )
             {
                 // Optionally log or handle parsing errors
                 return null;

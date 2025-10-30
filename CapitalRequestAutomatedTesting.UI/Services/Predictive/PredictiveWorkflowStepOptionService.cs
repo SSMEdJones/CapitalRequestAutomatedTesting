@@ -1,16 +1,10 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Enums;
-using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using Microsoft.AspNetCore.Connections.Features;
-using OpenQA.Selenium.DevTools.V134.Network;
 using SSMWorkflow.API.DataAccess.Models;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
@@ -31,24 +25,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
-        private readonly IPredictiveRequestedInfoService _predictiveRequestedInfoService;
-        private readonly IUserContextService _userContextService;
-        private readonly IDeletedReviewers _deletedReviewers;
         private readonly IMapper _mapper;
 
         public PredictiveWorkflowStepOptionService(
             ISSMWorkflowServices ssmWorkflowServices,
             ICapitalRequestServices capitalRequestServices,
-            IPredictiveRequestedInfoService predictiveRequestedInfoService,
-            IUserContextService userContextService,
-            IDeletedReviewers deletedReviewers,
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
-            _predictiveRequestedInfoService = predictiveRequestedInfoService;
-            _userContextService = userContextService;
-            _deletedReviewers = deletedReviewers;
             _mapper = mapper;
         }
 

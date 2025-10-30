@@ -1,7 +1,6 @@
-﻿using CapitalRequest.API.DataAccess.AutoMapper.MappingProfile;
+using CapitalRequest.API.DataAccess.AutoMapper.MappingProfile;
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequestAutomatedTesting.Data.Helpers;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.AutoMapper.MappingProfile;
 using CapitalRequestAutomatedTesting.UI.Helpers;

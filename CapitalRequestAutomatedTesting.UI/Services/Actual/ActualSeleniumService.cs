@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -647,7 +647,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private async Task<ResponseMessageResult> WaitForResponseMessage(IWebDriver driver, string scenarioId, int maxWaitSeconds = 30)
         {
             var startTime = DateTime.Now;
-            var checkInterval = TimeSpan.FromMilliseconds(500); // Check every 500ms
+            var checkInterval = TimeSpan.FromMilliseconds(500);
             
             Debug.WriteLine($"🔄 {scenarioId}: Starting to poll for responseMessage element...");
             
@@ -655,29 +655,34 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             {
                 try
                 {
-                    // Check if the responseMessage element exists and is visible
                     var responseElement = driver.FindElement(By.Id("responseMessage"));
+                    var isDisplayed = responseElement.Displayed;
+                    var hasText = !string.IsNullOrWhiteSpace(responseElement.Text);
                     
-                    if (responseElement.Displayed && !string.IsNullOrWhiteSpace(responseElement.Text))
+                    Debug.WriteLine($"🔍 {scenarioId}: Element found - Displayed: {isDisplayed}, HasText: {hasText}, Text: '{responseElement.Text}'");
+                    
+                    if (isDisplayed && hasText)
                     {
                         var messageText = responseElement.Text.Trim();
-                        Debug.WriteLine($"✅ {scenarioId}: Response message appeared: '{messageText}'");
+                        var elapsedSeconds = (DateTime.Now - startTime).TotalSeconds;
+                        
+                        Debug.WriteLine($"✅ {scenarioId}: Response message appeared after {elapsedSeconds:F1}s: '{messageText}'");
                         
                         return new ResponseMessageResult
                         {
                             Found = true,
                             Message = messageText,
-                            ElapsedSeconds = (DateTime.Now - startTime).TotalSeconds
+                            ElapsedSeconds = elapsedSeconds
                         };
                     }
                 }
                 catch (NoSuchElementException)
                 {
-                    // Element doesn't exist yet, continue polling
+                    Debug.WriteLine($"🔍 {scenarioId}: Element 'responseMessage' not found in DOM");
                 }
                 catch (StaleElementReferenceException)
                 {
-                    // Element became stale, continue polling
+                    Debug.WriteLine($"🔍 {scenarioId}: Element became stale, retrying...");
                 }
                 
                 await Task.Delay(checkInterval);

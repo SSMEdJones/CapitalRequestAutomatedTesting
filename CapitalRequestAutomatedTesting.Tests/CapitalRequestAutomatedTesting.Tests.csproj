@@ -8,6 +8,14 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;CS8618;CS8625;CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;CS8618;CS8625;CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.12.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />

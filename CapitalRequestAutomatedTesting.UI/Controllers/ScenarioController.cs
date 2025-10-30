@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -156,7 +156,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                                 }
                                 break; // Success
                             }
-                            catch (IOException ex) when (i < 2)
+                            catch (IOException ) when (i < 2)
                             {
                                 await Task.Delay(100);
                             }
