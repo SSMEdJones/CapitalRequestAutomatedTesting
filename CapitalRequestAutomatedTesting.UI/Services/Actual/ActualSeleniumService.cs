@@ -424,7 +424,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                 Debug.WriteLine($"✅ {scenarioId}: Auto-detected response after {responseResult.ElapsedSeconds:F1}s");
 
                                 // Check for expected success messages
-                                if (responseResult.Message.Contains(Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT))
+                                if (responseResult.Message.Contains(Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT))
                                 {
                                     Debug.WriteLine($"✅ {scenarioId}: Expected success message detected");
                                     return SeleniumStepResult.Pass($"Form submitted successfully. Auto-detected success message: {responseResult.Message}");
@@ -656,14 +656,34 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 try
                 {
                     var responseElement = driver.FindElement(By.Id("responseMessage"));
-                    var isDisplayed = responseElement.Displayed;
-                    var hasText = !string.IsNullOrWhiteSpace(responseElement.Text);
+                    var cssDisplay = responseElement.GetCssValue("display");
+                    var cssVisibility = responseElement.GetCssValue("visibility");
                     
-                    Debug.WriteLine($"🔍 {scenarioId}: Element found - Displayed: {isDisplayed}, HasText: {hasText}, Text: '{responseElement.Text}'");
+                    // 🔥 Try multiple methods to get the text content
+                    var elementText = responseElement.Text?.Trim() ?? "";
+                    var innerText = responseElement.GetAttribute("innerText")?.Trim() ?? "";
+                    var textContent = responseElement.GetAttribute("textContent")?.Trim() ?? "";
+                    var innerHTML = responseElement.GetAttribute("innerHTML")?.Trim() ?? "";
                     
-                    if (isDisplayed && hasText)
+                    Debug.WriteLine($"🔍 {scenarioId}: Text retrieval attempts:");
+                    Debug.WriteLine($"  - .Text: '{elementText}'");
+                    Debug.WriteLine($"  - innerText: '{innerText}'");
+                    Debug.WriteLine($"  - textContent: '{textContent}'");
+                    Debug.WriteLine($"  - innerHTML: '{innerHTML}'");
+                    Debug.WriteLine($"  - cssDisplay: '{cssDisplay}'");
+                    Debug.WriteLine($"  - cssVisibility: '{cssVisibility}'");
+                    
+                    // Choose the best available text
+                    var messageText = !string.IsNullOrWhiteSpace(elementText) ? elementText :
+                                     !string.IsNullOrWhiteSpace(innerText) ? innerText :
+                                     !string.IsNullOrWhiteSpace(textContent) ? textContent :
+                                     "";
+
+                    // Check if we have meaningful content and element is visible
+                    if (!string.IsNullOrWhiteSpace(messageText) && 
+                        cssDisplay != "none" && 
+                        cssVisibility != "hidden")
                     {
-                        var messageText = responseElement.Text.Trim();
                         var elapsedSeconds = (DateTime.Now - startTime).TotalSeconds;
                         
                         Debug.WriteLine($"✅ {scenarioId}: Response message appeared after {elapsedSeconds:F1}s: '{messageText}'");
@@ -671,7 +691,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         return new ResponseMessageResult
                         {
                             Found = true,
-                            Message = messageText,
+                            Message = messageText,  // ← Now this should have actual content
                             ElapsedSeconds = elapsedSeconds
                         };
                     }

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
@@ -368,16 +368,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 proposal.AddInfoFiles = detail.AddInfoFiles;
                 var actionType = proposal.ActionType;
-                //var expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
-
-                if (proposal.AddInfoFiles != null)
-                {
-                    proposal.Attachment = new CapitalRequest.API.Models.Attachment();
-                }
-
                 var lookupKey = Constants.UPLOAD_DIRECTORY_ATTACHMENTS;
 
                 List<FileUploadData> files = detail.FileUploads;
+
+                if (files.Any())
+                {
+                    proposal.Attachment = new CapitalRequest.API.Models.Attachment();
+                }
+                else
+                {
+                    proposal.Attachment = null;
+                }
 
                 // mapping fields
                 proposal.ProvidedInfo.RequestedInfoId = proposal.RequestedInfo.Id;
@@ -491,7 +493,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             return predictiveMethods;
         }
 
-        
+
 
     }
 }

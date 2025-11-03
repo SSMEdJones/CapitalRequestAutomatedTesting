@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
@@ -96,6 +96,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 scenarioDetail.SelectedProperties["Replying Group"] = replyingGroup.Name;
                 scenarioDetail.SelectedProperties["Returned Information"] = scenarioDetail.ReturnedInformation;
+
+            }
+
+            if (scenarioId == "SCN003")
+            {
+                // stubbed for future scenario
 
             }
 
@@ -539,6 +545,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                );
 
             }
+
+            else if (scenarioId == "SCN003")
+            {
+                //stubbed for future scenario
+            }
+
 
             return predictiveMethods;
         }
