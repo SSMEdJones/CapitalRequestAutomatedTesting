@@ -61,23 +61,30 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
 
-            var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
-            var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
-
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
-            proposal.ReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-            proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = reviewer;
 
             scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
-            scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
-            scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
-            scenarioDetail.SelectedProperties["Requested Information"] = scenarioDetail.RequestedInformation;
-            scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
 
+            if (scenarioId != "SCN003")
+            {
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
+
+                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+
+                proposal.Reviewer = reviewer;
+
+
+                scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
+                scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
+                scenarioDetail.SelectedProperties["Requested Information"] = scenarioDetail.RequestedInformation;
+                scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
+
+            }
 
             if (scenarioId == "SCN001")
             {
@@ -275,31 +282,36 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var predictiveMethods = new List<PredictiveMethod>();
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
-            var requestingGroupId = detail.RequestingGroupId;
-            var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
 
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
-            proposal.RequestingGroupId = detail.RequestingGroupId;
-            proposal.ReplyingGroupId = detail.ReplyingGroupId;
-            proposal.ReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
-            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-            proposal.ReturnedInformation = detail.ReturnedInformation;
+            var requestingGroupId = detail.RequestingGroupId;
+            var requestingGroupName = string.Empty;
 
-            proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+            if (scenarioId != "SCN003")
+            {
 
-            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
-                .Where(x => !x.IsComplete)
-                .FirstOrDefault();
+                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                requestingGroupName = requestingGroup.Name;
+                proposal.RequestingGroupId = detail.RequestingGroupId;
+                proposal.ReplyingGroupId = detail.ReplyingGroupId;
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.ReviewerGroupId = detail.TargetGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReturnedInformation = detail.ReturnedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
-            proposal.WorkflowStepId = workflowStep.WorkflowStepID;
-            proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
-            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                .Where(x => x.IsComplete == false && x.IsTerminate == false)
-                .ToList();
+                var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                    .Where(x => !x.IsComplete)
+                    .FirstOrDefault();
 
+                proposal.WorkflowStepId = workflowStep.WorkflowStepID;
+                proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
+                proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                    .Where(x => x.IsComplete == false && x.IsTerminate == false)
+                    .ToList();
+            }
             var stepNumber = 0;
 
             if (scenarioId == "SCN001")
@@ -388,7 +400,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                        StepNumber = ++stepNumber,
                        ServiceName = "IPredictiveDashboardService",
                        MethodName = "ValidateDashboardStatusAsync",
-                       Parameters = new List<object> { proposal, requestingGroup.Name, targetGroup.Name, Constants.DASHBOARD_STATUS_INFORMATION_REQUESTED }
+                       Parameters = new List<object> { proposal, requestingGroupName, targetGroup.Name, Constants.DASHBOARD_STATUS_INFORMATION_REQUESTED }
                    }
                );
 
@@ -480,22 +492,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         }
                     );
                 }
-                // 🆕 Alternative: Check AddInfoFiles if FileUploads is not populated
-                //else if (scenarioDetail.AddInfoFiles?.Any() == true)
-                //{
-                //    foreach (var file in scenarioDetail.AddInfoFiles)
-                //    {
-                //        predictiveMethods.Add(
-                //            new PredictiveMethod
-                //            {
-                //                StepNumber = ++stepNumber,
-                //                ServiceName = "IScenarioControllerService",
-                //                MethodName = "ValidateFileUploadAsync",
-                //                Parameters = new List<object> { file.FileName, file.ContentType }
-                //            }
-                //        );
-                //    }
-                //}
 
                 // Add pause step if enabled
                 if (scenarioDetail.PauseBeforeSubmit)
@@ -540,17 +536,50 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                        StepName = "Validate group status",
                        ServiceName = "IPredictiveDashboardService",
                        MethodName = "ValidateDashboardStatusAsync",
-                       Parameters = new List<object> { proposal, requestingGroup.Name, requestingGroup.Name, Constants.DASHBOARD_STATUS_CLEAR }
+                       Parameters = new List<object> { proposal, requestingGroupName, requestingGroupName, Constants.DASHBOARD_STATUS_CLEAR }
                    }
                );
 
             }
-
             else if (scenarioId == "SCN003")
             {
-                //stubbed for future scenario
-            }
+                proposal.SubmitUserId = detail.SubmitUserId;
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        StepName = "Validate Edit button",
+                        ServiceName = "IScenarioControllerService",
+                        MethodName = "ValidateEditButtonAsync",
+                        Parameters = new List<object> { proposal }
+                    }
+                );
 
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        StepName = "Validate Submit button",
+                        ServiceName = "IScenarioControllerService",
+                        MethodName = "ValidateSubmitButtonAsync",
+                        Parameters = new List<object> { proposal }
+                    }
+                );
+
+                if (scenarioDetail.PauseBeforeSubmit)
+                {
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            StepName = "Pause to submit the form",
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidatePauseBeforeSubmitAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
+                }
+            }
 
             return predictiveMethods;
         }

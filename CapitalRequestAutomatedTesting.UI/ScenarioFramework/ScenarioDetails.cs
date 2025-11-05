@@ -1,4 +1,6 @@
-﻿namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
+using Microsoft.AspNetCore.Mvc.Rendering;
+
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class ScenarioDetails
     {
@@ -15,6 +17,7 @@
         public string ReturnedInformation { get; set; }
         public int SequenceNumber { get; set; }
         public int RequestedInfoId { get; set; }
+        public string SubmitUserId { get; set; }
 
         public string Message { get; set; }
 

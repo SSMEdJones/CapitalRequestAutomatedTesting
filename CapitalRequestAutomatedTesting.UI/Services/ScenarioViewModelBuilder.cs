@@ -1,4 +1,4 @@
-﻿using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace CapitalRequestAutomatedTesting.UI.Services
@@ -27,6 +27,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 vm.RequestingGroups = requestingGroups;
                 vm.TargetGroups = targetGroups;
                 vm.Reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, vm.RequestingGroupId ?? 0);
+
+                // Set selected items
+                vm.RequestingGroups.ForEach(x => x.Selected = x.Value == vm.RequestingGroupId?.ToString());
+                vm.TargetGroups.ForEach(x => x.Selected = x.Value == vm.TargetGroupId?.ToString());
+                vm.Reviewers.ForEach(x => x.Selected = x.Value == vm.ReviewerId?.ToString());
+            }
+
+            if (vm.ScenarioId == "SCN003")
+            {
+               var submitUsers = await _scenarioControllerService.GetSubmitUsersAsync(proposalId);
 
                 // Set selected items
                 vm.RequestingGroups.ForEach(x => x.Selected = x.Value == vm.RequestingGroupId?.ToString());

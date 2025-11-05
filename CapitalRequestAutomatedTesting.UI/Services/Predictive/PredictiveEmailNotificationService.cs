@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
@@ -18,6 +18,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
     public interface IPredictiveEmailNotificationService
     {
         Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser);
+        Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal);
         Task<string> GenerateEmailMessageAsync(vm.EmailTemplate emailTemplate, vm.Reviewer reviewer, vm.ReviewerGroup requestingGroup, vm.Proposal proposal);
         string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName, string requestingUser);
     }
@@ -137,6 +138,75 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             return emailNotifications;
         }
 
+        public async Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal)
+        {
+            var emailNotifications = new List<EmailNotification>();
+
+            var workflowTemplate = (await _capitalRequestServices
+                .GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepNumber = Constants.STEP_ONE }))
+                .FirstOrDefault();
+
+            foreach (var reviewerGroup in proposal.ReviewerGroups)
+            {
+                var reviewerGroupdId = reviewerGroup.Id;
+                var reviewers = (await GetReviewers(proposal))
+                    .Where(x => x.ReviewerGroupId == reviewerGroupdId)
+                    .Select(z => _mapper.Map<vm.Reviewer>(z))
+                    .ToList();
+
+                foreach (var reviewer in reviewers)
+                {
+                    var emailActionTemplate = Constants.EMAIL_TEMPLATE_INITIAL_EMAIL;
+                    var fullName = reviewer.FullName;
+
+                    var action = emailActionTemplate;
+
+                    var emailTemplateId = reviewerGroup.EmailTemplateId;
+                    var emailTemplate = new vm.EmailTemplate();
+
+                    if (emailTemplateId != null)
+                    {
+                        emailTemplate = await _capitalRequestServices.GetEmailTemplate(emailTemplateId.Value);
+                    }
+
+                    var emailMessage = await GenerateEmailMessageAsync(emailTemplate, reviewer, proposal);
+
+                    var emallQueryViewModel = new EmailQueryViewModel
+                    {
+                        EmailTemplateId = emailTemplate.Id.ToString(),
+                        ReviewerGroupId = reviewerGroupdId.ToString(),
+                        Action = action,
+                        OptionId = "NULL",
+                        RequestedInfoId = "NULL"
+                    };
+
+                    var emailQuery = GenerateEmailQuery(emallQueryViewModel);
+                    var emailNotification = new EmailNotification
+                    {
+                        WorkflowStepId = Guid.Empty,
+                        WorkflowName = proposal.ProjectName,
+                        WorkflowDescription = proposal.ProjectDescription,
+                        WorkflowState = workflowTemplate.StepName,
+                        StepName = workflowTemplate.StepName,
+                        StepDescription = workflowTemplate.StepDescription,
+                        Action = workflowTemplate.StepDescription,
+                        EmailMessage = emailMessage,
+                        Recipients = reviewer.Email,
+                        Subject = emailTemplate.Subject,
+                        Priority = emailTemplate.Priority,
+                        EmailQuery = emailQuery,
+                        Created = DateTime.Now
+                    };
+
+                    emailNotifications.Add(emailNotification);
+
+                }
+
+            }
+
+            return emailNotifications;
+        }
+
         private string GenerateEmailQuery(EmailQueryViewModel emailQueryViewModel)
         {
 
@@ -209,7 +279,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 var reqId = proposal.Id.ToString();
                 var requestedInformation = proposal.RequestedInfo.RequestedInformation;
 
-                var requestedInfoId = proposal.RequestedInfo?.Id +1;
+                var requestedInfoId = proposal.RequestedInfo?.Id + 1;
                 var reviewerGroupId = proposal.RequestedInfo.ReviewerGroupId;
 
                 var projectLink = GenerateProjectLink(
@@ -291,6 +361,48 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             return emailMessage;
         }
 
+        public async Task<string> GenerateEmailMessageAsync(vm.EmailTemplate emailTemplate, vm.Reviewer reviewer, vm.Proposal proposal)
+        {
+            var emailStyle = (await _capitalRequestServices
+                .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = "Email Style" }))
+                .FirstOrDefault();
+
+            var emailMessage = string.Empty;
+
+            var body = emailTemplate.Body.Replace("[", "{{ ").Replace("]", " }}");
+            var firstName = reviewer.FirstName;
+            var projectName = proposal.ProjectName;
+            var reqId = proposal.Id.ToString();
+
+            var reviewerGroupId = reviewer.ReviewerGroupId.Value;
+
+            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupId);
+
+            var projectLink = GenerateProjectLink(
+                 _ssmWorkFlowSettings.ProjectReviewLink,
+                 proposal.Id,
+                 emailTemplate.OptionType,
+                 null,
+                 reviewer.Id,
+                 null,
+                null
+                );
+
+            var emailModel = new Dictionary<string, object>
+            {
+                ["UserFirstName"] = firstName,
+                ["ReviewerGroup"] = reviewerGroup.Name,
+                ["ProjectName"] = projectName,
+                ["ReqId"] = reqId,
+                ["ProjectLink"] = projectLink
+            };
+
+            var emailBody = TemplateHelper.Render(body, emailModel);
+
+            emailMessage = $"{emailStyle.Body}{emailBody}";
+
+            return emailMessage;
+        }
 
         public string RenderEmailTemplate(string templateText, object model)
         {
@@ -311,7 +423,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 ["fullName"] = fullName,
                 ["requestingGroupName"] = requestingGroupName,
                 ["reviewerGroupName"] = reviewerGroupName,
-                ["requestingUser"] = requestingUser,
+                ["submittingUser"] = requestingUser,
                 ["requestedGroup"] = requestedGroup,
                 ["requestDate"] = requestDate
             };
@@ -367,10 +479,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         }
 
 
-        private string FormatSqlValue(string? value)
-        {
-            return string.IsNullOrWhiteSpace(value) ? "NULL" : $"'{value}'";
-        }
+        //private string FormatSqlValue(string? value)
+        //{
+        //    return string.IsNullOrWhiteSpace(value) ? "NULL" : $"'{value}'";
+        //}
 
     }
 

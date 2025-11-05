@@ -352,6 +352,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                     }
                 );
             }
+            else if (scenarioId == "SCN003")
+            {
+                //stubbed for future scenario
+            }
+
 
             var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
             var proposalData = ModelConverter.ToDictionaryExcluding(proposal);

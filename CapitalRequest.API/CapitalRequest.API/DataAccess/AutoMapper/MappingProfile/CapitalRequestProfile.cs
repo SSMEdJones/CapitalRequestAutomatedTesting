@@ -1,6 +1,8 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Utilities;
 using CapitalRequest.API.Models;
+using Microsoft.VisualBasic;
+using SSMWorkflow.API.DataAccess.Models;
 using dto = CapitalRequest.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
 
@@ -62,7 +64,29 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
                .ForMember(dest => dest.Created, o => o.MapFrom(src => DateTime.Now))
                .ForMember(dest => dest.CreatedBy, o => o.MapFrom(src => src.Reviewer.UserId));
 
-            //CapitalRequest.API.Models.RequestedInfo->CapitalRequest.API.DataAccess.Models.RequestedInfo
+            CreateMap<vm.Proposal, Workflow>()
+                .ForMember(dest => dest.WorkflowName, o => o.MapFrom<string>(src => src.ProjectName))
+                .ForMember(dest => dest.WorkflowDescription, o => o.MapFrom<string>(src => src.ProjectDescription))
+                .ForMember(dest => dest.ValidFrom, o => o.MapFrom(src => DateTime.Today))
+                .ForMember(dest => dest.Created, o => o.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.CreatedBy, o => o.MapFrom(src => src.SubmitUserId));
+
+            CreateMap<WorkflowTemplate, WorkflowStep>()
+                .ForMember(dest => dest.StepName, o => o.MapFrom(src => src.StepName))
+                .ForMember(dest => dest.StepDescription, o => o.MapFrom(src => src.StepDescription))
+                .ForMember(dest => dest.StakeholderMessage, o => o.MapFrom(src => src.StepDescription))
+                .ForMember(dest => dest.Created, o => o.MapFrom(src => DateTime.Now));
+
+            CreateMap<vm.ReviewerGroup, WorkflowStakeholder>()
+                .ForMember(dest => dest.Stakeholder, o => o.MapFrom(src => src.Name))
+                .ForMember(dest => dest.isGroup, o => o.MapFrom(src => true))
+                .ForMember(dest => dest.Created, o => o.MapFrom(src => DateTime.Now));
+
+            CreateMap<vm.Reviewer, CreateUpdateWorkFlowStepOption>()
+                .ForMember(dest => dest.OptionName, o => o.MapFrom(src => src.Email))
+                .ForMember(dest => dest.Created, o => o.MapFrom(src => DateTime.Now));
+
+
         }
 
     }

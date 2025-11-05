@@ -1,6 +1,8 @@
 using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Enums;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -16,6 +18,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         Task<List<WorkflowStepOption>> ReOpenOptionsAsync(string optionType, vm.Proposal proposal);
         Task<List<WorkflowStepOption>> GetFilteredOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId);
         Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string OptionType, int? requestedInfoId);
+        Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal);
         Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage);
         Task<WorkflowStepOption> FindOrCreateWorkflowStepOptionAsync(vm.Proposal proposal, int reviewerGroupId, int reviewerId, string actionType);
         Task<vm.Proposal> PredictiveMessage(vm.Proposal proposal);
@@ -37,7 +40,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             _mapper = mapper;
         }
 
-        public async Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string OptionType, int? requestedInfoId)
+        public async Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId)
         {
             var workflowSteps = await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId);
             var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
@@ -90,6 +93,59 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
 
             return workflowStepOptions;
+        }
+
+        public async Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal)
+        {
+            var workflowStepOptions = new List<WorkflowStepOption>();
+
+            var reviewerGroups = proposal.ReviewerGroups;
+
+            foreach (var reviewerGroup in reviewerGroups)
+            {
+                var reviewers = (await GetFilteredReviewersAsync(proposal.Region, proposal.SegmentId, reviewerGroup.Id))
+                            .OrderBy(y => y.Email)
+                            .ToList();
+
+                var emailTemplates = await _capitalRequestServices
+                    .GetAllEmailTemplates(new EmailTemplateSearchFilter());
+
+                var emailType = emailTemplates
+                    .FirstOrDefault(y => y.Id == reviewerGroup.EmailTemplateId)
+                    ?.OptionType;
+
+
+                foreach (var reviewer in reviewers)
+                {
+                    if (emailType == Constants.EMAIL_TYPE_NOTIFY)
+                    {
+                        continue;
+                    }
+
+                    if (string.IsNullOrEmpty(reviewer.Email))
+                    {
+                        reviewer.Email = proposal.AuthorEmail;
+                    }
+
+                    var workflowStepOption = _mapper.Map<WorkflowStepOption>(reviewer);
+                    workflowStepOption.CreatedBy = proposal.SubmitUserId;
+                    workflowStepOption.OptionType = emailType;
+
+                    workflowStepOptions.Add(workflowStepOption);
+                }
+            }
+
+            return workflowStepOptions;
+        }
+
+        public async Task<List<vm.Reviewer>> GetFilteredReviewersAsync(int region, int segmentId, int reviewerGroupId)
+        {
+            return await _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter
+            {
+                RegionId = region,
+                SegmentId = segmentId,
+                ReviewerGroupId = reviewerGroupId
+            });
         }
 
         private async Task<List<vm.Reviewer>> GetReviewers(vm.Proposal proposal)

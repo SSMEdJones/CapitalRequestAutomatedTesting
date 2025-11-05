@@ -76,6 +76,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 scenarioDetail.SelectedProperties["Replying Group"] = proposal.ReplyingGroup.Name;
 
             }
+            else if (scenarioId == "SCN003")
+            {
+                //stubbed for future scenario
+            }
 
             var steps = await GenerateSeleniumSteps(scenarioDetail);
 

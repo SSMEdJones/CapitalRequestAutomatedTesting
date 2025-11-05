@@ -1,4 +1,4 @@
-﻿namespace CapitalRequestAutomatedTesting.UI.Models
+namespace CapitalRequestAutomatedTesting.UI.Models
 {
     public static class Constants
     {
@@ -9,6 +9,7 @@
 
         //Email Types
         public const string EMAIL_TYPE_NOTIFY = "Notify";
+        public const string EMAIL_TYPE_VERITY = "Verification";
 
         //Option Types
         public const string OPTION_TYPE_REQUEST = "Request";
@@ -74,6 +75,7 @@
 
         public const string EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION = "{{ fullName }} from {{ requestingGroupName }} requested more information from {{ requestedGroup }} on {{ requestDate }}";
         public const string EMAIL_TEMPLATE_RETURN_OF_REQUESTED_INFORMATION = "{{ fullName }} from {{ reviewerGroupName }} returned requested information to {{ requestingUser }} in {{requestingGroupName}} on {{ requestDate }}";
+        public const string EMAIL_TEMPLATE_INITIAL_EMAIL = "Email notification and verification to all reviewers";
 
         //Dashboard
         public const string DASHBOARD_STATUS_INFORMATION_REQUESTED = "I";
@@ -90,7 +92,13 @@
         public const string APPLICATION_ROLE_NAME_REVIEWER = "Reviewer";
         public const string APPLICATION_ROLE_NAME_REPORT = "Report";
 
+        public const int APPLICATION_ROLE_ID_ADMIN = 1;
+        public const int APPLICATION_ROLE_ID_REVIEWER = 4;
+        public const int APPLICATION_ROLE_ID_AUTHOR = 5;
+
         public const string UPLOAD_DIRECTORY_ATTACHMENTS = "UploadDirectoryAttachments";
+
+
 
     }
 }

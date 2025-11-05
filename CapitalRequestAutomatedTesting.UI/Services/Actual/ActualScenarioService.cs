@@ -26,21 +26,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private readonly IWebHostEnvironment _environment;
         private readonly IMapper _mapper;
 
-        //private readonly IWorkflowControllerService _workflowControllerService;
-        //private readonly IActualRequestedInfoService _actualRequestedInfoService;
-        //private IActualWorkflowStepResponderService _actualWorkflowStepResponderService;
-        //private IActualWorkflowStepOptionService _actualWorkflowStepOptionService;
-        //private IActualEmailNotificationService _actualEmailNotificationService;
-        //private readonly IUserContextService _userContextService;
-
         public ActualScenarioService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
-            //IWorkflowControllerService workflowControllerService,
-            //IActualRequestedInfoService actualRequestedInfoService,
-            //IActualWorkflowStepResponderService actualWorkflowStepResponderService,
-            //IActualWorkflowStepOptionService actualWorkflowStepOptionService,
-            //IActualEmailNotificationService actualEmailNotificationService,
-            //IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
             IFormDataContext formDataContext,
             IWebHostEnvironment environment,
@@ -48,12 +35,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
-            //_workflowControllerService = workflowControllerService;
-            //_actualRequestedInfoService = actualRequestedInfoService;
-            //_actualWorkflowStepResponderService = actualWorkflowStepResponderService;
-            //_actualWorkflowStepOptionService = actualWorkflowStepOptionService;
-            //_actualEmailNotificationService = actualEmailNotificationService;
-            //_userContextService = userContextService;
             _scopeFactory = scopeFactory;
             _formDataContext = formDataContext;
             _environment = environment;
@@ -336,18 +317,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         Operation = CrudOperationType.Insert
                     }
                 );
-
                 
-                //actualMethods.Add(
-                //    new ActualMethod
-                //    {
-                //        ServiceName = "IActualFileService",
-                //        MethodName = "DownloadFile",
-                //        Parameters = new List<object> { fileName, proposal.Id, fileType },
-                //        Operation = CrudOperationType.Insert
-                //    }
-                //);
-
                 actualMethods.Add(
                     new ActualMethod
                     {
@@ -399,6 +369,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 );
 
             }
+            else if (scenarioId == "SCN003")
+            {
+                //stubbed for future scenario
+            }
 
             var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
             var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
@@ -418,6 +392,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             return actualMethods;
         }
+
 
     }
 }

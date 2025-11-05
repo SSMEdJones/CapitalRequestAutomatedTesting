@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
@@ -472,13 +472,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
 
             var dashboardData = _ssmWorkflowServices.GetCapitalRequestDashboard(dashboardFilter).Result
-                .Where(x => x.SubmittedBy != null && x.IsMovingForward && x.ProjectNumber == null)
+                //.Where(x => x.SubmittedBy != null && x.IsMovingForward && x.ProjectNumber == null)
+                .Where(x => x.IsMovingForward && x.ProjectNumber == null)
                 .ToList();
 
-            dashboardData = (from data in dashboardData
-                             join action in workflowActions on data.ReqId equals action.ProposalId
-                             select data)
-                .ToList();
+            //dashboardData = (from data in dashboardData
+            //                 join action in workflowActions on data.ReqId equals action.ProposalId
+            //                 select data)
+            //    .ToList();
 
             return dashboardData;
         }

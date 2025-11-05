@@ -104,9 +104,9 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveProvidedInfoService, PredictiveProvidedInfoService>();
             services.AddScoped<IPredictiveFileService, PredictiveFileService>();
             services.AddScoped<IPredictiveAttachmentService, PredictiveAttachmentService>();
-
-            //services.AddScoped<IPredictiveProposalControllerService, PredictiveProposalControllerService>();
-
+            services.AddScoped<IPredictiveWorkflowService, PredictiveWorkflowService>();
+            services.AddScoped<IPredictiveWorkflowInstanceService, PredictiveWorkflowInstanceService>();
+            services.AddScoped<IPredictiveWorkflowStakeHolderService, PredictiveWorkflowStakeHolderService>();
 
             #endregion
 
@@ -122,6 +122,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualAttachmentService, ActualAttachmentService>();
             #endregion
             services.AddScoped<IOriginalScenarioService, OriginalScenarioService>();
+            services.AddScoped<IActualReviewerGroupService, ActualReviewerGroupService>();
             
             #region Rollback Services
             services.AddScoped<IRollbackProvidedInfoService, RollbackProvidedInfoService>();

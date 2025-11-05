@@ -4,8 +4,10 @@ using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
+using SSMWorkflow.API.DataAccess.Models;
 using System.Diagnostics;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
@@ -29,6 +31,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IFormDataContext _formDataContext;
+        private readonly IActualReviewerGroupService _actualReviewerGroupService;
         private readonly IMapper _mapper;
 
         public PredictiveScenarioService(ICapitalRequestServices capitalRequestServices,
@@ -41,6 +44,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
             IFormDataContext formDataContext,
+            IActualReviewerGroupService actualReviewerGroupService,
             IMapper mapper)
 
         {
@@ -54,6 +58,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             _userContextService = userContextService;
             _scopeFactory = scopeFactory;
             _formDataContext = formDataContext;
+            _actualReviewerGroupService = actualReviewerGroupService;
             _mapper = mapper;
         }
 
@@ -97,6 +102,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 scenarioDetail.SelectedProperties["Replying Group"] = replyingGroup.Name;
 
             }
+            else if (scenarioId == "SCN003")
+            {
+
+                //stubbed for future scenario
+            }
+
 
             var methods = await GetScenarioMethodsAsync(scenarioDetail);
 
@@ -155,6 +166,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 serviceType = typeof(IPredictiveScenarioService);
             else if (serviceName == $"{nameSpace}IPredictiveAttachmentService")
                 serviceType = typeof(IPredictiveAttachmentService);
+            else if (serviceName == $"{nameSpace}IPredictiveWorkflowService")
+                serviceType = typeof(IPredictiveWorkflowService);
+            else if (serviceName == $"{nameSpace}IPredictiveWorkflowInstanceService")
+                serviceType = typeof(IPredictiveWorkflowInstanceService);
 
             if (serviceType == null)
             {
@@ -221,6 +236,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 "IPredictiveWorkflowStepOptionService" => "WorkflowStepOption",
                 "IPredictiveEmailNotificationService" => "EmailNotification",
                 "IPredictiveAttachmentService" => "Attachment",
+                "IPredictiveWorkflowService" => "Workflow",
+                "IPredictiveWorkflowInstanceService" => "WorkflowInstance",
                 _ => "UnknownService"
             };
         }
@@ -258,6 +275,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var predictiveMethods = new List<PredictiveMethod>();
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
+
             var requestingGroupId = detail.RequestingGroupId;
             var replyingGroupId = detail.ReplyingGroupId;
 
@@ -388,6 +406,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.RequestedInfoId = proposal.RequestedInfo.Id;
                 proposal.RequestingGroupId = proposal.RequestedInfo.RequestingReviewerGroupId;
 
+
                 var stepNumber = 0;
 
                 predictiveMethods.Add(
@@ -476,6 +495,79 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 );
 
             }
+            else if (scenarioId == "SCN003")
+            {
+                var submitUser = scenarioDetail.SubmitUsers
+                    .FirstOrDefault(u => u.Value == detail.SubmitUserId).Text;
+
+                proposal.SubmitUserId = detail.SubmitUserId;
+                var reviewerGroups = await _actualReviewerGroupService.GetFilteredReviewerGroupsAsync(Constants.STEP_ONE);
+                var filteredReviewerGroups = _actualReviewerGroupService.FilterReviewerGroups(reviewerGroups, proposal, Constants.STEP_ONE);
+
+                proposal.ReviewerGroups = filteredReviewerGroups;
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowService",
+                        MethodName = "CreateWorkflow",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowService",
+                        MethodName = "CreateWorkflowStepAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowInstanceService",
+                        MethodName = "CreateWorkflowInstanceAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStakeHolderService",
+                        MethodName = "CreateWorkflowStakeholder",
+                        Parameters = new List<object> { proposal, Constants.STEP_ONE },
+                        Operation = CrudOperationType.Insert
+                    }
+                 );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStepOptionService",
+                        MethodName = "CreateWorkflowStepOptionsAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveEmailNotificationService",
+                        MethodName = "CreateEmailNotificationsAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert,
+
+                    }
+                );
+
+            }
 
             var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
             var proposalData = ModelConverter.ToDictionaryExcluding(proposal);
@@ -492,8 +584,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             return predictiveMethods;
         }
-
-
 
     }
 }

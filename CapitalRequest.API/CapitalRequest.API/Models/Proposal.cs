@@ -1,6 +1,7 @@
-﻿using CapitalRequest.API.CustomAttributes;
+using CapitalRequest.API.CustomAttributes;
 using CapitalRequest.API.Enums;
 using Microsoft.AspNetCore.Http;
+using OpenQA.Selenium.DevTools.V134.DOM;
 using SSMWorkflow.API.Models;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -408,14 +409,14 @@ namespace CapitalRequest.API.Models
 
         [IgnoreForLogging]
         [DisplayName("What is the project's estimated end date?")]
-        public DateTime? EndDate { get; set; }       
+        public DateTime? EndDate { get; set; }
 
         public Guid WorkflowId { get; set; }
 
         [IgnoreForLogging]
         public List<string> FileNames { get; set; } = new List<string>();
 
-        
+
 
         [IgnoreForLogging]
         public int StepNumber { get; set; }
@@ -558,5 +559,9 @@ namespace CapitalRequest.API.Models
         public int RequestedInfoId { get; set; }
         public int? ExecutionDurationMinutes { get; set; }
 
+        [IgnoreForLogging]
+        public string SubmitUserId { get; set; }
+        public string SubmittingUser{ get; set; }
     }
+
 }

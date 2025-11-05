@@ -1,4 +1,4 @@
-﻿using CapitalRequestAutomatedTesting.UI.CustomAttributes;
+using CapitalRequestAutomatedTesting.UI.CustomAttributes;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel;
@@ -45,6 +45,11 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [ValidateNever]
         public string ReviewerUserId { get; set; }
 
+        
+        [DisplayName("Submit User:")]
+        [ValidateNever]
+        public string SubmitUserId { get; set; }
+
         [ValidateNever]
         public int SequenceNumber { get; set; }
 
@@ -83,6 +88,9 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [IgnoreForLogging]
 
         public List<SelectListItem> Reviewers { get; set; } = new();
+
+        public List<SelectListItem> SubmitUsers { get; set; } = new();
+
 
         public int RequestCount { get; set; }
 

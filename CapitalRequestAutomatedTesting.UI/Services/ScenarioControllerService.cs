@@ -1,10 +1,12 @@
-﻿using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.DataAccess.Services.Api;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Collections.Generic;
 using vm = CapitalRequest.API.Models;
 
 
@@ -26,6 +28,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<SeleniumStepResult> ValidateRequestingGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
         Task<CapitalRequest.API.Models.ReviewerGroup> GetReviewerGroupByIdAsync(int id);
         Task<List<SelectListItem>> GetRequestingGroupsByReplyingIdAsync(int proposalId, int replyingGroupId);
+        Task<List<SelectListItem>> GetSubmitUsersAsync(int proposalId);
         Task<(List<SelectListItem> RequestingGroups, List<SelectListItem> TargetGroups)> BuildRequestingAndTargetGroupsAsync(int proposalId, int? requestingGroupId);
         Task<ScenarioDetailsViewModel> GetScenarioDetail(string scenarioId, int requestId);
         Task<List<vm.ReviewerGroup>> GetReviewerGroupsForReplyingGroup(int proposalId, int groupId);
@@ -35,6 +38,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<SeleniumStepResult> ValidateFileInputNotVisibileAsync(vm.Proposal proposal);
         Task<SeleniumStepResult> ValidateReturnedInformationAsync(vm.Proposal proposal);
         Task<SeleniumStepResult> ValidateRequestedInformationAsync(vm.Proposal proposal);
+
+        SeleniumStepResult ValidateSubmitButtonAsync(vm.Proposal proposal);
+        Task<SeleniumStepResult> ValidateEditButtonAsync(vm.Proposal proposal);
 
     }
 
@@ -57,30 +63,55 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         public async Task<ScenarioFormViewModel> GenerateScenarioFormViewModel(int? requestId = null)
         {
-            //TODO Make conditional based on requestId ie may not have a reply etc
-            var scenarioDetails = new List<ScenarioDetailsViewModel>
+            var submitted = false;
+            if (requestId != null)
             {
-                new ScenarioDetailsViewModel
+                var proposal = await _capitalRequestServices.GetProposal(requestId.Value);
+                if (proposal != null)
                 {
-                    ScenarioId = "SCN001",
-                    PartialViewName = "_RequestMoreInfo",
-                    DisplayText  = "Request More Information",
-                    SequenceNumber = 1,
-                    RequestingGroups = requestId.HasValue ? await GetRequestingGroupsAsync(requestId.Value) : new List<SelectListItem>(),
-                    //TargetGroups = requestId.HasValue ? await GetTargetGroupsByRequestIdAsync(requestId.Value) : new List<SelectListItem>(),
-                    //Reviewers = requestId.HasValue ? await GetReviewersByRequestIdAsync(requestId.Value) : new List<SelectListItem>()
-                },
-                new ScenarioDetailsViewModel
-                {
-                    ScenarioId = "SCN002",
-                    PartialViewName = "_ReplyToRequest",
-                    DisplayText  = "Reply to Request",
-                    SequenceNumber = 2,
-                    ReplyingGroups = requestId.HasValue ? await GetReplyingGroupsAsync(requestId.Value) : new List<SelectListItem>(),
-                    //TargetGroups = requestId.HasValue ? await GetTargetGroupsByRequestIdAsync(requestId.Value, null) : new List<SelectListItem>(),
-                    //Reviewers = requestId.HasValue ? await GetReviewersByRequestIdAsync(requestId.Value) : new List<SelectListItem>()
+                    // 🔥 Fixed syntax error
+                    submitted = proposal.WorkflowId != null && proposal.WorkflowId != Guid.Empty;
                 }
-            };
+            }
+
+            var scenarioDetails = new List<ScenarioDetailsViewModel>();
+
+            if (!submitted && requestId != null)
+            {
+                // 🔥 If NOT submitted, only show SCN003 for testing submission
+                var proposalId = requestId.Value;
+                scenarioDetails.Add(new ScenarioDetailsViewModel
+                {
+                    ScenarioId = "SCN003",
+                    PartialViewName = "_SubmitRequest",
+                    DisplayText = "Submit Request",
+                    SequenceNumber = 1,
+                    SubmitUsers = await GetSubmitUsersAsync(proposalId)
+                });
+            }
+            else
+            {
+                // 🔥 If submitted, show SCN001 and SCN002 for request/reply workflow
+                scenarioDetails.AddRange(new[]
+                {
+                    new ScenarioDetailsViewModel
+                    {
+                        ScenarioId = "SCN001",
+                        PartialViewName = "_RequestMoreInfo",
+                        DisplayText = "Request More Information",
+                        SequenceNumber = 1,
+                        RequestingGroups = requestId.HasValue ? await GetRequestingGroupsAsync(requestId.Value) : new List<SelectListItem>()
+                    },
+                    new ScenarioDetailsViewModel
+                    {
+                        ScenarioId = "SCN002",
+                        PartialViewName = "_ReplyToRequest",
+                        DisplayText = "Reply to Request",
+                        SequenceNumber = 2,
+                        ReplyingGroups = requestId.HasValue ? await GetReplyingGroupsAsync(requestId.Value) : new List<SelectListItem>()
+                    }
+                });
+            }
 
             return new ScenarioFormViewModel
             {
@@ -446,6 +477,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 "SCN001" => new PartialViewResult { ViewName = "_RequestMoreInfo" },
                 "SCN002" => new PartialViewResult { ViewName = "_ReplyToRequest" },
+                "SCN003" => new PartialViewResult { ViewName = "_SubmitRequest" }, // 🔥 Add this
                 _ => new PartialViewResult { ViewName = "_DefaultScenario" }
             };
         }
@@ -473,12 +505,53 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             }).ToList();
 
         }
+
+        public async Task<List<SelectListItem>> GetSubmitUsersAsync(int proposalId)
+        {
+
+            var proposal = await _capitalRequestServices.GetProposal(proposalId);
+            var submitUsers = await GetValidSubmitUsers(proposal);
+
+            return submitUsers
+                .OrderBy(x => x.FullName)
+                .Select(x => new SelectListItem
+                {
+                    Value = x.UserId,
+                    Text = x.FullName
+                })
+                .ToList();
+
+        }
+
+        private async Task<List<vm.ApplicationUser>> GetValidSubmitUsers(vm.Proposal proposal)
+        {
+            var submitUsers = await _capitalRequestServices.GetAllApplicationUsers(new ApplicationUserSearchFilter { ApplicationRoleId = Constants.APPLICATION_ROLE_ID_ADMIN });
+
+            var userId = submitUsers.Where(x => x.UserId == proposal.UserId).FirstOrDefault();
+
+            if (!submitUsers.Where(x => x.UserId == proposal.UserId).Any())
+            {
+
+                submitUsers.Add(new vm.ApplicationUser
+                {
+                    UserId = proposal.UserId,
+                    FullName = proposal.Author,
+                    ApplicationRoleId = Constants.APPLICATION_ROLE_ID_AUTHOR
+
+                });
+
+            }
+
+            return submitUsers;
+        }
+
         public string GetScenarioViewName(string scenarioId)
         {
             return scenarioId switch
             {
                 "SCN001" => "_RequestMoreInfo",
                 "SCN002" => "_ReplyToRequest",
+                "SCN003" => "_SubmitRequest", // 🔥 Add this
                 _ => "_DefaultScenario"
             };
         }
@@ -520,8 +593,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         // 🔥 NEW: Generic validation method with configurable delay and messaging
         private async Task<SeleniumStepResult> ExecuteValidationWithDelayAsync(
-            string successMessage, 
-            string failureMessagePrefix = "Validation failed", 
+            string successMessage,
+            string failureMessagePrefix = "Validation failed",
             int delayMs = 100)
         {
             try
@@ -593,6 +666,37 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 return SeleniumStepResult.Fail($"File upload validation failed: {ex.Message}");
             }
+        }
+        public async Task<SeleniumStepResult> ValidateEditButtonAsync(vm.Proposal proposal)
+        {
+
+            var users = await GetValidSubmitUsers(proposal);
+
+            bool isValid =  users.Where(x => x.UserId == proposal.SubmitUserId).Any();
+
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid
+                    ? "Edit button validation passed."
+                    : "Edit button not found for this Request."
+
+            };
+        }
+
+        public SeleniumStepResult ValidateSubmitButtonAsync(vm.Proposal proposal)
+        {
+            bool isValid = proposal.WorkflowId == Guid.Empty && proposal.IsMovingForward;
+
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid
+                    ? "Submit button validation passed."
+                    : "Submit button not found for this Request."
+
+            };
+
         }
     }
 }

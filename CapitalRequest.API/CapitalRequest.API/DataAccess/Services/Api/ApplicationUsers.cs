@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
@@ -6,7 +6,6 @@ using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using static System.Net.WebRequestMethods;
 using ApplicationUser = CapitalRequest.API.Models.ApplicationUser;
 
 namespace CapitalRequest.API.DataAccess.Services.Api
@@ -14,6 +13,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
     public interface IApplicationUsers
     {
         Task<ApplicationUser> Get(string userId);
+        Task<List<ApplicationUser>> GetAll(ApplicationUserSearchFilter filter);
     }
 
     public class ApplicationUsers : IApplicationUsers
@@ -61,6 +61,46 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             }
         }
 
-        
+        public async Task<List<ApplicationUser>> GetAll(ApplicationUserSearchFilter filter)
+        {
+            try
+            {
+                var applicationUsers = new List<ApplicationUser>();
+
+                var response = await _capitalRequestSettings.BaseApiUrl
+                    .AppendPathSegment("ApplicationUser")
+                    .SetQueryParams(new
+                    {
+                        filter.UserId,
+                        filter.ApplicationRoleId,
+                        filter.Email,
+                        filter.ReportAccess,
+                        filter.FullName,
+                        filter.FirstName,
+                        filter.LastName,
+
+                    })
+                    .GetJsonAsync<Response<dynamic>>();
+
+                var responseObject = JsonConvert.SerializeObject(response.Result);
+                var results = JsonConvert.DeserializeObject<List<ApplicationUser>>(responseObject);
+
+                if (results != null)
+                {
+                    foreach (var result in results)
+                    {
+                        applicationUsers.Add(result);
+                    }
+                }
+
+                return applicationUsers;
+            }
+            catch (FlurlHttpException ex)
+            {
+                var exceptionResponse = await ex.GetResponseStringAsync();
+                throw new Exception($"Failed attempting to send get all request to CapitalRequest. {exceptionResponse}");
+            }
+        }
+
     }
 }

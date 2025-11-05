@@ -1,4 +1,4 @@
-﻿using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Models;
 
@@ -64,6 +64,7 @@ namespace CapitalRequestAutomatedTesting.Data.Services
 
         //// ApplicationUser
         Task<CapitalRequest.API.Models.ApplicationUser> GetApplicationUser(string userId);
+        Task<List<CapitalRequest.API.Models.ApplicationUser>> GetAllApplicationUsers(ApplicationUserSearchFilter filter);
 
         //// DeletedReviewers
         Task<List<CapitalRequest.API.Models.DeletedReviewer>> GetAllDeletedReviewers(DeletedReviewerSearchFilter filter);
@@ -326,6 +327,11 @@ namespace CapitalRequestAutomatedTesting.Data.Services
         public Task<CapitalRequest.API.Models.ApplicationUser> GetApplicationUser(string userId)
         {
             return _applicationUsers.Get(userId);
+        }
+
+        public Task<List<CapitalRequest.API.Models.ApplicationUser>> GetAllApplicationUsers(ApplicationUserSearchFilter filter)
+        {
+            return _applicationUsers.GetAll(filter);
         }
 
         public Task<List<CapitalRequest.API.Models.DeletedReviewer>> GetAllDeletedReviewers(DeletedReviewerSearchFilter filter)
