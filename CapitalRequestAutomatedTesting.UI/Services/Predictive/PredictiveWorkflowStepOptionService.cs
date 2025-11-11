@@ -18,7 +18,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         Task<List<WorkflowStepOption>> ReOpenOptionsAsync(string optionType, vm.Proposal proposal);
         Task<List<WorkflowStepOption>> GetFilteredOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId);
         Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string OptionType, int? requestedInfoId);
-        Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal);
+        Task<List<WorkflowStepOption>> CreateSubmitWorkflowStepOptionsAsync(vm.Proposal proposal);
         Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage);
         Task<WorkflowStepOption> FindOrCreateWorkflowStepOptionAsync(vm.Proposal proposal, int reviewerGroupId, int reviewerId, string actionType);
         Task<vm.Proposal> PredictiveMessage(vm.Proposal proposal);
@@ -95,7 +95,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             return workflowStepOptions;
         }
 
-        public async Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal)
+        public async Task<List<WorkflowStepOption>> CreateSubmitWorkflowStepOptionsAsync(vm.Proposal proposal)
         {
             var workflowStepOptions = new List<WorkflowStepOption>();
 

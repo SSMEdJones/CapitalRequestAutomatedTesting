@@ -82,7 +82,7 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
                 .ForMember(dest => dest.isGroup, o => o.MapFrom(src => true))
                 .ForMember(dest => dest.Created, o => o.MapFrom(src => DateTime.Now));
 
-            CreateMap<vm.Reviewer, CreateUpdateWorkFlowStepOption>()
+            CreateMap<vm.Reviewer, WorkflowStepOption>()
                 .ForMember(dest => dest.OptionName, o => o.MapFrom(src => src.Email))
                 .ForMember(dest => dest.Created, o => o.MapFrom(src => DateTime.Now));
 

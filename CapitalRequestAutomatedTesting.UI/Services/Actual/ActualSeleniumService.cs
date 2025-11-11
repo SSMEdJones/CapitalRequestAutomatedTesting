@@ -5,6 +5,7 @@ using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using SSMWorkflow.API.DataAccess.Models;
+using System;
 using System.Diagnostics;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 
@@ -44,20 +45,26 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
-            var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
-            var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
 
-            proposal.ReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-            proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0 );
-            
-            scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
-            scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();
-            scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
-            scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
-            scenarioDetail.SelectedProperties["Requested Information"] = detail.RequestedInformation;
+            if (detail.ScenarioId != "SCN003")
+            {
+
+                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+
+            }
+
+            //scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
+            //scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();
+            //scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
+            //scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
+            //scenarioDetail.SelectedProperties["Requested Information"] = detail.RequestedInformation;
 
 
             if (scenarioId == "SCN001")
@@ -118,33 +125,56 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
         public async Task<List<SeleniumScenarioStep>> GenerateSeleniumSteps(ScenarioDetailsViewModel scenarioDetail)
         {
+            var reviewerGroup = new CapitalRequest.API.Models.ReviewerGroup();
+            var workflowPortion = string.Empty;
+            var workflowButtonId = string.Empty; 
+            var workflowButtonText = string.Empty;
+            var dashboardOrder = new int();
+            var reviewer = new CapitalRequest.API.Models.Reviewer();
+
+
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
 
             var proposalId = scenarioDetail.ProposalId;
             var proposal = await _capitalRequestServices.GetProposal(proposalId);
-            proposal.RequestedInfoId = detail.RequestedInfoId;
+            proposal.SubmitUserId = detail.SubmitUserId;
+            var userId = string.Empty;
 
+            if (detail.ScenarioId != "SCN003")
+            {
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+
+                proposal.RequestedInfoId = detail.RequestedInfoId;
+                reviewerGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                workflowPortion = $"{reviewerGroup.StepNumber} -{reviewerGroup.Name}";
+                workflowButtonId = "btnWorkflowActions";
+                workflowButtonText = "Workflow";
+                dashboardOrder = reviewerGroup.DashboardOrder ?? 0;
+                reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+                userId = reviewer.UserId ?? string.Empty;
+            }
+            else if (detail.ScenarioId == "SCN003")
+            {
+                userId = detail.SubmitUserId;
+                dashboardOrder = 1;
+            }
             var actualSteps = new List<SeleniumScenarioStep>();
 
             var scenarioId = scenarioDetail.ScenarioId;
             var baseUrl = _workflowControllerService.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
-            
-            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
-            var workflowPortion = $"{reviewerGroup.StepNumber} -{reviewerGroup.Name}";
-            var workflowButtonId = "btnWorkflowActions";
-            var workflowButtonText = "Workflow";
-            var dashboardOrder = reviewerGroup.DashboardOrder ?? 0;
-            var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
-
             var filter = new DashboardSearchFilter { CapitalFundingYear = DateTime.Now.Year };
 
-            scenarioDetail.RequestCount = (await _actualDashboardService.GetDashboardDataByUserId(filter, reviewer)).Count();
+            scenarioDetail.RequestCount = (await _actualDashboardService.GetDashboardDataByUserId(filter, userId)).Count();
 
             Debug.WriteLine($"ReviewerUserId: {reviewer.UserId ?? "null"}");
 
-            var homeDashboardUrl = BuildTestModeUrl($"", reviewer.UserId);
-            var viewProposalUrl = BuildTestModeUrl($"/Proposal/ViewProposal/{proposalId}", reviewer.UserId);
-            bool reviewerHasNoRequests = scenarioDetail.RequestCount == 0;
+            var homeDashboardUrl = BuildTestModeUrl($"", userId);
+            var viewProposalUrl = BuildTestModeUrl($"/Proposal/ViewProposal/{proposalId}", userId);
+            bool userHasNoRequests = scenarioDetail.RequestCount == 0;
             //TODO add to config
             var maxRetries = 3;
 
@@ -217,20 +247,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                             Console.WriteLine("🔄 Paused: Please manually submit the form in the browser.");
                             Console.WriteLine("🤖 Automation will automatically continue when the response message appears...");
                             Debug.WriteLine($"🔄 {scenarioId}: Starting automated response detection");
-                            
+
                             var urlBefore = driver.Url;
                             Debug.WriteLine($"🔄 {scenarioId}: Current URL before submission: {urlBefore}");
-                            
+
                             // 🔥 Wait for response message to appear (instead of manual Enter press)
                             var responseResult = await WaitForResponseMessage(driver, scenarioId, maxWaitSeconds: 60);
-                            
+
                             if (responseResult.Found)
                             {
                                 Console.WriteLine($"✅ Response message detected: '{responseResult.Message}'");
                                 Console.WriteLine($"🚀 Continuing test execution automatically after {responseResult.ElapsedSeconds:F1}s");
-                                
+
                                 Debug.WriteLine($"✅ {scenarioId}: Auto-detected response after {responseResult.ElapsedSeconds:F1}s");
-                                
+
                                 // Check for expected success messages
                                 if (responseResult.Message.Contains(Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT))
                                 {
@@ -252,13 +282,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                             {
                                 Console.WriteLine($"⏰ Timeout: No response message appeared within 60 seconds");
                                 Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for response message");
-                                
+
                                 // Fallback: Check for redirect or other indicators
                                 try
                                 {
                                     await Task.Delay(2000);
                                     var currentUrl = driver.Url;
-                                    
+
                                     if (currentUrl.Contains("/Home") || !currentUrl.Contains("WorkflowActions"))
                                     {
                                         Debug.WriteLine($"⚠️ {scenarioId}: Detected redirect as fallback indicator");
@@ -295,7 +325,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 var conditionalDashboardSteps = new SeleniumDsl()
                     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
                     .Then(Conditional.If(
-                        reviewerHasNoRequests,
+                        userHasNoRequests,
                         Validate.NoRequestsMessage(),
                         new SeleniumDsl()
                             .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
@@ -470,7 +500,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                     return SeleniumStepResult.Fail($"Timeout and error checking fallback indicators: {ex.Message}");
                                 }
                             }
-                            
+
                         }
                     });
                 }
@@ -494,7 +524,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 var conditionalDashboardSteps = new SeleniumDsl()
                     .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
                     .Then(Conditional.If(
-                        reviewerHasNoRequests,
+                        userHasNoRequests,
                         Validate.NoRequestsMessage(),
                         new SeleniumDsl()
                             .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
@@ -513,6 +543,151 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 });
 
             }
+            else if (scenarioId == "SCN003")
+            {
+                var editButtonId = "btnEditAttachments";
+                var editButtonText = "Edit ";
+                var submitButtonId = "btnSubmitWorkflow";
+                var submitButtonText = "Submit ";
+
+                // Step 1: Navigate to page and click Attachments tab
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = "Navigate to Attachments tab",
+                    Action = new SeleniumDsl()
+                        .BeginWith(Execute.NavigateTo(viewProposalUrl))
+                        .Then(Execute.ClickButtonById("nav-attachments-tab", "Attachments tab"))
+                        .Build("Navigated to Attachments tab")
+                });
+
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = "Validate Edit button and click",
+                    Action = new SeleniumDsl()
+                        .BeginWith(Validate.ElementById(editButtonId, $"{editButtonText} button"))
+                        .Then(Execute.RobustClickById(editButtonId, editButtonText, maxRetries))
+                        .Build("Clicked edit button")
+
+                });
+
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = "Validate Submit button ",
+                    Action = new SeleniumDsl()
+                        .BeginWith(Validate.ElementById(submitButtonId, $"{submitButtonText} button"))
+                        .Build("Reached submit page")
+
+                });
+
+                if (scenarioDetail.PauseBeforeSubmit)
+                {
+                    actualSteps.Add(new SeleniumScenarioStep
+                    {
+                        StepNumber = ++stepNumber,
+                        Description = "Pause for user to manually submit and auto-detect response message",
+                        Action = async driver =>
+                        {
+                            Console.WriteLine("🔄 Paused: Please manually submit the form in the browser.");
+                            Console.WriteLine("🤖 Automation will automatically continue when the response message appears...");
+                            Debug.WriteLine($"🔄 {scenarioId}: Starting automated response detection");
+
+                            var urlBefore = driver.Url;
+                            Debug.WriteLine($"🔄 {scenarioId}: Current URL before submission: {urlBefore}");
+
+                            // 🔥 Wait for response message to appear (instead of manual Enter press)
+                            var responseResult = await WaitForResponseMessage(driver, scenarioId, maxWaitSeconds: 60);
+
+                            if (responseResult.Found)
+                            {
+                                Console.WriteLine($"✅ Response message detected: '{responseResult.Message}'");
+                                Console.WriteLine($"🚀 Continuing test execution automatically after {responseResult.ElapsedSeconds:F1}s");
+
+                                Debug.WriteLine($"✅ {scenarioId}: Auto-detected response after {responseResult.ElapsedSeconds:F1}s");
+
+                                // Check for expected success messages
+                                if (responseResult.Message.Contains(Constants.RESPONSE_ACTION_VERIFIED))
+                                {
+                                    Debug.WriteLine($"✅ {scenarioId}: Expected success message detected");
+                                    return SeleniumStepResult.Pass($"Form submitted successfully. Auto-detected success message: {responseResult.Message}");
+                                }
+                                else if (responseResult.Message.Contains("Error") || responseResult.Message.Contains("Failed"))
+                                {
+                                    Debug.WriteLine($"❌ {scenarioId}: Error message detected");
+                                    return SeleniumStepResult.Fail($"Error detected in response: {responseResult.Message}");
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"⚠️ {scenarioId}: Unexpected message content");
+                                    return SeleniumStepResult.Pass($"Form submitted. Unexpected message: {responseResult.Message}");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"⏰ Timeout: No response message appeared within 60 seconds");
+                                Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for response message");
+
+                                // Fallback: Check for redirect or other indicators
+                                try
+                                {
+                                    await Task.Delay(2000);
+                                    var currentUrl = driver.Url;
+
+                                    if (currentUrl.Contains("/Home") || !currentUrl.Contains("WorkflowActions"))
+                                    {
+                                        Debug.WriteLine($"⚠️ {scenarioId}: Detected redirect as fallback indicator");
+                                        return SeleniumStepResult.Pass($"Form likely submitted (detected redirect to: {currentUrl})");
+                                    }
+                                    else
+                                    {
+                                        return SeleniumStepResult.Fail("Timeout waiting for response message and no redirect detected");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    return SeleniumStepResult.Fail($"Timeout and error checking fallback indicators: {ex.Message}");
+                                }
+                            }
+                        }
+                    });
+                }
+                else
+                {
+                    // Automated submission path
+                    actualSteps.Add(new SeleniumScenarioStep
+                    {
+                        StepNumber = ++stepNumber,
+                        Description = "Press submit ",
+                        Action = new SeleniumDsl()
+                            .BeginWith(Execute.ClickButtonById("btnSubmitWorkflow", "Submit button"))
+                            .Build("Clicked Submit button ")
+                    });
+                }
+
+                // Continue with dashboard validation step as before
+                var conditionalDashboardSteps = new SeleniumDsl()
+                    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
+                    .Then(Conditional.If(
+                        userHasNoRequests,
+                        Validate.NoRequestsMessage(),
+                        new SeleniumDsl()
+                            .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
+                            .Then(Validate.DashboardStatus(dashboardOrder, proposal.SubmitUserId, DateTime.Now))
+                            .Build("Dashboard Search + Status Validation")
+                    ))
+                    .Build("Navigate to Home Dashboard and validate group status");
+
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    StepName = "Validate group status",
+                    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
+                    Action = conditionalDashboardSteps,
+                    Retryable = true
+                });
+            }
 
             return actualSteps;
         }
@@ -521,7 +696,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         {
             var commitStepReached = false;
             var maxStep = scenarioDetail.PredictiveCompletionStep;
-            
+
             var outcome = new SeleniumScenarioOutcome
             {
                 ScenarioId = scenarioDetail.ScenarioId,
@@ -652,9 +827,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         {
             var startTime = DateTime.Now;
             var checkInterval = TimeSpan.FromMilliseconds(500);
-            
+
             Debug.WriteLine($"🔄 {scenarioId}: Starting to poll for responseMessage element...");
-            
+
             while ((DateTime.Now - startTime).TotalSeconds < maxWaitSeconds)
             {
                 try
@@ -662,13 +837,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     var responseElement = driver.FindElement(By.Id("responseMessage"));
                     var cssDisplay = responseElement.GetCssValue("display");
                     var cssVisibility = responseElement.GetCssValue("visibility");
-                    
+
                     // 🔥 Try multiple methods to get the text content
                     var elementText = responseElement.Text?.Trim() ?? "";
                     var innerText = responseElement.GetAttribute("innerText")?.Trim() ?? "";
                     var textContent = responseElement.GetAttribute("textContent")?.Trim() ?? "";
                     var innerHTML = responseElement.GetAttribute("innerHTML")?.Trim() ?? "";
-                    
+
                     Debug.WriteLine($"🔍 {scenarioId}: Text retrieval attempts:");
                     Debug.WriteLine($"  - .Text: '{elementText}'");
                     Debug.WriteLine($"  - innerText: '{innerText}'");
@@ -676,7 +851,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     Debug.WriteLine($"  - innerHTML: '{innerHTML}'");
                     Debug.WriteLine($"  - cssDisplay: '{cssDisplay}'");
                     Debug.WriteLine($"  - cssVisibility: '{cssVisibility}'");
-                    
+
                     // Choose the best available text
                     var messageText = !string.IsNullOrWhiteSpace(elementText) ? elementText :
                                      !string.IsNullOrWhiteSpace(innerText) ? innerText :
@@ -684,14 +859,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                      "";
 
                     // Check if we have meaningful content and element is visible
-                    if (!string.IsNullOrWhiteSpace(messageText) && 
-                        cssDisplay != "none" && 
+                    if (!string.IsNullOrWhiteSpace(messageText) &&
+                        cssDisplay != "none" &&
                         cssVisibility != "hidden")
                     {
                         var elapsedSeconds = (DateTime.Now - startTime).TotalSeconds;
-                        
+
                         Debug.WriteLine($"✅ {scenarioId}: Response message appeared after {elapsedSeconds:F1}s: '{messageText}'");
-                        
+
                         return new ResponseMessageResult
                         {
                             Found = true,
@@ -708,11 +883,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 {
                     Debug.WriteLine($"🔍 {scenarioId}: Element became stale, retrying...");
                 }
-                
+
                 await Task.Delay(checkInterval);
                 Debug.WriteLine($"🔄 {scenarioId}: Still waiting for responseMessage... ({(DateTime.Now - startTime).TotalSeconds:F1}s)");
             }
-            
+
             Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for responseMessage after {maxWaitSeconds}s");
             return new ResponseMessageResult
             {
@@ -721,7 +896,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 ElapsedSeconds = maxWaitSeconds
             };
         }
-        
+
         // 🔥 NEW: Result class for response message polling
         private class ResponseMessageResult
         {

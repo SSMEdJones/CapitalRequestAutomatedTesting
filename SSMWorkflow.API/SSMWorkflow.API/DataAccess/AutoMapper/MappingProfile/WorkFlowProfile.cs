@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
 
@@ -10,10 +10,12 @@ namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
         {
             //WorkFlow
             CreateMap<WorkFlowViewModel, CreateUpdateWorkFlow>();
+            CreateMap<WorkFlowViewModel, Workflow>();
             CreateMap<CreateUpdateWorkFlow, Workflow>();
 
             //WorkFlowStakeHolder
             CreateMap<WorkFlowStakeholderViewModel, CreateUpdateWorkFlowStakeholder>();
+            CreateMap<WorkFlowStakeholderViewModel, WorkflowStakeholder>();
             CreateMap<CreateUpdateWorkFlowStakeholder, WorkflowStakeholder>();
 
             //WorkFlowStep
@@ -24,6 +26,7 @@ namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
             //WorkFlowInstance
             CreateMap<WorkFlowInstanceViewModel, CreateUpdateWorkFlowInstance>();
             CreateMap<CreateUpdateWorkFlowInstance, WorkflowInstance>();
+            CreateMap<WorkflowStep, WorkflowInstance>();
 
             //WorkFlowStepOption
             CreateMap<WorkFlowStepOptionViewModel, CreateUpdateWorkFlowStepOption>();

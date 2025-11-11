@@ -1,4 +1,4 @@
-﻿using CapitalRequestAutomatedTesting.UI.Models;
+using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -570,7 +570,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
-        public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateReviewerDashboardCell(int dashboardOrder, string expectedName, DateTime? expectedDate)
+        public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateDashboardCell(int dashboardOrder, string expectedName, DateTime? expectedDate)
         {
             return async driver =>
             {

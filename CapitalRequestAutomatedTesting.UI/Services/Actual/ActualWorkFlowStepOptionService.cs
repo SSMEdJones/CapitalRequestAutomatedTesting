@@ -1,12 +1,7 @@
-﻿using AutoMapper;
-using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequest.API.Models;
+using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
-using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.Models;
 using SSMWorkflow.API.DataAccess.Models;
-using SSMWorkflow.API.Models;
 using System.Diagnostics;
 using vm = CapitalRequest.API.Models;
 
@@ -24,15 +19,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
+        private readonly IActualWorkflowStepService _actualWorkflowStepService;
         private IMapper _mapper;
 
         public ActualWorkflowStepOptionService(
             ISSMWorkflowServices ssmWorkflowServices,
             ICapitalRequestServices capitalRequestServices,
+            IActualWorkflowStepService actualWorkflowStepService,
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
+            _actualWorkflowStepService = actualWorkflowStepService;
 
             _mapper = mapper;
         }
@@ -133,6 +131,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 .ToList();
 
             return actual;
+        }
+
+        public async Task<List<WorkflowStepOption>> GetWorkflowStepOptions(vm.Proposal proposal)
+        {
+            var workflowStep = await _actualWorkflowStepService.GetWorkflowStepAsync(proposal);
+            var workflowStepOptionsViewModels = await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID);
+
+            var workflowStepOptions = workflowStepOptionsViewModels
+                .Select(x => _mapper.Map<WorkflowStepOption>(x))
+                .ToList();
+
+            return workflowStepOptions;
         }
         //public async Task<List<WorkflowStepOption>> GetRequestTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal)
         //{

@@ -3,10 +3,16 @@ namespace CapitalRequestAutomatedTesting.UI.Models
     public static class Constants
     {
         //Email Templates
+        public const string EMAIL_NOTIFICATION = "Notification Email";
+        public const string EMAIL_VERIFICATION = "Verification";
+
+        public const string EMAIL_INITIAL_EMAIL = "Initial Email";
         public const string EMAIL_REQUEST_MORE_INFORMATION = "Request More Information Email";
         public const string EMAIL_PROVIDE_MORE_INFORMATION = "Return of Requested Information";
         public const string EMAIL_PURCHASING_FINANCE_AUTHOR = "Purchasing, Finance, and Author Email";
 
+
+        
         //Email Types
         public const string EMAIL_TYPE_NOTIFY = "Notify";
         public const string EMAIL_TYPE_VERITY = "Verification";
@@ -16,6 +22,7 @@ namespace CapitalRequestAutomatedTesting.UI.Models
         public const string OPTION_TYPE_ADD_INFO = "AddInfo";
         public const string OPTION_TYPE_REPLY = "Reply";
         public const string OPTION_TYPE_VERIFY = "Verify";
+        public const string OPTION_TYPE_NOTIFY = "Notify";
         public const string OPTION_TYPE_VERIFY_WBS = "VerifyWBS";
 
         public const string BUTTON_CAPTION_VERIFY = "Verify";
@@ -83,6 +90,7 @@ namespace CapitalRequestAutomatedTesting.UI.Models
         public const string DASHBOARD_STATUS_CANCELLED = "X";
         public const string DASHBOARD_STATUS_SKIPPED = "-";
         public const string DASHBOARD_STATUS_CLEAR = " ";
+        public const string DASHBOARD_STATUS_SUBMITTED = " ";
 
         //Access Maintenance
         public const string APPLICATION_ROLE_NAME_ADMIN = "Admin";

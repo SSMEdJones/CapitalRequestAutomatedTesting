@@ -1,4 +1,4 @@
-﻿using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualBasic;
@@ -97,6 +97,12 @@ namespace CapitalRequestAutomatedTesting.Data.Services
         {
             return await _ssmMWorkFlowStep.Get(workFlowStepId);
         }
+
+        public async Task<WorkFlowViewModel> GetWorkflow(Guid workFlowId)
+        {
+            return await _ssmMWorkFlow.Get(workFlowId);
+        }
+
 
         public async Task<List<WorkFlowStakeholderViewModel>> GetAllWorkFlowStakeholders(Guid workflowID)
         {

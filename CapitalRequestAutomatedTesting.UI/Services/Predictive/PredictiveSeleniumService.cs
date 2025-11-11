@@ -1,6 +1,5 @@
 using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Infrastructure.ApiDiagnostics;
@@ -20,36 +19,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
     {
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        private readonly IWorkflowControllerService _workflowControllerService;
-        private readonly IPredictiveRequestedInfoService _predictiveRequestedInfoService;
-        private readonly IPredictiveWorkflowStepResponderService _predictiveWorkflowStepResponderService;
-        private readonly IPredictiveWorkflowStepOptionService _predictiveWorkflowStepOptionService;
-        private readonly IPredictiveEmailNotificationService _predictiveEmailNotificationService;
-        private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
 
         public PredictiveSeleniumService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
-            IWorkflowControllerService workflowControllerService,
-            IPredictiveRequestedInfoService predictiveRequestedInfoService,
-            IPredictiveWorkflowStepResponderService predictiveWorkflowStepResponderService,
-            IPredictiveWorkflowStepOptionService predictiveWorkflowStepOptionService,
-            IPredictiveEmailNotificationService predictiveEmailNotificationService,
-            IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
             IFormDataContext formDataContext,
             IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
-            _workflowControllerService = workflowControllerService;
-            _predictiveRequestedInfoService = predictiveRequestedInfoService;
-            _predictiveWorkflowStepResponderService = predictiveWorkflowStepResponderService;
-            _predictiveWorkflowStepOptionService = predictiveWorkflowStepOptionService;
-            _predictiveEmailNotificationService = predictiveEmailNotificationService;
-            _userContextService = userContextService;
             _scopeFactory = scopeFactory;
             _formDataContext = formDataContext;
             _mapper = mapper;
@@ -286,6 +267,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
             var requestingGroupId = detail.RequestingGroupId;
             var requestingGroupName = string.Empty;
+            var submitUserId = string.Empty;
 
             if (scenarioId != "SCN003")
             {
@@ -544,6 +526,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             else if (scenarioId == "SCN003")
             {
                 proposal.SubmitUserId = detail.SubmitUserId;
+                expectedMessage = Constants.RESPONSE_ACTION_VERIFIED;
+                submitUserId = proposal.SubmitUserId;
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        StepName = "Validate Attachment tab",
+                        ServiceName = "IScenarioControllerService",
+                        MethodName = "ValidateAttachmentTabAsync",
+                        Parameters = new List<object> { proposal }
+                    }
+                );
+
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
@@ -579,6 +575,29 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         }
                     );
                 }
+
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       StepNumber = ++stepNumber,
+                       StepName = "Validate submit button pressed",
+                       ServiceName = "IScenarioControllerService",
+                       MethodName = "ValidateSubmitButtonPressedAsync",
+                       Parameters = new List<object> { proposal }
+                   }
+               );
+
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       StepNumber = ++stepNumber,
+                       StepName = "Validate submit status",
+                       ServiceName = "IPredictiveDashboardService",
+                       MethodName = "ValidateDashboardStatusAsync",
+                       Parameters = new List<object> { proposal, null, null, Constants.DASHBOARD_STATUS_SUBMITTED }
+                   }
+                );
+
             }
 
             return predictiveMethods;

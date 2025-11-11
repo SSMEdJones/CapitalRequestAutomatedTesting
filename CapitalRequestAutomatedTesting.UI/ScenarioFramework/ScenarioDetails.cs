@@ -18,6 +18,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public int SequenceNumber { get; set; }
         public int RequestedInfoId { get; set; }
         public string SubmitUserId { get; set; }
+        public string SubmittedBy { get; set; } = string.Empty;
 
         public string Message { get; set; }
 

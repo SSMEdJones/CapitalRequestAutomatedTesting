@@ -17,7 +17,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
         Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail);
         Task<ScenarioDataViewModel> ExecuteScenarioMethodsAsync(List<OriginalMethod> methods, ScenarioDetailsViewModel scenarioDetail);
     }
-    
+
     public class OriginalScenarioService : IOriginalScenarioService
     {
         private readonly ILogger<OriginalScenarioService> _logger;
@@ -126,7 +126,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
 
                 // Get method info
                 MethodInfo methodInfo = serviceInstance.GetType().GetMethod(method.MethodName);
-                if (methodInfo == null) 
+                if (methodInfo == null)
                 {
                     throw new InvalidOperationException($"Method '{method.MethodName}' not found on service '{method.ServiceName}'");
                 }
@@ -134,11 +134,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                 // Validate parameter count before invoking
                 var expectedParamCount = methodInfo.GetParameters().Length;
                 var actualParamCount = method.Parameters?.Count ?? 0;
-                
+
                 if (expectedParamCount != actualParamCount)
                 {
                     throw new ArgumentException(
-                        $"Parameter count mismatch for method '{method.MethodName}'. " + 
+                        $"Parameter count mismatch for method '{method.MethodName}'. " +
                         $"Expected: {expectedParamCount}, Actual: {actualParamCount}");
                 }
 
@@ -159,7 +159,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                 if (result is Task taskResult) // If method returns a Task
                 {
                     await taskResult.ConfigureAwait(false); // Await task completion
-                    
+
                     // If Task<T>, retrieve the actual result
                     var resultProperty = taskResult.GetType().GetProperty("Result");
                     result = resultProperty?.GetValue(taskResult);
@@ -180,11 +180,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             catch (Exception ex)
             {
                 // Log error with context before letting it propagate
-                _logger.LogError(ex, "Error executing method {Method} on {Service} with parameters: {Parameters}", 
-                    method.MethodName, 
-                    method.ServiceName, 
+                _logger.LogError(ex, "Error executing method {Method} on {Service} with parameters: {Parameters}",
+                    method.MethodName,
+                    method.ServiceName,
                     string.Join(", ", method.Parameters ?? new List<object>()));
-                
+
                 // Re-throw to preserve stack trace
                 throw;
             }
@@ -236,22 +236,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
 
 
-            //TODO Map
-            proposal.RequestedInfoId = detail.RequestedInfoId;
-            proposal.ReviewerGroupId = detail.TargetGroupId;
-            proposal.ReviewerId = detail.ReviewerId;
-            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestingGroupId = detail.RequestingGroupId;
+            if (scenarioId != "SCN003")
+            {
 
-            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
-            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
-                        .Where(x => !x.IsComplete)
-                        .FirstOrDefault();
+                //TODO Map
+                proposal.RequestedInfoId = detail.RequestedInfoId;
+                proposal.ReviewerGroupId = detail.TargetGroupId;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestingGroupId = detail.RequestingGroupId;
 
-            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+
+                proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                            .Where(x => !x.IsComplete)
+                            .FirstOrDefault();
+
+                proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
+            }
 
             if (scenarioId == "SCN001")
             {

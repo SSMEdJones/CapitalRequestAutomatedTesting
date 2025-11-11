@@ -391,9 +391,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
 
                     scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
 
-                    //TODO remove after debugging
-                    scenario.PredictedSeleniumOutcome.Success = false;
-                    return scenario;
 
                     _logger.LogInformation("Step 2.5/4: Generating Original Data for {ScenarioName}", scenario.DisplayText);
 

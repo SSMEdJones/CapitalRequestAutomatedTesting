@@ -120,9 +120,15 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualSeleniumService, ActualSeleniumService>();
             services.AddScoped<IActualProvidedInfoService, ActualProvidedInfoService>();
             services.AddScoped<IActualAttachmentService, ActualAttachmentService>();
+            services.AddScoped<IActualWorkflowService, ActualWorkflowService>();
+            services.AddScoped<IActualWorkflowStepService, ActualWorkflowStepService>();
+            services.AddScoped<IActualWorkflowInstanceService, ActualWorkflowInstanceService>();
+            services.AddScoped<IActualWorkflowStakeHolderService, ActualWorkflowStakeHolderService>();
+            services.AddScoped<IActualReviewerGroupService, ActualReviewerGroupService>();
+
+
             #endregion
             services.AddScoped<IOriginalScenarioService, OriginalScenarioService>();
-            services.AddScoped<IActualReviewerGroupService, ActualReviewerGroupService>();
             
             #region Rollback Services
             services.AddScoped<IRollbackProvidedInfoService, RollbackProvidedInfoService>();

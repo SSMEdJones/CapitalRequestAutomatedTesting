@@ -189,9 +189,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
-            proposal.ReviewerId = detail.ReviewerId;
 
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                .Where(x => !x.IsComplete)
+                .FirstOrDefault();
+
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
+
+            if (detail.ScenarioId != "SCN003")
+            {
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+            }
 
             proposal.ExecutionDurationMinutes = scenarioDetail.ExecutionDurationMinutes;
 
@@ -201,12 +210,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 //allows for debugging time
                 proposal.ExecutionDurationMinutes += 5;
             }
-
-            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
-                        .Where(x => !x.IsComplete)
-                        .FirstOrDefault();
-
-            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
 
             if (scenarioId == "SCN001")
             {
@@ -317,7 +320,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         Operation = CrudOperationType.Insert
                     }
                 );
-                
+
                 actualMethods.Add(
                     new ActualMethod
                     {
@@ -371,7 +374,66 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
             else if (scenarioId == "SCN003")
             {
-                //stubbed for future scenario
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowService",
+                        MethodName = "GetWorkflowStepAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowStepService",
+                        MethodName = "GetWorkflowStepAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowInstanceService",
+                        MethodName = "GetWorkflowInstanceAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowStakeHolderService",
+                        MethodName = "GetWorkflowStakeHoldersAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowStepOptionService",
+                        MethodName = "GetWorkflowStepOptionsAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualEmailNotificationService",
+                        MethodName = "GetEmailNotificationsAsync",
+                        Parameters = new List<object> { proposal, Constants.EMAIL_INITIAL_EMAIL, string.Empty },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
             }
 
             var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);

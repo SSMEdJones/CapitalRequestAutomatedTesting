@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Extensions;
@@ -33,7 +33,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private readonly IUserContextService _userContextService;
         private IMapper _mapper;
 
-        public ActualEmailNotificationService(ICapitalRequestServices capitalRequestServices,ISSMWorkflowServices ssmWorkflowServices, IUserContextService userContextService, IMapper mapper)
+        public ActualEmailNotificationService(ICapitalRequestServices capitalRequestServices, ISSMWorkflowServices ssmWorkflowServices, IUserContextService userContextService, IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
@@ -51,20 +51,34 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return relevantNotifications;
         }
 
-        
+        //left off here going to need a new GetSubmitEmaiNotificationsAsync that is driven by the reviewer for emailtype
 
         public async Task<List<EmailNotification>> GetEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser)
         {
-
             var workflowStep = proposal.WorkflowStep;
-
             var workflowStepId = workflowStep.WorkflowStepID;
 
-            var reviewerGroupdId = proposal.ReviewerGroupId;
-            var requestingGroupId = proposal.RequestingGroupId;
+            var reviewerGroupdId = 0;
+            var requestingGroupId = 0;
+            var reviewerGroup = new vm.ReviewerGroup();
+            var requestingGroup = new vm.ReviewerGroup();
+            var reviewers = new List<vm.Reviewer>();
+            var fullName = string.Empty;
 
-            var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
-            var requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
+            if (emailType != Constants.EMAIL_INITIAL_EMAIL)
+            {
+                reviewerGroupdId = proposal.ReviewerGroupId;
+                requestingGroupId = proposal.RequestingGroupId;
+
+                reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
+                requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
+                reviewers = (await GetReviewers(proposal))
+                     .Where(x => x.ReviewerGroupId == reviewerGroupdId)
+                     .Select(z => _mapper.Map<vm.Reviewer>(z))
+                     .ToList();
+
+                fullName = proposal.Reviewer.FullName;
+            }
 
             var emailTemplate = (await _capitalRequestServices
                     .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = emailType }))
@@ -74,22 +88,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     .GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep.StepName }))
                     .FirstOrDefault();
 
-            var reviewers = (await GetReviewers(proposal))
-                     .Where(x => x.ReviewerGroupId == reviewerGroupdId)
-                     .Select(z => _mapper.Map<vm.Reviewer>(z))
-                     .ToList();
-
-            var fullName = proposal.Reviewer.FullName;
-
             var emailTemplateType = emailType == Constants.EMAIL_REQUEST_MORE_INFORMATION
                 ? Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION
-                : Constants.EMAIL_TEMPLATE_RETURN_OF_REQUESTED_INFORMATION;
+                : emailType == Constants.EMAIL_TEMPLATE_RETURN_OF_REQUESTED_INFORMATION
+                    ? Constants.EMAIL_INITIAL_EMAIL
+                    : Constants.EMAIL_TEMPLATE_INITIAL_EMAIL;
 
 
             //var action = EmailNotifcationHelper.GenerateActionString(reviewerGroup.Name, requestingGroup.Name, emailTemplateType, fullName, requestingUser);
-
-            var action = EmailNotifcationHelper.GenerateActionString(reviewerGroup, requestingGroup, emailTemplateType, fullName, requestingUser);
-
+            var action = string.Empty;
+            if (emailType == Constants.EMAIL_INITIAL_EMAIL)
+            {
+                action = Constants.EMAIL_TEMPLATE_INITIAL_EMAIL;
+            }
+            else
+            {
+                action = EmailNotifcationHelper.GenerateActionString(reviewerGroup, requestingGroup, emailTemplateType, fullName, requestingUser);
+            }
 
             var emallQueryViewModel = new EmailQueryViewModel
             {
@@ -117,13 +132,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                      .ToList();
             }
 
-            var relevantNotifications = allEmailNotifications
-                .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
-                            x.EmailQueryDetails.EmailTemplateId == emailTemplate.Id.ToString() &&
-                            x.EmailQueryDetails.ReviewerGroupId == reviewerGroupdId.ToString() &&
-                            x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString() &&  
-                            x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, durationMinutes))
-                .ToList();
+            var relevantNotifications = new List<EmailNotification>();
+
+            if (emailType == Constants.EMAIL_INITIAL_EMAIL)
+            {
+                relevantNotifications = allEmailNotifications
+                    .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
+                                x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, durationMinutes))
+                    .ToList();
+
+            }
+            else
+            {
+                relevantNotifications = allEmailNotifications
+                    .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
+                                x.EmailQueryDetails.EmailTemplateId == emailTemplate.Id.ToString() &&
+                                x.EmailQueryDetails.ReviewerGroupId == reviewerGroupdId.ToString() &&
+                                x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString() &&
+                                x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, durationMinutes))
+                    .ToList();
+
+            }
 
             emailNotifications = (from data in relevantNotifications
                                   from recipient in data.Recipients.Split(',')
@@ -134,6 +163,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             return emailNotifications;
         }
+
+
 
         public string NormalizeHtml(string html)
         {

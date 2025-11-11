@@ -32,6 +32,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IFormDataContext _formDataContext;
         private readonly IActualReviewerGroupService _actualReviewerGroupService;
+        private readonly IScenarioControllerService _scenarioControllerService;
         private readonly IMapper _mapper;
 
         public PredictiveScenarioService(ICapitalRequestServices capitalRequestServices,
@@ -45,6 +46,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             IServiceScopeFactory scopeFactory,
             IFormDataContext formDataContext,
             IActualReviewerGroupService actualReviewerGroupService,
+            IScenarioControllerService scenarioControllerService,
             IMapper mapper)
 
         {
@@ -59,6 +61,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             _scopeFactory = scopeFactory;
             _formDataContext = formDataContext;
             _actualReviewerGroupService = actualReviewerGroupService;
+            _scenarioControllerService = scenarioControllerService;
             _mapper = mapper;
         }
 
@@ -68,21 +71,38 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
-            var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
-            var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
 
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
-            proposal.RequestingGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-            proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
+            if (detail.ScenarioId != "SCN003")
+            {
+                var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
+
+                proposal.RequestingGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+
+                scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
+                scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
+                scenarioDetail.SelectedProperties["Requested Information"] = detail.RequestedInformation;
+            }
+
+            if (!string.IsNullOrWhiteSpace(detail.SubmitUserId))
+            {
+                detail.SubmittedBy = (await _scenarioControllerService.GetSubmitUsersAsync(detail.ProposalId))
+                                .FirstOrDefault(u => u.Value == detail.SubmitUserId).Text;
+
+                if (!string.IsNullOrWhiteSpace(detail.SubmittedBy))
+                {
+                    scenarioDetail.SelectedProperties["Submitted By"] = detail.SubmittedBy;
+                }
+
+            }
             scenarioDetail.SelectedProperties["Scenario Name"] = detail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();
-            scenarioDetail.SelectedProperties["Requesting Group"] = requestingGroup.Name;
-            scenarioDetail.SelectedProperties["Reviewer"] = reviewer.FullName;
-            scenarioDetail.SelectedProperties["Requested Information"] = detail.RequestedInformation;
 
             if (scenarioId == "SCN001")
             {
@@ -276,34 +296,39 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var scenarioId = scenarioDetail.ScenarioId;
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
 
-            var requestingGroupId = detail.RequestingGroupId;
-            var replyingGroupId = detail.ReplyingGroupId;
-
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
 
-            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
-                .Where(x => !x.IsComplete)
-                .FirstOrDefault();
+            if (detail.ScenarioId != "SCN003")
+            {
+                var requestingGroupId = detail.RequestingGroupId;
+                var replyingGroupId = detail.ReplyingGroupId;
 
-            proposal.ReviewerGroupId = detail.RequestingGroupId;
-            proposal.ReplyingGroupId = detail.ReplyingGroupId;
-            proposal.RequestingGroupId = detail.RequestingGroupId;
-            proposal.RequestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
-            proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
-            proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
-            proposal.ReviewerId = detail.ReviewerId;
-            proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
-            proposal.WorkflowStepId = workflowStep.WorkflowStepID;
-            proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
+                var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                    .Where(x => !x.IsComplete)
+                    .FirstOrDefault();
 
-            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                .Where(x => x.IsComplete == false && x.IsTerminate == false)
-                .ToList();
+                proposal.ReviewerGroupId = detail.RequestingGroupId;
+                proposal.ReplyingGroupId = detail.ReplyingGroupId;
+                proposal.RequestingGroupId = detail.RequestingGroupId;
+                proposal.RequestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
+                proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
+                proposal.RequestedInfo.RequestedInformation = detail.RequestedInformation;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
-            var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                               .Where(x => x.IsComplete == false && x.IsTerminate == false)
-                               .ToList();
+                proposal.WorkflowStepId = workflowStep.WorkflowStepID;
+                proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
+
+                proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                    .Where(x => x.IsComplete == false && x.IsTerminate == false)
+                    .ToList();
+
+                var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                                   .Where(x => x.IsComplete == false && x.IsTerminate == false)
+                                   .ToList();
+
+            }
 
             var increment = 1;
 
@@ -497,8 +522,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             else if (scenarioId == "SCN003")
             {
-                var submitUser = scenarioDetail.SubmitUsers
+                var submitUser = (await _scenarioControllerService.GetSubmitUsersAsync(detail.ProposalId))
                     .FirstOrDefault(u => u.Value == detail.SubmitUserId).Text;
+                
 
                 proposal.SubmitUserId = detail.SubmitUserId;
                 var reviewerGroups = await _actualReviewerGroupService.GetFilteredReviewerGroupsAsync(Constants.STEP_ONE);
@@ -519,7 +545,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
-                        ServiceName = "IPredictiveWorkflowService",
+                        ServiceName = "IPredictiveWorkflowStepService",
                         MethodName = "CreateWorkflowStepAsync",
                         Parameters = new List<object> { proposal },
                         Operation = CrudOperationType.Insert
@@ -550,7 +576,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     new PredictiveMethod
                     {
                         ServiceName = "IPredictiveWorkflowStepOptionService",
-                        MethodName = "CreateWorkflowStepOptionsAsync",
+                        MethodName = "CreateSubmitWorkflowStepOptionsAsync",
                         Parameters = new List<object> { proposal },
                         Operation = CrudOperationType.Insert
                     }
@@ -560,7 +586,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     new PredictiveMethod
                     {
                         ServiceName = "IPredictiveEmailNotificationService",
-                        MethodName = "CreateEmailNotificationsAsync",
+                        MethodName = "CreateSubmitEmailNotificationsAsync",
                         Parameters = new List<object> { proposal },
                         Operation = CrudOperationType.Insert,
 

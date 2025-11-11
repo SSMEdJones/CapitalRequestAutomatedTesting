@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -15,22 +15,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
     }
     public class PredictiveDashboardService : IPredictiveDashboardService
-{
+    {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        private readonly ICapitalRequestServices _capitalRequestServices;
-        private readonly IUserContextService _userContextService;
-        private readonly IMapper _mapper;
 
-        public PredictiveDashboardService(
-            ISSMWorkflowServices ssmWorkflowServices,
-            ICapitalRequestServices capitalRequestServices,
-            IUserContextService userContextService,
-            IMapper mapper)
+        public PredictiveDashboardService(ISSMWorkflowServices ssmWorkflowServices)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
-            _capitalRequestServices = capitalRequestServices;
-            _userContextService = userContextService;
-            _mapper = mapper;
         }
 
         public async Task<List<SSMWorkflow.API.Models.Dashboard>> GetDashboardDataAsync(vm.Proposal proposal)
@@ -72,27 +62,34 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     };
                 }
 
-                var groupPrefix = $"{requestingGroup.Replace(" ",string.Empty)}Review"; // e.g., "ITReview"
-                var expectedDate = DateTime.Now.Date.ToShortDateString(); // Adjust to your desired format if needed
+                var reviewDate = string.Empty;
+                var reviewName = string.Empty;
+                var reviewStatus = string.Empty;
 
-                var dateProp = dashboardData.GetType().GetProperty($"{groupPrefix}Date");
-                var nameProp = dashboardData.GetType().GetProperty($"{groupPrefix}Name");
-                var statusProp = dashboardData.GetType().GetProperty($"{groupPrefix}Status");
-
-                
-                if (dateProp == null || nameProp == null || statusProp == null)
+                if (requestingGroup != null)
                 {
-                    return new SeleniumStepResult
+
+
+                    var groupPrefix = $"{requestingGroup.Replace(" ", string.Empty)}Review"; // e.g., "ITReview"
+                    var expectedDate = DateTime.Now.Date.ToShortDateString(); // Adjust to your desired format if needed
+
+                    var dateProp = dashboardData.GetType().GetProperty($"{groupPrefix}Date");
+                    var nameProp = dashboardData.GetType().GetProperty($"{groupPrefix}Name");
+                    var statusProp = dashboardData.GetType().GetProperty($"{groupPrefix}Status");
+
+                    if (dateProp == null || nameProp == null || statusProp == null)
                     {
-                        Success = false,
-                        Message = $"One or more expected properties ({groupPrefix}Date/Name/Status) not found on dashboard model."
-                    };
+                        return new SeleniumStepResult
+                        {
+                            Success = false,
+                            Message = $"One or more expected properties ({groupPrefix}Date/Name/Status) not found on dashboard model."
+                        };
+                    }
+
+                    reviewDate = dateProp.GetValue(dashboardData)?.ToString();
+                    reviewName = nameProp.GetValue(dashboardData)?.ToString();
+                    reviewStatus = statusProp.GetValue(dashboardData)?.ToString();
                 }
-
-                var reviewDate = dateProp.GetValue(dashboardData)?.ToString();
-                var reviewName = nameProp.GetValue(dashboardData)?.ToString();
-                var reviewStatus = statusProp.GetValue(dashboardData)?.ToString();
-
                 var todayStr = DateTime.Now.ToShortDateString();
                 var errors = new List<string>();
 
@@ -112,7 +109,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     reviewDate = DateTime.Now.ToShortDateString();
                     reviewName = targetGroup;
                     reviewStatus = Constants.DASHBOARD_STATUS_INFORMATION_REQUESTED;
-                    
+
                     if (!string.Equals(reviewDate, todayStr, StringComparison.OrdinalIgnoreCase))
                         errors.Add($"Expected review date '{todayStr}', but got '{reviewDate}'.");
 
@@ -123,7 +120,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         errors.Add($"Expected status '{dashboardStatus}', but got '{reviewStatus}'.");
 
                 }
-                else if(proposal.ResponseMessage == Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT)
+                else if (proposal.ResponseMessage == Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT)
                 {
                     todayStr = string.Empty;
                     reviewDate = string.Empty;
@@ -140,6 +137,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         errors.Add($"Expected status '{dashboardStatus}', but got '{reviewStatus}'.");
 
                 }
+                else if (string.IsNullOrWhiteSpace(proposal.ResponseMessage))
+                {
+                    todayStr = DateTime.Now.ToShortDateString();
+                    var submitName = proposal.SubmitUserId;
+
+                    var submitPrefix = "Submit";
+
+                    var submitted = DateTime.Now.ToShortDateString();
+                    var submittedBy = submitName;
+
+                    if (!string.Equals(submitted, todayStr, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected submit date '{todayStr}', but got '{submitted}'.");
+
+                    if (!string.Equals(submitName, submittedBy, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected submit name '{submitName}', but got '{submittedBy}'.");
+                    
+                }
 
                 if (errors.Any())
                 {
@@ -153,7 +167,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 return new SeleniumStepResult
                 {
                     Success = true,
-                    Message = $"{requestingGroup} dashboard review matches expected status, name, and date."
+                    Message = $"{requestingGroup} dashboard matches expected status, name, and date."
                 };
             }
             catch (Exception ex)

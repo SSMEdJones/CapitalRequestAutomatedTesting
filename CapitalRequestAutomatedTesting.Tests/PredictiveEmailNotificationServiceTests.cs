@@ -99,7 +99,7 @@ public class PredictiveEmailNotificationServiceTests : IntegrationTestBase
     [Fact]
     public async Task GetlEmailNotificationsAsync_ShouldReturnExpectedResults()
     {
-        var proposal = await _capitalRequestservices.GetProposal(2936);
+        var proposal = await _capitalRequestservices.GetProposal(2943);
         proposal.ReviewerGroupId = 3;  // will come from selection of what button selected
         proposal.RequestingGroupId = 2;
 

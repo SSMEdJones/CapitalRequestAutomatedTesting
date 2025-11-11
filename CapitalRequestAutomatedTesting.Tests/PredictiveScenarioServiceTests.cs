@@ -52,8 +52,8 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
             new PredictiveMethod { ServiceName = "IPredictiveRequestedInfoService", MethodName = "CreateRequestedInfoAsync", Parameters = new List<object> { proposal, increment }, Operation = CrudOperationType.Insert},
             new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepResponderService", MethodName = "CreateWorkflowStepResponderAsync", Parameters = new List<object> { proposal, Constants.RESPONDER_REQUEST}, Operation = CrudOperationType.Insert },
             new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepOptionService", MethodName = "CloseOptionsAsync", Parameters = new List<object> { proposal, Guid.Empty, Constants.OPTION_TYPE_VERIFY, null, Constants.OPTION_TYPE_REQUEST}, Operation = CrudOperationType.Update },
-            new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepOptionService", MethodName = "CreateWorkflowStepOptionsAsync", Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, proposal.RequestedInfo.Id } , Operation = CrudOperationType.Insert },
-            new PredictiveMethod { ServiceName = "IPredictiveEmailNotificationService", MethodName = "CreateEmailNotificationsAsync", Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION }, Operation = CrudOperationType.Insert }
+            new PredictiveMethod { ServiceName = "IPredictiveWorkflowStepOptionService", MethodName = "CreateSubmitWorkflowStepOptionsAsync", Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION, proposal.RequestedInfo.Id } , Operation = CrudOperationType.Insert },
+            new PredictiveMethod { ServiceName = "IPredictiveEmailNotificationService", MethodName = "CreateSubmitEmailNotificationsAsync", Parameters = new List<object> { proposal, Constants.EMAIL_REQUEST_MORE_INFORMATION }, Operation = CrudOperationType.Insert }
         };
 
         var scenarioDetailViewModel = new ScenarioDetailsViewModel

@@ -1,4 +1,4 @@
-﻿using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using OpenQA.Selenium;
 
 namespace CapitalRequestAutomatedTesting.UI.Helpers
@@ -30,7 +30,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             => SeleniumHelper.ValidateElementTextIsEmpty(id, description);
 
         public static Func<IWebDriver, Task<SeleniumStepResult>> DashboardStatus(int dashboardOrder, string expectedName, DateTime? expectedDate)
-            => SeleniumHelper.ValidateReviewerDashboardCell(dashboardOrder, expectedName, expectedDate);
+            => SeleniumHelper.ValidateDashboardCell(dashboardOrder, expectedName, expectedDate);
 
         public static Func<IWebDriver, Task<SeleniumStepResult>> NoRequestsMessage()
             => SeleniumHelper.NoRequestsMessage();

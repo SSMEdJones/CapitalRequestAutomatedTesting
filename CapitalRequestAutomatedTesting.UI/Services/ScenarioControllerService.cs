@@ -667,37 +667,63 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 return SeleniumStepResult.Fail($"File upload validation failed: {ex.Message}");
             }
         }
+
+        private SeleniumStepResult ExecuteValidationWithCondition(
+            Func<bool> validationCondition,
+            string successMessage,
+            string failureMessage)
+        {
+            bool isValid = validationCondition();
+            
+            return new SeleniumStepResult
+            {
+                Success = isValid,
+                Message = isValid ? successMessage : failureMessage
+            };
+        }
+
+        // Refactor ValidateEditButtonAsync to use the common method
         public async Task<SeleniumStepResult> ValidateEditButtonAsync(vm.Proposal proposal)
         {
-
             var users = await GetValidSubmitUsers(proposal);
 
-            bool isValid =  users.Where(x => x.UserId == proposal.SubmitUserId).Any();
-
-            return new SeleniumStepResult
-            {
-                Success = isValid,
-                Message = isValid
-                    ? "Edit button validation passed."
-                    : "Edit button not found for this Request."
-
-            };
+            return ExecuteValidationWithCondition(
+                () => users.Where(x => x.UserId == proposal.SubmitUserId).Any(),
+                "Edit button validation passed.",
+                "Edit button not found for this Request."
+            );
         }
 
+        // Refactor ValidateSubmitButtonAsync to use the common method
         public SeleniumStepResult ValidateSubmitButtonAsync(vm.Proposal proposal)
         {
-            bool isValid = proposal.WorkflowId == Guid.Empty && proposal.IsMovingForward;
-
-            return new SeleniumStepResult
-            {
-                Success = isValid,
-                Message = isValid
-                    ? "Submit button validation passed."
-                    : "Submit button not found for this Request."
-
-            };
-
+            return ExecuteValidationWithCondition(
+                () => proposal.WorkflowId == Guid.Empty && proposal.IsMovingForward,
+                "Submit button validation passed.",
+                "Submit button not found for this Request."
+            );
         }
+
+        // Refactor ValidateAttachmentTabAsync to use the common method
+        public SeleniumStepResult ValidateAttachmentTabAsync(vm.Proposal proposal)
+        {
+            return ExecuteValidationWithCondition(
+                () => proposal.WorkflowId == Guid.Empty && proposal.IsMovingForward,
+                "Attachment Tab validation passed.",
+                "Attachment Tab not found for this Request."
+            );
+        }
+
+        public SeleniumStepResult ValidateSubmitButtonPressedAsync(vm.Proposal proposal)
+        {
+            return ExecuteValidationWithCondition(
+                () => proposal.WorkflowId == Guid.Empty && proposal.IsMovingForward,
+                "Submit Button Pressed validation passed.",
+                "Submit Button Pressed validation failed."
+            );
+        }
+
+        
     }
 }
 

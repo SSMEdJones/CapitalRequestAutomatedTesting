@@ -1,5 +1,6 @@
 using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Helpers;
@@ -18,7 +19,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
     public interface IPredictiveEmailNotificationService
     {
         Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser);
-        Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal);
+        Task<List<EmailNotification>> CreateSubmitEmailNotificationsAsync(vm.Proposal proposal);
         Task<string> GenerateEmailMessageAsync(vm.EmailTemplate emailTemplate, vm.Reviewer reviewer, vm.ReviewerGroup requestingGroup, vm.Proposal proposal);
         string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName, string requestingUser);
     }
@@ -138,7 +139,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             return emailNotifications;
         }
 
-        public async Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal)
+        public async Task<List<EmailNotification>> CreateSubmitEmailNotificationsAsync(vm.Proposal proposal)
         {
             var emailNotifications = new List<EmailNotification>();
 
@@ -161,12 +162,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                     var action = emailActionTemplate;
 
-                    var emailTemplateId = reviewerGroup.EmailTemplateId;
+                    var emailTemplateId = (int)reviewerGroup.EmailTemplateId;
                     var emailTemplate = new vm.EmailTemplate();
 
                     if (emailTemplateId != null)
                     {
-                        emailTemplate = await _capitalRequestServices.GetEmailTemplate(emailTemplateId.Value);
+                        emailTemplate = await _capitalRequestServices.GetEmailTemplate(emailTemplateId);
                     }
 
                     var emailMessage = await GenerateEmailMessageAsync(emailTemplate, reviewer, proposal);
@@ -356,7 +357,43 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 emailMessage = $"{emailStyle.Body}{emailBody}";
             }
+            //else if (emailTemplate.Name == Constants.EMAIL_NOTIFICATION || emailTemplate.Name == Constants.EMAIL_VERIFICATION)
+            //{
+            //    var body = emailTemplate.Body.Replace("[", "{{ ").Replace("]", " }}");
+            //    var firstName = reviewer.FirstName;
+            //    var projectName = proposal.ProjectName;
+            //    var reqId = proposal.Id.ToString();
+            //    var reviewerGroupId = reviewer.ReviewerGroupId.Value;
 
+            //    var projectLink = GenerateProjectLink(
+            //         _ssmWorkFlowSettings.ProjectReviewLink,
+            //         proposal.Id,
+            //         emailTemplate.OptionType,
+            //         null,
+            //         null,
+            //         proposal.ReviewerGroupId,
+            //         null
+            //    );
+            //    //.http://caps-dev.ssmhc.com/CapitalRequest/Proposal/Review?Id=2943&ReviewerGroupId=2&ActionType=Verify
+            //    //?Id=2943&ReviewerGroupId=2&ActionType=Verify
+            //    //.http://caps-dev.ssmhc.com/CapitalRequest/Proposal/Review?Id=2943&ReviewerGroupId=1&ActionType=Notify
+            //    //Id=2943&ReviewerGroupId=1&ActionType=Notify
+
+
+            //    var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(proposal.ReviewerGroupId);
+            //    var emailModel = new Dictionary<string, object>
+            //    {
+            //        ["UserFirstName"] = firstName,
+            //        ["ProjectName"] = projectName,
+            //        ["ReqId"] = reqId,
+            //        ["ReviewerGroup"] = reviewerGroup,
+            //        ["ProjectLink"] = projectLink
+            //    };
+
+            //    var emailBody = TemplateHelper.Render(body, emailModel);
+
+            //    emailMessage = $"{emailStyle.Body}{emailBody}";
+            //}
 
             return emailMessage;
         }
@@ -373,19 +410,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var firstName = reviewer.FirstName;
             var projectName = proposal.ProjectName;
             var reqId = proposal.Id.ToString();
-
             var reviewerGroupId = reviewer.ReviewerGroupId.Value;
-
             var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupId);
 
             var projectLink = GenerateProjectLink(
-                 _ssmWorkFlowSettings.ProjectReviewLink,
-                 proposal.Id,
-                 emailTemplate.OptionType,
-                 null,
-                 reviewer.Id,
-                 null,
-                null
+                     _ssmWorkFlowSettings.ProjectReviewLink,
+                     proposal.Id,
+                     emailTemplate.OptionType,
+                     null,
+                     null,
+                     reviewerGroupId,
+                     null
                 );
 
             var emailModel = new Dictionary<string, object>
@@ -445,33 +480,94 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             int? requestingReviewerGroupId)
         {
             string idParam = $"?Id={proposalId}";
-
-            // Determine parameter name
-            string paramName = (requestedInfoId == null || reviewerId != null) && optionType != "AddInfo"
-                ? "&ReviewerGroupId="
-                : "&RequestedInfoId=";
-
-            // Determine parameter value
+            string paramName;
             string paramValue;
-            if (requestedInfoId != null && reviewerId != null && optionType == "Verify")
+
+            // Determine paramName
+            if (optionType == "AddInfo")
+            {
+                paramName = "&RequestedInfoId=";
+            }
+            else
+            {
+                paramName = "&ReviewerGroupId=";
+            }
+
+            // Determine paramValue
+            if (optionType == "Verify" && requestedInfoId != null && reviewerId != null)
             {
                 paramValue = requestingReviewerGroupId?.ToString();
             }
-            else if (requestedInfoId != null && optionType == "AddInfo")
+            else if (optionType == "AddInfo" && requestedInfoId != null)
             {
                 paramValue = requestedInfoId.ToString();
             }
-            else if (requestedInfoId == null || reviewerId != null)
+            else if ((requestedInfoId == null || reviewerId != null) && reviewerGroupId != null)
             {
-                paramValue = reviewerGroupId?.ToString();
+                paramValue = reviewerGroupId.ToString();
+            }
+            else if ((optionType == Constants.OPTION_TYPE_VERIFY || optionType == Constants.OPTION_TYPE_NOTIFY) && reviewerGroupId != null)
+            {
+                paramValue = reviewerGroupId.ToString();
             }
             else
             {
                 paramValue = reviewerId?.ToString();
             }
 
+            //.http://caps-dev.ssmhc.com/CapitalRequest/Proposal/Review?Id=2943&ReviewerGroupId=2&ActionType=Verify
+
+            //.http://caps-dev.ssmhc.com/CapitalRequest/Proposal/Review?Id=2943&ReviewerGroupId=1&ActionType=Notify
+
             return $"{baseUrl}{idParam}{paramName}{paramValue}&ActionType={optionType}\" target=\"_blank";
         }
+        //public string GenerateProjectLink(
+        //    string baseUrl,
+        //    int proposalId,
+        //    string optionType,
+        //    int? requestedInfoId,
+        //    int? reviewerId,
+        //    int? reviewerGroupId,
+        //    int? requestingReviewerGroupId)
+        //{
+        //    string idParam = $"?Id={proposalId}";
+
+        //    // Determine parameter name
+        //    string paramName = (requestedInfoId == null || reviewerId != null) && optionType != "AddInfo"
+        //        ? "&ReviewerGroupId="
+        //        : "&RequestedInfoId=";
+
+
+        //    // Determine parameter value                 
+        //    string paramValue;
+        //    if (requestedInfoId != null && reviewerId != null && optionType == "Verify")
+        //    {
+        //        paramValue = requestingReviewerGroupId?.ToString();
+        //    }
+        //    else if (requestedInfoId != null && optionType == "AddInfo")
+        //    {
+        //        paramValue = requestedInfoId.ToString();
+        //    }
+        //    else if (requestedInfoId == null || reviewerId != null)
+        //    {
+        //        paramValue = reviewerGroupId?.ToString();
+        //    }
+        //    else if (reviewerGroupId != null && optionType == Constants.OPTION_TYPE_VERIFY || optionType == Constants.OPTION_TYPE_NOTIFY)
+        //    {
+        //        paramName = "&ReviewerGroupId=";
+        //        paramValue = reviewerGroupId?.ToString();
+        //    }
+
+        //    else
+        //    {
+        //        paramValue = reviewerId?.ToString();
+        //    }
+
+        //    //http://caps-dev.ssmhc.com/CapitalRequest/Proposal/Review?Id=2943&ReviewerGroupId=2&ActionType=Verify
+
+        //    //http://caps-dev.ssmhc.com/CapitalRequest/Proposal/Review?Id=2943&ReviewerGroupId=1&ActionType=Notify
+        //    return $"{baseUrl}{idParam}{paramName}{paramValue}&ActionType={optionType}\" target=\"_blank";
+        //}
 
         private async Task<List<vm.Reviewer>> GetReviewers(vm.Proposal proposal)
         {
