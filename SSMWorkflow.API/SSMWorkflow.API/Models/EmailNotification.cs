@@ -18,6 +18,7 @@ namespace SSMWorkflow.API.Models
         public string Priority { get; set; }
 
         private string _emailQuery;
+
         public string EmailQuery
         {
             get => _emailQuery;
@@ -27,6 +28,8 @@ namespace SSMWorkflow.API.Models
                 EmailQueryDetails = ParseEmailQuery(_emailQuery);
             }
         }
+
+        public string ReviewerGroupId { get; set; }
 
         public DateTime? Created { get; set; }
         public EmailQueryDetails EmailQueryDetails { get; private set; }

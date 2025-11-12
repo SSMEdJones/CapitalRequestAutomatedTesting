@@ -1,6 +1,5 @@
-﻿using CapitalRequestAutomatedTesting.UI.Extensions;
+using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
-using CapitalRequestAutomatedTesting.UI.Helpers;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
 using Newtonsoft.Json;

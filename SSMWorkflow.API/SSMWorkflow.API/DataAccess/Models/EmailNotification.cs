@@ -1,4 +1,4 @@
-﻿#nullable disable
+#nullable disable
 
 namespace SSMWorkflow.API.DataAccess.Models
 {
@@ -17,6 +17,8 @@ namespace SSMWorkflow.API.DataAccess.Models
         public string Subject { get; set; }
         public string Priority { get; set; }
         public string EmailQuery { get; set; }
+        public string ReviewerGroupId { get; set; }
+
         public DateTime? Created { get; set; }
     }
 }

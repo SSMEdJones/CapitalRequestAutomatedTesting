@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
@@ -73,7 +73,8 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                    filter.Name,
                    filter.EmailTemplateId,
                    filter.ReviewerType,
-                   filter.AdminReviewer
+                   filter.AdminReviewer,
+                   filter.StepNumber
                });
 
             var response = await _apiDiagnosticsSender

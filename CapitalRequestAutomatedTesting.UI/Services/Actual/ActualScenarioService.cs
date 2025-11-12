@@ -24,6 +24,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IFormDataContext _formDataContext;
         private readonly IWebHostEnvironment _environment;
+        private readonly IActualReviewerGroupService _actualReviewerGroupService;
         private readonly IMapper _mapper;
 
         public ActualScenarioService(ICapitalRequestServices capitalRequestServices,
@@ -31,6 +32,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             IServiceScopeFactory scopeFactory,
             IFormDataContext formDataContext,
             IWebHostEnvironment environment,
+            IActualReviewerGroupService actualReviewerGroupService,
             IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
@@ -38,6 +40,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _scopeFactory = scopeFactory;
             _formDataContext = formDataContext;
             _environment = environment;
+            _actualReviewerGroupService = actualReviewerGroupService;
             _mapper = mapper;
 
         }
@@ -374,6 +377,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
             else if (scenarioId == "SCN003")
             {
+                var reviewerGroups = await _actualReviewerGroupService.GetFilteredReviewerGroupsAsync(Constants.STEP_ONE);
+                var filteredReviewerGroups = _actualReviewerGroupService.FilterReviewerGroups(reviewerGroups, proposal, Constants.STEP_ONE);
+                proposal.ReviewerGroups = filteredReviewerGroups;
+
                 actualMethods.Add(
                     new ActualMethod
                     {
@@ -428,8 +435,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     new ActualMethod
                     {
                         ServiceName = "IActualEmailNotificationService",
-                        MethodName = "GetEmailNotificationsAsync",
-                        Parameters = new List<object> { proposal, Constants.EMAIL_INITIAL_EMAIL, string.Empty },
+                        MethodName = "GetSubmitEmailNotificationsAsync",
+                        Parameters = new List<object> { proposal, scenarioDetail },
                         Operation = CrudOperationType.Insert
                     }
                 );

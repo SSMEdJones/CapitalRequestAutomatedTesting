@@ -1,7 +1,5 @@
 using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Helpers;
 using CapitalRequestAutomatedTesting.UI.Models;
@@ -11,7 +9,6 @@ using Scriban.Runtime;
 using SSMWorkflow.API.DataAccess.ConfigurationSettings;
 using SSMWorkflow.API.DataAccess.Models;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
@@ -27,20 +24,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
-        private readonly IUserContextService _userContextService;
         private readonly SSMWorkFlowSettings _ssmWorkFlowSettings;
         private readonly IMapper _mapper;
 
         public PredictiveEmailNotificationService(
             ISSMWorkflowServices ssmWorkflowServices,
             ICapitalRequestServices capitalRequestServices,
-            IUserContextService userContextService,
             IOptionsMonitor<SSMWorkFlowSettings> ssmWorkFlowSettings,
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
-            _userContextService = userContextService;
             _ssmWorkFlowSettings = ssmWorkFlowSettings.CurrentValue;
             _mapper = mapper;
         }
@@ -126,6 +120,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     Action = workflowStep.StepDescription,
                     EmailMessage = emailMessage,
                     Recipients = reviewer.Email,
+                    ReviewerGroupId = emallQueryViewModel.ReviewerGroupId,
                     Subject = emailTemplate.Subject,
                     Priority = emailTemplate.Priority,
                     EmailQuery = emailQuery,
@@ -133,8 +128,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 };
 
                 emailNotifications.Add(emailNotification);
-            }
-            ;
+            };
 
             return emailNotifications;
         }
@@ -163,22 +157,31 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     var action = emailActionTemplate;
 
                     var emailTemplateId = (int)reviewerGroup.EmailTemplateId;
-                    var emailTemplate = new vm.EmailTemplate();
 
-                    if (emailTemplateId != null)
+                    var emailTemplate = await _capitalRequestServices.GetEmailTemplate(emailTemplateId);
+
+                    if (emailTemplate.Priority == Constants.EMAIL_PRIORITY_NORMAL)
                     {
-                        emailTemplate = await _capitalRequestServices.GetEmailTemplate(emailTemplateId);
+                        var existing = emailNotifications.FirstOrDefault(x =>
+                            x.Priority == Constants.EMAIL_PRIORITY_NORMAL &&
+                            x.ReviewerGroupId == reviewerGroupdId.ToString());
+
+                        if (existing != null)
+                        {
+                            existing.Recipients += $";{reviewer.Email}";
+                            continue;
+                        }
                     }
 
                     var emailMessage = await GenerateEmailMessageAsync(emailTemplate, reviewer, proposal);
 
                     var emallQueryViewModel = new EmailQueryViewModel
                     {
-                        EmailTemplateId = emailTemplate.Id.ToString(),
-                        ReviewerGroupId = reviewerGroupdId.ToString(),
-                        Action = action,
-                        OptionId = "NULL",
-                        RequestedInfoId = "NULL"
+                        EmailTemplateId = "0",
+                        ReviewerGroupId = "0",
+                        Action = "",
+                        OptionId = null,
+                        RequestedInfoId = null
                     };
 
                     var emailQuery = GenerateEmailQuery(emallQueryViewModel);
@@ -196,6 +199,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         Subject = emailTemplate.Subject,
                         Priority = emailTemplate.Priority,
                         EmailQuery = emailQuery,
+                        ReviewerGroupId = reviewerGroupdId.ToString(),
                         Created = DateTime.Now
                     };
 

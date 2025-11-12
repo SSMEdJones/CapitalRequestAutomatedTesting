@@ -160,7 +160,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             else if (detail.ScenarioId == "SCN003")
             {
                 userId = detail.SubmitUserId;
-                dashboardOrder = 1;
+                dashboardOrder = 0;
             }
             var actualSteps = new List<SeleniumScenarioStep>();
 

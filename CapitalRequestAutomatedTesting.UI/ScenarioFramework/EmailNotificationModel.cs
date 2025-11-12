@@ -1,4 +1,4 @@
-﻿namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class EmailNotificationModel
     {
@@ -15,6 +15,9 @@
         public string Subject { get; set; }
         public string Priority { get; set; }
         public string EmailQuery { get; set; }
+
+        [RowKey]
+        public string ReviewerGroupId { get; set; }
         public DateTime? Created { get; set; }
 
     }

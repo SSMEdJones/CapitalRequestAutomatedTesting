@@ -17,6 +17,9 @@ namespace CapitalRequestAutomatedTesting.UI.Models
         public const string EMAIL_TYPE_NOTIFY = "Notify";
         public const string EMAIL_TYPE_VERITY = "Verification";
 
+        //Email Priority
+        public const string EMAIL_PRIORITY_NORMAL = "Normal";
+
         //Option Types
         public const string OPTION_TYPE_REQUEST = "Request";
         public const string OPTION_TYPE_ADD_INFO = "AddInfo";

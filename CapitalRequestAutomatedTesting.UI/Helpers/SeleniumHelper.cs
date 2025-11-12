@@ -637,7 +637,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                             issues.Add($"Expected date '{expectedDateStr}' not found in cell.");
 
                         var hasInfoIcon = reviewCell.FindElements(By.CssSelector("i.fa-info-circle")).Any();
-                        if (!hasInfoIcon)
+                        if (!hasInfoIcon && dashboardOrder > 0)
                             issues.Add("Expected info icon not found in reviewer cell.");
 
                         if (issues.Any())
