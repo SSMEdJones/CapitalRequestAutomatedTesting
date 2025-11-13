@@ -24,7 +24,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         public async Task<Workflow> GetWorkflowAsync(vm.Proposal proposal)
         {
 
-            var workflow = await _ssmWorkflowServices.GetWorkflowStep(proposal.WorkflowId);
+            var workflow = await _ssmWorkflowServices.GetWorkflow(proposal.WorkflowId);
 
             return _mapper.Map<Workflow>(workflow);
         }

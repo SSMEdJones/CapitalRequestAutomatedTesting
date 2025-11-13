@@ -23,12 +23,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
     {
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        private readonly IWorkflowControllerService _workflowControllerService;
-        private readonly IPredictiveRequestedInfoService _predictiveRequestedInfoService;
-        private readonly IPredictiveWorkflowStepResponderService _predictiveWorkflowStepResponderService;
-        private readonly IPredictiveWorkflowStepOptionService _predictiveWorkflowStepOptionService;
-        private readonly IPredictiveEmailNotificationService _predictiveEmailNotificationService;
-        private readonly IUserContextService _userContextService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IFormDataContext _formDataContext;
         private readonly IActualReviewerGroupService _actualReviewerGroupService;
@@ -37,12 +31,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
         public PredictiveScenarioService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
-            IWorkflowControllerService workflowControllerService,
-            IPredictiveRequestedInfoService predictiveRequestedInfoService,
-            IPredictiveWorkflowStepResponderService predictiveWorkflowStepResponderService,
-            IPredictiveWorkflowStepOptionService predictiveWorkflowStepOptionService,
-            IPredictiveEmailNotificationService predictiveEmailNotificationService,
-            IUserContextService userContextService,
             IServiceScopeFactory scopeFactory,
             IFormDataContext formDataContext,
             IActualReviewerGroupService actualReviewerGroupService,
@@ -52,12 +40,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
-            _workflowControllerService = workflowControllerService;
-            _predictiveRequestedInfoService = predictiveRequestedInfoService;
-            _predictiveWorkflowStepResponderService = predictiveWorkflowStepResponderService;
-            _predictiveWorkflowStepOptionService = predictiveWorkflowStepOptionService;
-            _predictiveEmailNotificationService = predictiveEmailNotificationService;
-            _userContextService = userContextService;
             _scopeFactory = scopeFactory;
             _formDataContext = formDataContext;
             _actualReviewerGroupService = actualReviewerGroupService;
@@ -190,6 +172,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 serviceType = typeof(IPredictiveWorkflowService);
             else if (serviceName == $"{nameSpace}IPredictiveWorkflowInstanceService")
                 serviceType = typeof(IPredictiveWorkflowInstanceService);
+            else if (serviceName == $"{nameSpace}IPredictiveWorkflowStakeHolderService")
+                serviceType = typeof(IPredictiveWorkflowStakeHolderService);
 
             if (serviceType == null)
             {
@@ -257,7 +241,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 "IPredictiveEmailNotificationService" => "EmailNotification",
                 "IPredictiveAttachmentService" => "Attachment",
                 "IPredictiveWorkflowService" => "Workflow",
+                "IPredictiveWorkflowStepService" => "WorkflowStep",
                 "IPredictiveWorkflowInstanceService" => "WorkflowInstance",
+                "IPredictiveWorkflowStakeHolderService" => "WorkflowStakeHolder",
                 _ => "UnknownService"
             };
         }
@@ -566,7 +552,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     new PredictiveMethod
                     {
                         ServiceName = "IPredictiveWorkflowStakeHolderService",
-                        MethodName = "CreateWorkflowStakeholder",
+                        MethodName = "CreateWorkflowStakeholders",
                         Parameters = new List<object> { proposal, Constants.STEP_ONE },
                         Operation = CrudOperationType.Insert
                     }

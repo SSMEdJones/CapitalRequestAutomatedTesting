@@ -108,6 +108,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 serviceType = typeof(IActualScenarioService);
             else if (serviceName == $"{nameSpace}IActualAttachmentService")
                 serviceType = typeof(IActualAttachmentService);
+            else if (serviceName == $"{nameSpace}IActualWorkflowService")
+                serviceType = typeof(IActualWorkflowService);
+            else if (serviceName == $"{nameSpace}IActualWorkflowStepService")
+                serviceType = typeof(IActualWorkflowStepService);
+            else if (serviceName == $"{nameSpace}IActualWorkflowInstanceService")
+                serviceType = typeof(IActualWorkflowInstanceService);
+            else if (serviceName == $"{nameSpace}IActualWorkflowStakeHolderService")
+                serviceType = typeof(IActualWorkflowStakeHolderService);
 
             if (serviceType == null) return scenarioDataViewModel;
 
@@ -151,7 +159,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
         private string DetermineTableName(string serviceName)
         {
-
             return serviceName switch
             {
                 "IActualRequestedInfoService" => "RequestedInfo",
@@ -159,6 +166,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 "IActualWorkflowStepOptionService" => "WorkflowStepOption",
                 "IActualEmailNotificationService" => "EmailNotification",
                 "IActualAttachmentService" => "Attachment",
+                "IActualWorkflowService" => "Workflow",
+                "IActualWorkflowStepService" => "WorkflowStep",
+                "IActualWorkflowInstanceService" => "WorkflowInstance",
+                "IActualWorkflowStakeHolderService" => "WorkflowStakeHolder",
                 _ => "UnknownTable"
             };
         }
@@ -385,7 +396,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     new ActualMethod
                     {
                         ServiceName = "IActualWorkflowService",
-                        MethodName = "GetWorkflowStepAsync",
+                        MethodName = "GetWorkflowAsync",
                         Parameters = new List<object> { proposal },
                         Operation = CrudOperationType.Insert
                     }

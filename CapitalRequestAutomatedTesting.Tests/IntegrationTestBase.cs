@@ -1,7 +1,8 @@
-﻿using CapitalRequestAutomatedTesting.Tests.Models;
+using CapitalRequestAutomatedTesting.Tests.Models;
 using CapitalRequestAutomatedTesting.UI;
 using CapitalRequestAutomatedTesting.UI.Services;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,6 +73,7 @@ namespace CapitalRequestAutomatedTesting.Tests
 
             services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor { HttpContext = context });
             services.AddSingleton<IConfiguration>(configuration);
+            services.AddSingleton<IWebHostEnvironment>(builder.Environment);
 
             _provider = services.BuildServiceProvider();
 

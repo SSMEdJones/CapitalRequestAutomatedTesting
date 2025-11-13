@@ -133,7 +133,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return actual;
         }
 
-        public async Task<List<WorkflowStepOption>> GetWorkflowStepOptions(vm.Proposal proposal)
+        public async Task<List<WorkflowStepOption>> GetWorkflowStepOptionsAsync(vm.Proposal proposal)
         {
             var workflowStep = await _actualWorkflowStepService.GetWorkflowStepAsync(proposal);
             var workflowStepOptionsViewModels = await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID);

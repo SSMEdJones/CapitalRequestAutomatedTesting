@@ -115,7 +115,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                             tableName, opType, key, fullValueJson);
                                     }
                                 }
-
+                                seenRowKeys.Clear();
                                 // Process actual list and log duplicate values
                                 foreach (var obj in actualList.Cast<object>())
                                 {
@@ -143,6 +143,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                     comparisonData[$"DuplicateKeys.{tableName}.{opType}"] = string.Join(", ", duplicateRowKeys);
                                     comparisonData[$"DuplicateDetails.{tableName}.{opType}"] = duplicateDetails;
                                     comparisonData[$"DuplicateCount.{tableName}.{opType}"] = duplicateRowKeys.Count;
+
+                                    var list = predictiveList.Cast<object>().ToList();
+                                    var allRowKeys = list
+                                        .Select(obj =>
+                                        {
+                                            var type = obj.GetType();
+                                            var recipients = type.GetProperty("Recipients")?.GetValue(obj)?.ToString();
+                                            var groupId = type.GetProperty("ReviewerGroupId")?.GetValue(obj)?.ToString();
+                                            return $"{recipients}|{groupId}";
+                                        })
+                                        .ToList();
+
+                                    Debug.WriteLine($"All RowKeys in table '{tableName}', operation '{opType}': {string.Join(", ", allRowKeys)}");
+
+
+
                                 }
 
                                 var dictA = predictiveList.Cast<object>().ToDictionary(GetRowKey);

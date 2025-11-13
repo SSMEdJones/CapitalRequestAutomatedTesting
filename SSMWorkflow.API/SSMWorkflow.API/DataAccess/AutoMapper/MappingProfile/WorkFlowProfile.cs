@@ -25,6 +25,7 @@ namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
 
             //WorkFlowInstance
             CreateMap<WorkFlowInstanceViewModel, CreateUpdateWorkFlowInstance>();
+            CreateMap<WorkFlowInstanceViewModel, WorkflowInstance>();
             CreateMap<CreateUpdateWorkFlowInstance, WorkflowInstance>();
             CreateMap<WorkflowStep, WorkflowInstance>();
 

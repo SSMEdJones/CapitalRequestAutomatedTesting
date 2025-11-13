@@ -13,6 +13,7 @@ namespace CapitalRequestAutomatedTesting.Data.Services
 {
     public interface ISSMWorkflowServices
     {
+        Task<WorkFlowViewModel> GetWorkflow(Guid workFlowId);
 
         Task<List<WorkFlowStepViewModel>> GetAllWorkFlowSteps(Guid workFlowId);
 

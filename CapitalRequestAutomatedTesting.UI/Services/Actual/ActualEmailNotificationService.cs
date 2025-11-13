@@ -68,6 +68,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var emailNotifications = await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId });
 
             var notifications = new List<EmailNotification>();
+            var emailQuery = string.Empty;
             foreach (var reviewerGroup in proposal.ReviewerGroups)
             {
                 var reviewerGroupdId = reviewerGroup.Id;
@@ -114,7 +115,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         RequestedInfoId = null
                     };
 
-                    var emailQuery = GenerateEmailQuery(emallQueryViewModel);
+                    emailQuery = GenerateEmailQuery(emallQueryViewModel);
                     var emailNotification = new EmailNotification
                     {
                         WorkflowStepId = Guid.Empty,
@@ -140,7 +141,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             }
 
-            // Update actualEmailNotifications ReviewerGroupId based on matches with emailNotifications
+            //Update actualEmailNotifications ReviewerGroupId based on matches with Notifications
             var notificationLookup = notifications
                 .GroupBy(en => new { 
                     EmailMessage = en.EmailMessage?.Trim(), 
@@ -161,36 +162,47 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 }
             }
 
+            //Update Predictive EmailNotifications from actual data for later matching
+
             var predictiveData = scenarioDetail.PredictiveData;
             var tables = predictiveData.Tables;
 
-            var predictiveNotificationLookup = notifications
-                .GroupBy(en => new {
-                    EmailMessage = en.EmailMessage?.Trim(),
-                    Recipients = en.Recipients?.Trim().ToLowerInvariant()
-                })
-                .ToDictionary(g => g.Key, g => g.First().EmailQuery);
-
-            if (tables.TryGetValue("EmailNotifications", out var emailNotificationsTable))
+            // Make sure the table exists
+            if (tables.TryGetValue("EmailNotification", out var emailTable))
             {
-                foreach (var row in emailNotificationsTable.Rows.Values)
-                {
-                    var emailMessage = row.Fields.TryGetValue("EmailMessage", out var emailMessageField) ? emailMessageField?.ToString() : null;
-                    var recipients = row.Fields.TryGetValue("Recipients", out var recipientsField) ? recipientsField?.ToString() : null;
-                    
-                    var key = new
-                    {
-                        EmailMessage = emailMessage?.Trim(),
-                        Recipients = recipients?.Trim().ToLowerInvariant()
-                    };
+                // Get the first record's data and cast it
+                var recordEntry = emailTable.Records.FirstOrDefault();
+                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
 
-                    if (predictiveNotificationLookup.TryGetValue(key, out var emailQuery))
+                var predictiveNotifications = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.EmailNotification>;
+                if (predictiveNotifications != null)
+                {
+                    foreach (var email in predictiveNotifications)
                     {
-                        predictiveData.SetValue("EmailNotifications", row.RowId, "EmailQuery", emailQuery);
+                        email.EmailQuery = emailQuery;
+                        email.WorkflowStepId = workflowStepId;
                     }
                 }
             }
-            
+
+            //Update Predictive WorkflowStepOption from actual data for later matching
+            // Make sure the table exists
+
+            if (tables.TryGetValue("WorkflowStepOption", out var optionTable))
+            {
+                // Get the first record's data and cast it
+                var recordEntry = emailTable.Records.FirstOrDefault();
+                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                var predictiveOptions = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.WorkflowStepOption>;
+                if (predictiveOptions != null)
+                {
+                    foreach (var option in predictiveOptions)
+                    {
+                        option.WorkflowStepID = workflowStepId;
+                    }
+                }
+            }
 
             return emailNotifications;
 
@@ -415,7 +427,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private string GenerateEmailQuery(EmailQueryViewModel emailQueryViewModel)
         {
 
-            var sql = Template.Parse(SqlTemplates.CapitalRequestNotification);
+            var sql = Template.Parse(SqlTemplates.CapitalRequestSubmitNotification);
             //"EXECUTE dbo.GetCapitalRequestGroupNotifications NULL,'{{ workflowStepId }}','{{ emailTemplateId }}','{{ reviewerGroupId }}','{{ action }}.',{{ optionId }},'{{ requestedInfoId }}'"
 
             var workflowStepId = emailQueryViewModel.WorkflowStepId != null

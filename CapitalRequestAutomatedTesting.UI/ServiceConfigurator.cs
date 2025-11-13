@@ -105,6 +105,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveFileService, PredictiveFileService>();
             services.AddScoped<IPredictiveAttachmentService, PredictiveAttachmentService>();
             services.AddScoped<IPredictiveWorkflowService, PredictiveWorkflowService>();
+            services.AddScoped<IPredictiveWorkflowStepService, PredictiveWorkflowStepService>();
             services.AddScoped<IPredictiveWorkflowInstanceService, PredictiveWorkflowInstanceService>();
             services.AddScoped<IPredictiveWorkflowStakeHolderService, PredictiveWorkflowStakeHolderService>();
 
