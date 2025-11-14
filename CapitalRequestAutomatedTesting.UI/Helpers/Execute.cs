@@ -1,4 +1,4 @@
-﻿using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
+using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using OpenQA.Selenium;
 
 namespace CapitalRequestAutomatedTesting.UI.Helpers
@@ -42,6 +42,8 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
         public static Func<IWebDriver, Task<SeleniumStepResult>> RunJavaScript(string script, string description)
             => SeleniumHelper.RunJavaScript(script, description);
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> WaitForDashboardSearchBox()
+            => SeleniumHelper.WaitForDashboardSearchBox();
 
     }
 

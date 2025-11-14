@@ -34,7 +34,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 vm.Reviewers.ForEach(x => x.Selected = x.Value == vm.ReviewerId?.ToString());
             }
 
-            if (vm.ScenarioId == "SCN003")
+            if (vm.ScenarioId == "SCN004")
             {
                var submitUsers = await _scenarioControllerService.GetSubmitUsersAsync(proposalId);
 

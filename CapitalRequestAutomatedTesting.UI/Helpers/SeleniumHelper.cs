@@ -941,6 +941,39 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
+        public static Func<IWebDriver, Task<SeleniumStepResult>> WaitForDashboardSearchBox()
+        {
+            return async driver =>
+            {
+                try
+                {
+                    var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(15));
+                    var searchBox = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("dashboard_filter")));
+
+                    return new SeleniumStepResult
+                    {
+                        Success = true,
+                        Message = "Dashboard search box is now visible and ready for use."
+                    };
+                }
+                catch (WebDriverTimeoutException)
+                {
+                    return new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = "Dashboard search box did not appear within the timeout period."
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new SeleniumStepResult
+                    {
+                        Success = false,
+                        Message = $"Error waiting for dashboard search box: {ex.Message}"
+                    };
+                }
+            };
+        }
 
         //public static Func<IWebDriver, SeleniumStepResult> NoRequestsMessage()
         //{

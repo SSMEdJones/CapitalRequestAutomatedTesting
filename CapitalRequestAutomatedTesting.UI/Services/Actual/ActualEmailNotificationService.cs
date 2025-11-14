@@ -60,7 +60,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return relevantNotifications;
         }
 
-        public async Task<List<EmailNotification>> GetSubmitEmailNotificationsAsync(vm.Proposal proposal, ScenarioDetailsViewModel scenarioDetail)
+        public async Task<List<EmailNotification>> GetSubmitEmailNotificationsAsync(vm.Proposal proposal, ScenarioDetailsViewModel? scenarioDetail)
         {
             var workflowStep = proposal.WorkflowStep;
             var workflowID = proposal.WorkflowId;
@@ -141,106 +141,112 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             }
 
-            //Update actualEmailNotifications ReviewerGroupId based on matches with Notifications
-            var notificationLookup = notifications
-                .GroupBy(en => new { 
-                    EmailMessage = en.EmailMessage?.Trim(), 
-                    Recipients = en.Recipients?.Trim().ToLowerInvariant() 
-                })
-                .ToDictionary(g => g.Key, g => g.First().ReviewerGroupId);
-
-            foreach (var emailNotification in emailNotifications)
+            if (scenarioDetail != null)
             {
-                var key = new { 
-                    EmailMessage = emailNotification.EmailMessage?.Trim(), 
-                    Recipients = emailNotification.Recipients?.Trim().ToLowerInvariant() 
-                };
-                
-                if (notificationLookup.TryGetValue(key, out var reviewerGroupId))
-                {
-                    emailNotification.ReviewerGroupId = reviewerGroupId;
-                }
-            }
 
-            //Update Predictive EmailNotifications from actual data for later matching
-
-            var predictiveData = scenarioDetail.PredictiveData;
-            var tables = predictiveData.Tables;
-
-            // Make sure the table exists
-            if (tables.TryGetValue("EmailNotification", out var emailTable))
-            {
-                // Get the first record's data and cast it
-                var recordEntry = emailTable.Records.FirstOrDefault();
-                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
-
-                var predictiveNotifications = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.EmailNotification>;
-                if (predictiveNotifications != null)
-                {
-                    foreach (var email in predictiveNotifications)
+                //Update actualEmailNotifications ReviewerGroupId based on matches with Notifications
+                var notificationLookup = notifications
+                    .GroupBy(en => new
                     {
-                        email.EmailQuery = emailQuery;
-                        email.WorkflowStepId = workflowStepId;
+                        EmailMessage = en.EmailMessage?.Trim(),
+                        Recipients = en.Recipients?.Trim().ToLowerInvariant()
+                    })
+                    .ToDictionary(g => g.Key, g => g.First().ReviewerGroupId);
+
+                foreach (var emailNotification in emailNotifications)
+                {
+                    var key = new
+                    {
+                        EmailMessage = emailNotification.EmailMessage?.Trim(),
+                        Recipients = emailNotification.Recipients?.Trim().ToLowerInvariant()
+                    };
+
+                    if (notificationLookup.TryGetValue(key, out var reviewerGroupId))
+                    {
+                        emailNotification.ReviewerGroupId = reviewerGroupId;
                     }
                 }
-            }
 
-            if (tables.TryGetValue("WorkflowStep", out var stepTable))
-            {
-                // Get the first record's data and cast it
-                var recordEntry = stepTable.Records.FirstOrDefault();
-                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+                //Update Predictive EmailNotifications from actual data for later matching
 
-                var predictiveStep = recordEntry?.Data as SSMWorkflow.API.DataAccess.Models.WorkflowStep;
-                if (predictiveStep != null)
+                var predictiveData = scenarioDetail.PredictiveData;
+                var tables = predictiveData.Tables;
+
+                // Make sure the table exists
+                if (tables.TryGetValue("EmailNotification", out var emailTable))
                 {
-                    predictiveStep.WorkflowID = workflowID;
-                }
-            }
+                    // Get the first record's data and cast it
+                    var recordEntry = emailTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
 
-            if (tables.TryGetValue("WorkflowStepOption", out var optionTable))
-            {
-                // Get the first record's data and cast it
-                var recordEntry = optionTable.Records.FirstOrDefault();
-                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
-
-                var predictiveOptions = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.WorkflowStepOption>;
-                if (predictiveOptions != null)
-                {
-                    foreach (var option in predictiveOptions)
+                    var predictiveNotifications = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.EmailNotification>;
+                    if (predictiveNotifications != null)
                     {
-                        option.WorkflowStepID = workflowStepId;
+                        foreach (var email in predictiveNotifications)
+                        {
+                            email.EmailQuery = emailQuery;
+                            email.WorkflowStepId = workflowStepId;
+                        }
                     }
                 }
-            }
 
-            if (tables.TryGetValue("WorkflowInstance", out var instanceTable))
-            {
-                // Get the first record's data and cast it
-                var recordEntry = instanceTable.Records.FirstOrDefault();
-                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
-
-                var predictiveInstance = recordEntry?.Data as SSMWorkflow.API.DataAccess.Models.WorkflowInstance;
-                if (predictiveInstance != null)
+                if (tables.TryGetValue("WorkflowStep", out var stepTable))
                 {
-                    predictiveInstance.WorkflowID = workflowID;
-                    predictiveInstance.CurrentWorkflowStepID = workflowStepId;
-                    predictiveInstance.CurrentWorkflowState = workflowStep.StepName;
-                }
-            }
+                    // Get the first record's data and cast it
+                    var recordEntry = stepTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
 
-            if (tables.TryGetValue("WorkflowStakeHolder", out var holderTable))
-            {
-                // Get the first record's data and cast it
-                var recordEntry = holderTable.Records.FirstOrDefault();
-                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
-
-                var predictiveHolders = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.WorkflowStakeholder>;
-                if (predictiveHolders != null)
-                {
-                    foreach (var holder in predictiveHolders)
+                    var predictiveStep = recordEntry?.Data as SSMWorkflow.API.DataAccess.Models.WorkflowStep;
+                    if (predictiveStep != null)
                     {
-                        holder.WorkflowID = workflowID;
+                        predictiveStep.WorkflowID = workflowID;
+                    }
+                }
+
+                if (tables.TryGetValue("WorkflowStepOption", out var optionTable))
+                {
+                    // Get the first record's data and cast it
+                    var recordEntry = optionTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                    var predictiveOptions = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.WorkflowStepOption>;
+                    if (predictiveOptions != null)
+                    {
+                        foreach (var option in predictiveOptions)
+                        {
+                            option.WorkflowStepID = workflowStepId;
+                        }
+                    }
+                }
+
+                if (tables.TryGetValue("WorkflowInstance", out var instanceTable))
+                {
+                    // Get the first record's data and cast it
+                    var recordEntry = instanceTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                    var predictiveInstance = recordEntry?.Data as SSMWorkflow.API.DataAccess.Models.WorkflowInstance;
+                    if (predictiveInstance != null)
+                    {
+                        predictiveInstance.WorkflowID = workflowID;
+                        predictiveInstance.CurrentWorkflowStepID = workflowStepId;
+                        predictiveInstance.CurrentWorkflowState = workflowStep.StepName;
+                    }
+                }
+
+                if (tables.TryGetValue("WorkflowStakeHolder", out var holderTable))
+                {
+                    // Get the first record's data and cast it
+                    var recordEntry = holderTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                    var predictiveHolders = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.WorkflowStakeholder>;
+                    if (predictiveHolders != null)
+                    {
+                        foreach (var holder in predictiveHolders)
+                        {
+                            holder.WorkflowID = workflowID;
+                        }
                     }
                 }
             }

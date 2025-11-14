@@ -56,7 +56,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
 
-            if (detail.ScenarioId != "SCN003")
+            if (detail.ScenarioId != "SCN004")
             {
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
                 var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
@@ -104,7 +104,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 scenarioDetail.SelectedProperties["Replying Group"] = replyingGroup.Name;
 
             }
-            else if (scenarioId == "SCN003")
+            else if (scenarioId == "SCN004")
             {
 
                 //stubbed for future scenario
@@ -284,7 +284,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
 
-            if (detail.ScenarioId != "SCN003")
+            if (detail.ScenarioId != "SCN004")
             {
                 var requestingGroupId = detail.RequestingGroupId;
                 var replyingGroupId = detail.ReplyingGroupId;
@@ -506,7 +506,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 );
 
             }
-            else if (scenarioId == "SCN003")
+            else if (scenarioId == "SCN004")
             {
                 var submitUser = (await _scenarioControllerService.GetSubmitUsersAsync(detail.ProposalId))
                     .FirstOrDefault(u => u.Value == detail.SubmitUserId).Text;

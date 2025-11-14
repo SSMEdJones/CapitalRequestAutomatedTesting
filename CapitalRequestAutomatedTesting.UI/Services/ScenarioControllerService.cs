@@ -82,7 +82,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 var proposalId = requestId.Value;
                 scenarioDetails.Add(new ScenarioDetailsViewModel
                 {
-                    ScenarioId = "SCN003",
+                    ScenarioId = "SCN004",
                     PartialViewName = "_SubmitRequest",
                     DisplayText = "Submit Request",
                     SequenceNumber = 1,
@@ -466,7 +466,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         //{
         //    new { id = "SCN001", name = "Request More Information" },
         //    new { id = "SCN002", name = "Reply to Request" },
-        //    new { id = "SCN003", name = "Verify" },
+        //    new { id = "SCN004", name = "Verify" },
         //    new { id = "SCN004", name = "Approve WBS" }
         //};
         //}
@@ -477,7 +477,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 "SCN001" => new PartialViewResult { ViewName = "_RequestMoreInfo" },
                 "SCN002" => new PartialViewResult { ViewName = "_ReplyToRequest" },
-                "SCN003" => new PartialViewResult { ViewName = "_SubmitRequest" }, // 🔥 Add this
+                "SCN004" => new PartialViewResult { ViewName = "_SubmitRequest" }, // 🔥 Add this
                 _ => new PartialViewResult { ViewName = "_DefaultScenario" }
             };
         }
@@ -551,7 +551,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 "SCN001" => "_RequestMoreInfo",
                 "SCN002" => "_ReplyToRequest",
-                "SCN003" => "_SubmitRequest", // 🔥 Add this
+                "SCN004" => "_SubmitRequest", // 🔥 Add this
                 _ => "_DefaultScenario"
             };
         }

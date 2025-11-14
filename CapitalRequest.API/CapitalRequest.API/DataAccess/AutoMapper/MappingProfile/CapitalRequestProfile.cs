@@ -69,7 +69,9 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
                 .ForMember(dest => dest.WorkflowDescription, o => o.MapFrom<string>(src => src.ProjectDescription))
                 .ForMember(dest => dest.ValidFrom, o => o.MapFrom(src => DateTime.Today))
                 .ForMember(dest => dest.Created, o => o.MapFrom(src => DateTime.Now))
-                .ForMember(dest => dest.CreatedBy, o => o.MapFrom(src => src.SubmitUserId));
+                .ForMember(dest => dest.CreatedBy, o => o.MapFrom(src => src.SubmitUserId))
+                .ForMember(dest => dest.Updated, o => o.MapFrom(src => (DateTime?)null))
+                .ForMember(dest => dest.UpdatedBy, o => o.MapFrom(src => (string)null));
 
             CreateMap<WorkflowTemplate, WorkflowStep>()
                 .ForMember(dest => dest.StepName, o => o.MapFrom(src => src.StepName))

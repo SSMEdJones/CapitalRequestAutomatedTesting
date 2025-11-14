@@ -32,7 +32,7 @@ namespace CapitalRequestAutomatedTesting.Tests
         {
 
             // Arrange
-            int proposalId = 2948;
+            int proposalId = 2953;
             var proposal = await _capitalRequestServices.GetProposal(proposalId);
 
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
@@ -41,9 +41,9 @@ namespace CapitalRequestAutomatedTesting.Tests
 
             var scenario = new ScenarioDetailsViewModel
             {
-                ScenarioId = "SCN003",
+                ScenarioId = "SCN004",
                 ProposalId = proposalId,
-                SubmitUserId = "tfujim"
+                SubmitUserId = "pshumw"
             };
             scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
             scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
@@ -59,6 +59,7 @@ namespace CapitalRequestAutomatedTesting.Tests
             // Assert
             Assert.NotNull(result);
         }
+
 
         private void AnalyzeDifferences(ScenarioComparisonResult result)
         {
@@ -91,7 +92,69 @@ namespace CapitalRequestAutomatedTesting.Tests
                 Debug.WriteLine($"   - {fieldDiffCount} field differences");
                 Debug.WriteLine($"   - {table.OnlyInPredictive.Count} records only in Predictive");
                 Debug.WriteLine($"   - {table.OnlyInActual.Count} records only in Actual");
+
+                // 🆕 Show detailed field differences if any exist
+                if (fieldDiffCount > 0)
+                {
+                    Debug.WriteLine($"\n   🔍 FIELD DIFFERENCES for '{table.TableName}':");
+
+                    foreach (var opGroup in table.OperationGroups ?? new List<OperationGroupDifference>())
+                    {
+                        if (opGroup.Records.Any(r => r.FieldDifferences.Any()))
+                        {
+                            Debug.WriteLine($"      Operation: {opGroup.Operation}");
+
+                            foreach (var recordDiff in opGroup.Records)
+                            {
+                                if (recordDiff.FieldDifferences.Any())
+                                {
+                                    Debug.WriteLine($"         RowKey: {recordDiff.RowKey}");
+
+                                    foreach (var fieldDiff in recordDiff.FieldDifferences)
+                                    {
+                                        Debug.WriteLine($"            Field '{fieldDiff.FieldName}':");
+                                        Debug.WriteLine($"               Predictive: [{fieldDiff.PredictiveValue ?? "NULL"}]");
+                                        Debug.WriteLine($"               Actual:     [{fieldDiff.ActualValue ?? "NULL"}]");
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
+        //private void AnalyzeDifferences(ScenarioComparisonResult result)
+        //{
+        //    Debug.WriteLine("=== DIFFERENCE ANALYSIS ===");
+
+        //    if (!result.TablesOnlyInPredictive.Any() &&
+        //        !result.TablesOnlyInActual.Any() &&
+        //        !result.DifferingTables.Any())
+        //    {
+        //        Debug.WriteLine("✅ PERFECT MATCH: No differences found!");
+        //        return;
+        //    }
+
+        //    if (result.TablesOnlyInPredictive.Any())
+        //        Debug.WriteLine($"⚠️ Tables only in Predictive: {string.Join(", ", result.TablesOnlyInPredictive)}");
+
+        //    if (result.TablesOnlyInActual.Any())
+        //        Debug.WriteLine($"⚠️ Tables only in Actual: {string.Join(", ", result.TablesOnlyInActual)}");
+
+        //    foreach (var table in result.DifferingTables)
+        //    {
+        //        Debug.WriteLine($"\n📊 Table '{table.TableName}' has differences:");
+
+        //        // Count total field differences for quick overview
+        //        var fieldDiffCount = (table.OperationGroups ?? new List<OperationGroupDifference>())
+        //            .SelectMany(og => og.Records)
+        //            .SelectMany(r => r.FieldDifferences)
+        //            .Count();
+
+        //        Debug.WriteLine($"   - {fieldDiffCount} field differences");
+        //        Debug.WriteLine($"   - {table.OnlyInPredictive.Count} records only in Predictive");
+        //        Debug.WriteLine($"   - {table.OnlyInActual.Count} records only in Actual");
+        //    }
+        //}
     }
 }

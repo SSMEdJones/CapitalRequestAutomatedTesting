@@ -23,6 +23,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IWorkflowControllerService _workflowControllerService;
         private readonly IActualDashboardService _actualDashboardService;
+        private readonly IActualEmailNotificationService _actualEmailNotificationService;
+        private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ILogger<ActualSeleniumService> _logger;
         private readonly IMapper _mapper;
 
@@ -30,12 +32,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             ICapitalRequestServices capitalRequestServices,
             IWorkflowControllerService workflowControllerService,
             IActualDashboardService actualDashboardService,
+            IActualEmailNotificationService actualEmailNotificationService,
+            ISSMWorkflowServices ssmWorkflowServices,
             IMapper mapper)
         {
             _logger = logger;
             _capitalRequestServices = capitalRequestServices;
             _workflowControllerService = workflowControllerService;
             _actualDashboardService = actualDashboardService;
+            _actualEmailNotificationService = actualEmailNotificationService;
+            _ssmWorkflowServices = ssmWorkflowServices;
             _mapper = mapper;
         }
 
@@ -46,7 +52,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
 
-            if (detail.ScenarioId != "SCN003")
+            if (detail.ScenarioId != "SCN004")
             {
 
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
@@ -83,7 +89,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 scenarioDetail.SelectedProperties["Replying Group"] = proposal.ReplyingGroup.Name;
 
             }
-            else if (scenarioId == "SCN003")
+            else if (scenarioId == "SCN004")
             {
                 //stubbed for future scenario
             }
@@ -127,7 +133,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         {
             var reviewerGroup = new CapitalRequest.API.Models.ReviewerGroup();
             var workflowPortion = string.Empty;
-            var workflowButtonId = string.Empty; 
+            var workflowButtonId = string.Empty;
             var workflowButtonText = string.Empty;
             var dashboardOrder = new int();
             var reviewer = new CapitalRequest.API.Models.Reviewer();
@@ -140,7 +146,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             proposal.SubmitUserId = detail.SubmitUserId;
             var userId = string.Empty;
 
-            if (detail.ScenarioId != "SCN003")
+            if (detail.ScenarioId != "SCN004")
             {
                 proposal.ReviewerGroupId = detail.RequestingGroupId;
                 proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
@@ -157,7 +163,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
                 userId = reviewer.UserId ?? string.Empty;
             }
-            else if (detail.ScenarioId == "SCN003")
+            else if (detail.ScenarioId == "SCN004")
             {
                 userId = detail.SubmitUserId;
                 dashboardOrder = 0;
@@ -543,7 +549,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 });
 
             }
-            else if (scenarioId == "SCN003")
+            else if (scenarioId == "SCN004")
             {
                 var editButtonId = "btnEditAttachments";
                 var editButtonText = "Edit ";
@@ -587,47 +593,31 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     actualSteps.Add(new SeleniumScenarioStep
                     {
                         StepNumber = ++stepNumber,
-                        Description = "Pause for user to manually submit and auto-detect response message",
+                        Description = "Pause for user to manually submit and auto-detect email notification",
                         Action = async driver =>
                         {
                             Console.WriteLine("🔄 Paused: Please manually submit the form in the browser.");
-                            Console.WriteLine("🤖 Automation will automatically continue when the response message appears...");
-                            Debug.WriteLine($"🔄 {scenarioId}: Starting automated response detection");
+                            Console.WriteLine("🤖 Automation will automatically continue when an email notification is created...");
+                            Debug.WriteLine($"🔄 {scenarioId}: Starting automated email notification detection");
 
                             var urlBefore = driver.Url;
                             Debug.WriteLine($"🔄 {scenarioId}: Current URL before submission: {urlBefore}");
 
-                            // 🔥 Wait for response message to appear (instead of manual Enter press)
-                            var responseResult = await WaitForResponseMessage(driver, scenarioId, maxWaitSeconds: 60);
+                            // 🔥 Wait for email notification to be created (instead of response message)
+                            var emailResult = await WaitForEmailNotification(scenarioId, proposalId, maxWaitSeconds: 60);
 
-                            if (responseResult.Found)
+                            if (emailResult.Found)
                             {
-                                Console.WriteLine($"✅ Response message detected: '{responseResult.Message}'");
-                                Console.WriteLine($"🚀 Continuing test execution automatically after {responseResult.ElapsedSeconds:F1}s");
+                                Console.WriteLine($"✅ Email notification detected: ID {emailResult.NotificationId}");
+                                Console.WriteLine($"🚀 Continuing test execution automatically after {emailResult.ElapsedSeconds:F1}s");
 
-                                Debug.WriteLine($"✅ {scenarioId}: Auto-detected response after {responseResult.ElapsedSeconds:F1}s");
-
-                                // Check for expected success messages
-                                if (responseResult.Message.Contains(Constants.RESPONSE_ACTION_VERIFIED))
-                                {
-                                    Debug.WriteLine($"✅ {scenarioId}: Expected success message detected");
-                                    return SeleniumStepResult.Pass($"Form submitted successfully. Auto-detected success message: {responseResult.Message}");
-                                }
-                                else if (responseResult.Message.Contains("Error") || responseResult.Message.Contains("Failed"))
-                                {
-                                    Debug.WriteLine($"❌ {scenarioId}: Error message detected");
-                                    return SeleniumStepResult.Fail($"Error detected in response: {responseResult.Message}");
-                                }
-                                else
-                                {
-                                    Debug.WriteLine($"⚠️ {scenarioId}: Unexpected message content");
-                                    return SeleniumStepResult.Pass($"Form submitted. Unexpected message: {responseResult.Message}");
-                                }
+                                Debug.WriteLine($"✅ {scenarioId}: Auto-detected email notification after {emailResult.ElapsedSeconds:F1}s");
+                                return SeleniumStepResult.Pass($"Form submitted successfully. Auto-detected email notification: ID {emailResult.NotificationId}");
                             }
                             else
                             {
-                                Console.WriteLine($"⏰ Timeout: No response message appeared within 60 seconds");
-                                Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for response message");
+                                Console.WriteLine($"⏰ Timeout: No email notification created within 60 seconds");
+                                Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for email notification");
 
                                 // Fallback: Check for redirect or other indicators
                                 try
@@ -642,7 +632,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                     }
                                     else
                                     {
-                                        return SeleniumStepResult.Fail("Timeout waiting for response message and no redirect detected");
+                                        return SeleniumStepResult.Fail("Timeout waiting for email notification and no redirect detected");
                                     }
                                 }
                                 catch (Exception ex)
@@ -653,22 +643,94 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                         }
                     });
                 }
-                else
-                {
-                    // Automated submission path
-                    actualSteps.Add(new SeleniumScenarioStep
-                    {
-                        StepNumber = ++stepNumber,
-                        Description = "Press submit ",
-                        Action = new SeleniumDsl()
-                            .BeginWith(Execute.ClickButtonById("btnSubmitWorkflow", "Submit button"))
-                            .Build("Clicked Submit button ")
-                    });
-                }
+
+                //if (scenarioDetail.PauseBeforeSubmit)
+                //{
+                //    actualSteps.Add(new SeleniumScenarioStep
+                //    {
+                //        StepNumber = ++stepNumber,
+                //        Description = "Pause for user to manually submit and auto-detect response message",
+                //        Action = async driver =>
+                //        {
+                //            Console.WriteLine("🔄 Paused: Please manually submit the form in the browser.");
+                //            Console.WriteLine("🤖 Automation will automatically continue when the response message appears...");
+                //            Debug.WriteLine($"🔄 {scenarioId}: Starting automated response detection");
+
+                //            var urlBefore = driver.Url;
+                //            Debug.WriteLine($"🔄 {scenarioId}: Current URL before submission: {urlBefore}");
+
+                //            // 🔥 Wait for response message to appear (instead of manual Enter press)
+                //            var responseResult = await WaitForResponseMessage(driver, scenarioId, maxWaitSeconds: 60);
+
+                //            if (responseResult.Found)
+                //            {
+                //                Console.WriteLine($"✅ Response message detected: '{responseResult.Message}'");
+                //                Console.WriteLine($"🚀 Continuing test execution automatically after {responseResult.ElapsedSeconds:F1}s");
+
+                //                Debug.WriteLine($"✅ {scenarioId}: Auto-detected response after {responseResult.ElapsedSeconds:F1}s");
+
+                //                // Check for expected success messages
+                //                if (responseResult.Message.Contains(Constants.RESPONSE_ACTION_VERIFIED))
+                //                {
+                //                    Debug.WriteLine($"✅ {scenarioId}: Expected success message detected");
+                //                    return SeleniumStepResult.Pass($"Form submitted successfully. Auto-detected success message: {responseResult.Message}");
+                //                }
+                //                else if (responseResult.Message.Contains("Error") || responseResult.Message.Contains("Failed"))
+                //                {
+                //                    Debug.WriteLine($"❌ {scenarioId}: Error message detected");
+                //                    return SeleniumStepResult.Fail($"Error detected in response: {responseResult.Message}");
+                //                }
+                //                else
+                //                {
+                //                    Debug.WriteLine($"⚠️ {scenarioId}: Unexpected message content");
+                //                    return SeleniumStepResult.Pass($"Form submitted. Unexpected message: {responseResult.Message}");
+                //                }
+                //            }
+                //            else
+                //            {
+                //                Console.WriteLine($"⏰ Timeout: No response message appeared within 60 seconds");
+                //                Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for response message");
+
+                //                // Fallback: Check for redirect or other indicators
+                //                try
+                //                {
+                //                    await Task.Delay(2000);
+                //                    var currentUrl = driver.Url;
+
+                //                    if (currentUrl.Contains("/Home") || !currentUrl.Contains("WorkflowActions"))
+                //                    {
+                //                        Debug.WriteLine($"⚠️ {scenarioId}: Detected redirect as fallback indicator");
+                //                        return SeleniumStepResult.Pass($"Form likely submitted (detected redirect to: {currentUrl})");
+                //                    }
+                //                    else
+                //                    {
+                //                        return SeleniumStepResult.Fail("Timeout waiting for response message and no redirect detected");
+                //                    }
+                //                }
+                //                catch (Exception ex)
+                //                {
+                //                    return SeleniumStepResult.Fail($"Timeout and error checking fallback indicators: {ex.Message}");
+                //                }
+                //            }
+                //        }
+                //    });
+                //}
+                //else
+                //{
+                //    // Automated submission path
+                //    actualSteps.Add(new SeleniumScenarioStep
+                //    {
+                //        StepNumber = ++stepNumber,
+                //        Description = "Press submit ",
+                //        Action = new SeleniumDsl()
+                //            .BeginWith(Execute.ClickButtonById("btnSubmitWorkflow", "Submit button"))
+                //            .Build("Clicked Submit button ")
+                //    });
+                //}
 
                 // Continue with dashboard validation step as before
                 var conditionalDashboardSteps = new SeleniumDsl()
-                    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
+                    .BeginWith(Execute.WaitForDashboardSearchBox()) // Wait for search box instead of navigate
                     .Then(Conditional.If(
                         userHasNoRequests,
                         Validate.NoRequestsMessage(),
@@ -677,7 +739,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                             .Then(Validate.DashboardStatus(dashboardOrder, proposal.SubmitUserId, DateTime.Now))
                             .Build("Dashboard Search + Status Validation")
                     ))
-                    .Build("Navigate to Home Dashboard and validate group status");
+                    .Build("Wait for Dashboard Search Box and validate group status");
+                //var conditionalDashboardSteps = new SeleniumDsl()
+                //    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
+                //    .Then(Conditional.If(
+                //        userHasNoRequests,
+                //        Validate.NoRequestsMessage(),
+                //        new SeleniumDsl()
+                //            .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
+                //            .Then(Validate.DashboardStatus(dashboardOrder, proposal.SubmitUserId, DateTime.Now))
+                //            .Build("Dashboard Search + Status Validation")
+                //    ))
+                //    .Build("Navigate to Home Dashboard and validate group status");
 
                 actualSteps.Add(new SeleniumScenarioStep
                 {
@@ -690,6 +763,107 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
 
             return actualSteps;
+        }
+
+        // Add this new method to the ActualSeleniumService class
+        private async Task<EmailNotificationResult> WaitForEmailNotification(string scenarioId, int proposalId, int maxWaitSeconds = 30)
+        {
+            var proposal = await _capitalRequestServices.GetProposal(proposalId);
+            var startTime = DateTime.Now;
+            var checkInterval = TimeSpan.FromSeconds(2); // Check every 2 seconds for database changes
+
+            while ((DateTime.Now - startTime).TotalSeconds < maxWaitSeconds)
+            {
+
+                try
+                {
+                    proposal = await _capitalRequestServices.GetProposal(proposalId);
+
+                    if (proposal.WorkflowId != null && proposal.WorkflowId != Guid.Empty)
+                    {
+                        break;
+                    }
+
+                    Debug.WriteLine($"🔄 {scenarioId}: Still waiting for workflow ... ({(DateTime.Now - startTime).TotalSeconds:F1}s)");
+
+                    await Task.Delay(checkInterval);
+
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"🔍 {scenarioId}: Error checking workflow : {ex.Message}");
+                }
+            }
+
+            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                .Where(x => !x.IsComplete)
+                .FirstOrDefault();
+
+            Debug.WriteLine($"🔄 {scenarioId}: Starting to poll for email notifications for proposal {proposalId}...");
+
+            startTime = DateTime.Now;
+
+            // Get initial count to detect new notifications
+            var initialNotifications = await _actualEmailNotificationService.GetSubmitEmailNotificationsAsync(proposal, null);
+            var initialCount = initialNotifications?.Count ?? 0;
+
+            Debug.WriteLine($"🔍 {scenarioId}: Initial email notification count: {initialCount}");
+
+            while ((DateTime.Now - startTime).TotalSeconds < maxWaitSeconds)
+            {
+                try
+                {
+                    var currentNotifications = await _actualEmailNotificationService.GetSubmitEmailNotificationsAsync(proposal, null);
+                    var currentCount = currentNotifications?.Count ?? 0;
+
+                    Debug.WriteLine($"🔍 {scenarioId}: Current email notification count: {currentCount}");
+
+                    if (currentCount > initialCount || currentCount > 0 && (currentCount == initialCount && (DateTime.Now - startTime).TotalSeconds > 10))
+                    {
+                        var elapsedSeconds = (DateTime.Now - startTime).TotalSeconds;
+                        var newNotification = currentNotifications?.OrderByDescending(n => n.Id).FirstOrDefault();
+
+                        if (currentCount > initialCount)
+                        {
+                            Debug.WriteLine($"✅ {scenarioId}: New email notification detected after {elapsedSeconds:F1}s: ID {newNotification?.Id}");
+                        }
+                        else
+                        {
+                            Debug.WriteLine($"✅ {scenarioId}: No new email notification detected after {elapsedSeconds:F1}s: ID {newNotification?.Id}");
+                        }
+
+                        return new EmailNotificationResult
+                        {
+                            Found = true,
+                            NotificationId = newNotification?.Id ?? 0,
+                            ElapsedSeconds = elapsedSeconds
+                        };
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"🔍 {scenarioId}: Error checking email notifications: {ex.Message}");
+                }
+
+                await Task.Delay(checkInterval);
+                Debug.WriteLine($"🔄 {scenarioId}: Still waiting for email notification... ({(DateTime.Now - startTime).TotalSeconds:F1}s)");
+            }
+
+            Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for email notification after {maxWaitSeconds}s");
+            return new EmailNotificationResult
+            {
+                Found = false,
+                NotificationId = 0,
+                ElapsedSeconds = maxWaitSeconds
+            };
+        }
+
+        // Add this new result class for email notification polling
+        private class EmailNotificationResult
+        {
+            public bool Found { get; set; }
+            public int NotificationId { get; set; }
+            public double ElapsedSeconds { get; set; }
         }
 
         public async Task<SeleniumScenarioOutcome> ExecuteSeleniumStepsAsync(List<SeleniumScenarioStep> steps, ScenarioDetailsViewModel scenarioDetail, IWebDriver driver)

@@ -77,7 +77,7 @@ namespace CapitalRequestAutomatedTesting.Tests
 
             var scenario = new ScenarioDetailsViewModel
             {
-                ScenarioId = "SCN003",
+                ScenarioId = "SCN004",
                 ProposalId = proposalId,
                 SubmitUserId = "tfujim"
             };

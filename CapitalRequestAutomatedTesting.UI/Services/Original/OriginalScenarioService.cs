@@ -236,7 +236,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
 
 
-            if (scenarioId != "SCN003")
+            if (scenarioId != "SCN004")
             {
 
 
@@ -357,7 +357,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                     }
                 );
             }
-            else if (scenarioId == "SCN003")
+            else if (scenarioId == "SCN004")
             {
                 //stubbed for future scenario
             }

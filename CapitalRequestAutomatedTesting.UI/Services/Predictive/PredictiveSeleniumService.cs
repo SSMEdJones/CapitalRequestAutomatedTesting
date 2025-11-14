@@ -47,7 +47,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
 
-            if (scenarioId != "SCN003")
+            if (scenarioId != "SCN004")
             {
                 proposal.ReviewerGroupId = detail.RequestingGroupId;
                 proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
@@ -87,7 +87,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             }
 
-            if (scenarioId == "SCN003")
+            if (scenarioId == "SCN004")
             {
                 // stubbed for future scenario
 
@@ -269,7 +269,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var requestingGroupName = string.Empty;
             var submitUserId = string.Empty;
 
-            if (scenarioId != "SCN003")
+            if (scenarioId != "SCN004")
             {
 
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
@@ -523,7 +523,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                );
 
             }
-            else if (scenarioId == "SCN003")
+            else if (scenarioId == "SCN004")
             {
                 proposal.SubmitUserId = detail.SubmitUserId;
                 expectedMessage = Constants.RESPONSE_ACTION_VERIFIED;

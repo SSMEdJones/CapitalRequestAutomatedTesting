@@ -210,7 +210,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
 
-            if (detail.ScenarioId != "SCN003")
+            if (detail.ScenarioId != "SCN004")
             {
                 proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
@@ -386,7 +386,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 );
 
             }
-            else if (scenarioId == "SCN003")
+            else if (scenarioId == "SCN004")
             {
                 var reviewerGroups = await _actualReviewerGroupService.GetFilteredReviewerGroupsAsync(Constants.STEP_ONE);
                 var filteredReviewerGroups = _actualReviewerGroupService.FilterReviewerGroups(reviewerGroups, proposal, Constants.STEP_ONE);

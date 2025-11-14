@@ -655,7 +655,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             {
                 new { id = "SCN001", name = "Request More Information" },
                 new { id = "SCN002", name = "Reply to Request" },
-                new { id = "SCN003", name = "Verify" },
+                new { id = "SCN004", name = "Verify" },
                 new { id = "SCN004", name = "Approve WBS" }
             };
 
@@ -714,7 +714,9 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                 "SCN001" => 1, // Request More Information (creates dependency)
                 "SCN002" => 2, // Reply to Request (depends on SCN001)
                 "SCN003" => 3, // Verify (can depend on others)
-                "SCN004" => 4, // Approve WBS (final step)
+                "SCN004" => 4, // Submit
+                "SCN005" => 5, // Approve WBS (final step)
+                "SCN006" => 6, // Delete a Reviewer
                 _ => 999
             };
         }
