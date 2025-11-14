@@ -146,7 +146,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 var reviewerGroupdId = reviewerGroup.Id;
                 var reviewers = (await GetReviewers(proposal))
                     .Where(x => x.ReviewerGroupId == reviewerGroupdId)
-                    .Select(z => _mapper.Map<vm.Reviewer>(z))
+                    .OrderBy(x => x.Email)
+                    .Select(z => _mapper.Map<vm.Reviewer>(z))                    
                     .ToList();
 
                 foreach (var reviewer in reviewers)
@@ -168,7 +169,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                         if (existing != null)
                         {
-                            existing.Recipients += $";{reviewer.Email}";
+                            existing.Recipients += $", {reviewer.Email}";
                             continue;
                         }
                     }

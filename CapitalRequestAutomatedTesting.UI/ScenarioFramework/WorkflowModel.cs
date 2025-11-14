@@ -1,27 +1,21 @@
-
-namespace SSMWorkflow.API.DataAccess.Models
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
-    public class Workflow
+    public class WorkflowModel
     {
-        public Guid WorkflowID { get; set; }
+        [RowKey]
 
         public string WorkflowName { get; set; }
 
-
         public string WorkflowDescription { get; set; }
-
 
         public string StakeholderNotificationType { get; set; }
 
-
         public string CompleteMessage { get; set; }
 
-
         public string CancelledMessage { get; set; }
+
         public string? ProjectReviewLink { get; set; }
 
-        public DateTime? ValidFrom { get; set; }
-        public DateTime? ValidTo { get; set; }
         public DateTime Created { get; set; }
 
         public string CreatedBy { get; set; }

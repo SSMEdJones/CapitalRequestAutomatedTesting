@@ -21,6 +21,7 @@ namespace SSMWorkflow.API.Models
 
 
         public string CancelledMessage { get; set; }
+        public string ProjectReviewLink { get; set; }
 
         public DateTime? ValidFrom { get; set; }
         public DateTime? ValidTo { get; set; }

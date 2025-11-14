@@ -1,4 +1,4 @@
-﻿namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
+namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public static class TableTypeRegistry
     {
@@ -8,7 +8,12 @@
             { "WorkflowStepResponder", typeof(WorkflowStepResponderModel) },
             { "WorkflowStepOption", typeof(List<WorkflowStepOptionModel>) },
             { "EmailNotification", typeof(List<EmailNotificationModel>) },
-            { "Attachment", typeof(List<AttachmentModel>) }
+            { "Attachment", typeof(List<AttachmentModel>) },
+            { "Workflow", typeof(WorkflowModel) },
+            { "WorkflowStep", typeof(WorkflowStepModel) },
+            { "WorkflowInstance", typeof(WorkflowInstanceModel) },
+            { "WorkflowStakeHolder", typeof(List<WorkflowStakeholderModel?>) },
+
         // Add more table-to-type mappings here
         };
     }

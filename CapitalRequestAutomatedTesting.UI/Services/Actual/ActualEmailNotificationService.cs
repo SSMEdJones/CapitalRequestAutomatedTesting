@@ -63,7 +63,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         public async Task<List<EmailNotification>> GetSubmitEmailNotificationsAsync(vm.Proposal proposal, ScenarioDetailsViewModel scenarioDetail)
         {
             var workflowStep = proposal.WorkflowStep;
-
+            var workflowID = proposal.WorkflowId;
             var workflowStepId = workflowStep.WorkflowStepID;
             var emailNotifications = await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId });
 
@@ -185,13 +185,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 }
             }
 
-            //Update Predictive WorkflowStepOption from actual data for later matching
-            // Make sure the table exists
+            if (tables.TryGetValue("WorkflowStep", out var stepTable))
+            {
+                // Get the first record's data and cast it
+                var recordEntry = stepTable.Records.FirstOrDefault();
+                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                var predictiveStep = recordEntry?.Data as SSMWorkflow.API.DataAccess.Models.WorkflowStep;
+                if (predictiveStep != null)
+                {
+                    predictiveStep.WorkflowID = workflowID;
+                }
+            }
 
             if (tables.TryGetValue("WorkflowStepOption", out var optionTable))
             {
                 // Get the first record's data and cast it
-                var recordEntry = emailTable.Records.FirstOrDefault();
+                var recordEntry = optionTable.Records.FirstOrDefault();
                 Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
 
                 var predictiveOptions = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.WorkflowStepOption>;
@@ -200,6 +210,37 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     foreach (var option in predictiveOptions)
                     {
                         option.WorkflowStepID = workflowStepId;
+                    }
+                }
+            }
+
+            if (tables.TryGetValue("WorkflowInstance", out var instanceTable))
+            {
+                // Get the first record's data and cast it
+                var recordEntry = instanceTable.Records.FirstOrDefault();
+                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                var predictiveInstance = recordEntry?.Data as SSMWorkflow.API.DataAccess.Models.WorkflowInstance;
+                if (predictiveInstance != null)
+                {
+                    predictiveInstance.WorkflowID = workflowID;
+                    predictiveInstance.CurrentWorkflowStepID = workflowStepId;
+                    predictiveInstance.CurrentWorkflowState = workflowStep.StepName;
+                }
+            }
+
+            if (tables.TryGetValue("WorkflowStakeHolder", out var holderTable))
+            {
+                // Get the first record's data and cast it
+                var recordEntry = holderTable.Records.FirstOrDefault();
+                Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                var predictiveHolders = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.WorkflowStakeholder>;
+                if (predictiveHolders != null)
+                {
+                    foreach (var holder in predictiveHolders)
+                    {
+                        holder.WorkflowID = workflowID;
                     }
                 }
             }

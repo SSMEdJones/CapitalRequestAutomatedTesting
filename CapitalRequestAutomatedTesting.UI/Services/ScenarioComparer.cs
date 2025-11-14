@@ -63,6 +63,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     {
                         var recordA = recordsA[i];
                         var recordB = recordsB[i];
+
                         if (TableTypeRegistry.TableTypes.TryGetValue(tableName, out var type))
                         {
                             var predictiveJson = JsonConvert.SerializeObject(recordA.Data);
