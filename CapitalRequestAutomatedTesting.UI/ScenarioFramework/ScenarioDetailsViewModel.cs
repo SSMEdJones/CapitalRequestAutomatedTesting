@@ -49,6 +49,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [DisplayName("Submit User:")]
         [ValidateNever]
         public string SubmitUserId { get; set; }
+        public string VerifyUserId { get; set; }
 
         [ValidateNever]
         public int SequenceNumber { get; set; }
@@ -90,6 +91,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public List<SelectListItem> Reviewers { get; set; } = new();
 
         public List<SelectListItem> SubmitUsers { get; set; } = new();
+        public List<SelectListItem> VerifyUsers { get; set; } = new();
 
 
         public int RequestCount { get; set; }

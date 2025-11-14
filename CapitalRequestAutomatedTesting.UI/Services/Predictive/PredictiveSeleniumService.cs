@@ -86,7 +86,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 scenarioDetail.SelectedProperties["Returned Information"] = scenarioDetail.ReturnedInformation;
 
             }
+            if (scenarioId == "SCN003")
+            {
+                // stubbed for future scenario
 
+            }
             if (scenarioId == "SCN004")
             {
                 // stubbed for future scenario
@@ -521,6 +525,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                        Parameters = new List<object> { proposal, requestingGroupName, requestingGroupName, Constants.DASHBOARD_STATUS_CLEAR }
                    }
                );
+
+            }
+            else if (scenarioId == "SCN003")
+            {
+                // stubbed for future scenario
 
             }
             else if (scenarioId == "SCN004")

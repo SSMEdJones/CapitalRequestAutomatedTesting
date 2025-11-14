@@ -357,6 +357,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
                     }
                 );
             }
+            else if (scenarioId == "SCN003")
+            {
+                // stubbed for future scenario
+
+            }
             else if (scenarioId == "SCN004")
             {
                 //stubbed for future scenario

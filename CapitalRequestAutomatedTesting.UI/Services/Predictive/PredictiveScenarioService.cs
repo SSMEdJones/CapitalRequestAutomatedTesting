@@ -104,6 +104,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 scenarioDetail.SelectedProperties["Replying Group"] = replyingGroup.Name;
 
             }
+            else if (scenarioId == "SCN003")
+            {
+                // stubbed for future scenario
+
+            }
             else if (scenarioId == "SCN004")
             {
 
@@ -504,6 +509,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                     }
                 );
+
+            }
+            else if (scenarioId == "SCN003")
+            {
+                // stubbed for future scenario
 
             }
             else if (scenarioId == "SCN004")

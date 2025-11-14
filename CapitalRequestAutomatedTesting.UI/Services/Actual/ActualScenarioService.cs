@@ -386,6 +386,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 );
 
             }
+            else if (scenarioId == "SCN003")
+            {
+                // stubbed for future scenario
+
+            }
             else if (scenarioId == "SCN004")
             {
                 var reviewerGroups = await _actualReviewerGroupService.GetFilteredReviewerGroupsAsync(Constants.STEP_ONE);

@@ -89,6 +89,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 scenarioDetail.SelectedProperties["Replying Group"] = proposal.ReplyingGroup.Name;
 
             }
+            else if (scenarioId == "SCN003")
+            {
+                // stubbed for future scenario
+
+            }
             else if (scenarioId == "SCN004")
             {
                 //stubbed for future scenario
@@ -549,6 +554,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 });
 
             }
+            else if (scenarioId == "SCN003")
+            {
+                // stubbed for future scenario
+
+            }
             else if (scenarioId == "SCN004")
             {
                 var editButtonId = "btnEditAttachments";
@@ -644,90 +654,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     });
                 }
 
-                //if (scenarioDetail.PauseBeforeSubmit)
-                //{
-                //    actualSteps.Add(new SeleniumScenarioStep
-                //    {
-                //        StepNumber = ++stepNumber,
-                //        Description = "Pause for user to manually submit and auto-detect response message",
-                //        Action = async driver =>
-                //        {
-                //            Console.WriteLine("🔄 Paused: Please manually submit the form in the browser.");
-                //            Console.WriteLine("🤖 Automation will automatically continue when the response message appears...");
-                //            Debug.WriteLine($"🔄 {scenarioId}: Starting automated response detection");
-
-                //            var urlBefore = driver.Url;
-                //            Debug.WriteLine($"🔄 {scenarioId}: Current URL before submission: {urlBefore}");
-
-                //            // 🔥 Wait for response message to appear (instead of manual Enter press)
-                //            var responseResult = await WaitForResponseMessage(driver, scenarioId, maxWaitSeconds: 60);
-
-                //            if (responseResult.Found)
-                //            {
-                //                Console.WriteLine($"✅ Response message detected: '{responseResult.Message}'");
-                //                Console.WriteLine($"🚀 Continuing test execution automatically after {responseResult.ElapsedSeconds:F1}s");
-
-                //                Debug.WriteLine($"✅ {scenarioId}: Auto-detected response after {responseResult.ElapsedSeconds:F1}s");
-
-                //                // Check for expected success messages
-                //                if (responseResult.Message.Contains(Constants.RESPONSE_ACTION_VERIFIED))
-                //                {
-                //                    Debug.WriteLine($"✅ {scenarioId}: Expected success message detected");
-                //                    return SeleniumStepResult.Pass($"Form submitted successfully. Auto-detected success message: {responseResult.Message}");
-                //                }
-                //                else if (responseResult.Message.Contains("Error") || responseResult.Message.Contains("Failed"))
-                //                {
-                //                    Debug.WriteLine($"❌ {scenarioId}: Error message detected");
-                //                    return SeleniumStepResult.Fail($"Error detected in response: {responseResult.Message}");
-                //                }
-                //                else
-                //                {
-                //                    Debug.WriteLine($"⚠️ {scenarioId}: Unexpected message content");
-                //                    return SeleniumStepResult.Pass($"Form submitted. Unexpected message: {responseResult.Message}");
-                //                }
-                //            }
-                //            else
-                //            {
-                //                Console.WriteLine($"⏰ Timeout: No response message appeared within 60 seconds");
-                //                Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for response message");
-
-                //                // Fallback: Check for redirect or other indicators
-                //                try
-                //                {
-                //                    await Task.Delay(2000);
-                //                    var currentUrl = driver.Url;
-
-                //                    if (currentUrl.Contains("/Home") || !currentUrl.Contains("WorkflowActions"))
-                //                    {
-                //                        Debug.WriteLine($"⚠️ {scenarioId}: Detected redirect as fallback indicator");
-                //                        return SeleniumStepResult.Pass($"Form likely submitted (detected redirect to: {currentUrl})");
-                //                    }
-                //                    else
-                //                    {
-                //                        return SeleniumStepResult.Fail("Timeout waiting for response message and no redirect detected");
-                //                    }
-                //                }
-                //                catch (Exception ex)
-                //                {
-                //                    return SeleniumStepResult.Fail($"Timeout and error checking fallback indicators: {ex.Message}");
-                //                }
-                //            }
-                //        }
-                //    });
-                //}
-                //else
-                //{
-                //    // Automated submission path
-                //    actualSteps.Add(new SeleniumScenarioStep
-                //    {
-                //        StepNumber = ++stepNumber,
-                //        Description = "Press submit ",
-                //        Action = new SeleniumDsl()
-                //            .BeginWith(Execute.ClickButtonById("btnSubmitWorkflow", "Submit button"))
-                //            .Build("Clicked Submit button ")
-                //    });
-                //}
-
                 // Continue with dashboard validation step as before
                 var conditionalDashboardSteps = new SeleniumDsl()
                     .BeginWith(Execute.WaitForDashboardSearchBox()) // Wait for search box instead of navigate
@@ -740,17 +666,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                             .Build("Dashboard Search + Status Validation")
                     ))
                     .Build("Wait for Dashboard Search Box and validate group status");
-                //var conditionalDashboardSteps = new SeleniumDsl()
-                //    .BeginWith(Execute.NavigateTo($"{homeDashboardUrl}"))
-                //    .Then(Conditional.If(
-                //        userHasNoRequests,
-                //        Validate.NoRequestsMessage(),
-                //        new SeleniumDsl()
-                //            .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
-                //            .Then(Validate.DashboardStatus(dashboardOrder, proposal.SubmitUserId, DateTime.Now))
-                //            .Build("Dashboard Search + Status Validation")
-                //    ))
-                //    .Build("Navigate to Home Dashboard and validate group status");
 
                 actualSteps.Add(new SeleniumScenarioStep
                 {

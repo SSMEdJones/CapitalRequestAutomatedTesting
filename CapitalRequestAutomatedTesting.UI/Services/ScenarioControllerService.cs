@@ -109,7 +109,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         DisplayText = "Reply to Request",
                         SequenceNumber = 2,
                         ReplyingGroups = requestId.HasValue ? await GetReplyingGroupsAsync(requestId.Value) : new List<SelectListItem>()
+                    },
+                    new ScenarioDetailsViewModel
+                    {
+                        ScenarioId = "SCN003",
+                        PartialViewName = "_VerifyRequest",
+                        DisplayText = "Verify a Request",
+                        SequenceNumber = 2,
+                        ReplyingGroups = requestId.HasValue ? await GetReplyingGroupsAsync(requestId.Value) : new List<SelectListItem>()
                     }
+
                 });
             }
 
@@ -523,6 +532,24 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         }
 
+        public async Task<List<SelectListItem>> GetVerifyUsersAsync(int proposalId)
+        {
+
+            var proposal = await _capitalRequestServices.GetProposal(proposalId);
+            var submitUsers = await GetValidVerifyUsers(proposal);
+
+            return submitUsers
+                .OrderBy(x => x.FullName)
+                .Select(x => new SelectListItem
+                {
+                    Value = x.UserId,
+                    Text = x.FullName
+                })
+                .ToList();
+
+        }
+
+
         private async Task<List<vm.ApplicationUser>> GetValidSubmitUsers(vm.Proposal proposal)
         {
             var submitUsers = await _capitalRequestServices.GetAllApplicationUsers(new ApplicationUserSearchFilter { ApplicationRoleId = Constants.APPLICATION_ROLE_ID_ADMIN });
@@ -545,6 +572,28 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return submitUsers;
         }
 
+        //left off here need to refactor for only reviewers
+        private async Task<List<vm.ApplicationUser>> GetValidVerifyUsers(vm.Proposal proposal)
+        {
+            var submitUsers = await _capitalRequestServices.GetAllApplicationUsers(new ApplicationUserSearchFilter { ApplicationRoleId = Constants.APPLICATION_ROLE_ID_ADMIN });
+
+            var userId = submitUsers.Where(x => x.UserId == proposal.UserId).FirstOrDefault();
+
+            if (!submitUsers.Where(x => x.UserId == proposal.UserId).Any())
+            {
+
+                submitUsers.Add(new vm.ApplicationUser
+                {
+                    UserId = proposal.UserId,
+                    FullName = proposal.Author,
+                    ApplicationRoleId = Constants.APPLICATION_ROLE_ID_AUTHOR
+
+                });
+
+            }
+
+            return submitUsers;
+        }
         public string GetScenarioViewName(string scenarioId)
         {
             return scenarioId switch
