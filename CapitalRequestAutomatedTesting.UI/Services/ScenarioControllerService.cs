@@ -116,10 +116,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         ScenarioId = "SCN003",
                         PartialViewName = "_VerifyRequest",
                         DisplayText = "Verify a Request",
-                        SequenceNumber = 2,
+                        SequenceNumber = 3, 
                         VerifyingGroups = requestId.HasValue ? await GetReviewerGroupsAsync(requestId.Value) : new List<SelectListItem>(),
                     }
-
                 });
             }
 

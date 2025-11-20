@@ -124,8 +124,25 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 {
                     todayStr = string.Empty;
                     reviewDate = string.Empty;
-                    reviewName = requestingGroup;
+                    reviewName = targetGroup;
                     reviewStatus = Constants.DASHBOARD_STATUS_CLEAR;
+
+                    if (!string.Equals(reviewDate, todayStr, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected review date '{todayStr}', but got '{reviewDate}'.");
+
+                    if (!string.Equals(reviewName, targetGroup, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected reviewer name '{targetGroup}', but got '{reviewName}'.");
+
+                    if (!string.Equals(reviewStatus, dashboardStatus, StringComparison.OrdinalIgnoreCase))
+                        errors.Add($"Expected status '{dashboardStatus}', but got '{reviewStatus}'.");
+
+                }
+                else if (proposal.ResponseMessage == Constants.RESPONSE_ACTION_VERIFIED)
+                {
+                    todayStr = DateTime.Now.ToShortDateString();
+                    reviewDate = todayStr;
+                    reviewName = targetGroup;
+                    reviewStatus = dashboardStatus;
 
                     if (!string.Equals(reviewDate, todayStr, StringComparison.OrdinalIgnoreCase))
                         errors.Add($"Expected review date '{todayStr}', but got '{reviewDate}'.");

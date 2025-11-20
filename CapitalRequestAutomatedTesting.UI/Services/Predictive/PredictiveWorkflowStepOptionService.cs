@@ -411,13 +411,31 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             //var workflowStep = _mapper.Map<WorkflowStep>(workflowSteps.FirstOrDefault(x => !x.IsComplete));
             var workflowStep = _mapper.Map<WorkflowStep>(proposal.WorkflowStep);
 
-            var reviewerGroups = (await GetReviewerGroupsAsync(proposal, workflowStep))
-                .Where(x => x.Id == proposal.RequestedInfo.ReviewerGroupId)
-                    .ToList();
+            var reviewerGroups = new List<vm.ReviewerGroup>();
 
-            var emailTemplate = (await _capitalRequestServices
-                .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = Constants.EMAIL_REQUEST_MORE_INFORMATION }))
-                .FirstOrDefault();
+            var allGroups = await GetReviewerGroupsAsync(proposal, workflowStep);
+
+            if (proposal.ExpectedMessage == Constants.RESPONSE_ACTION_VERIFIED )
+            {
+                reviewerGroups = allGroups;
+            }
+            else
+            {
+                reviewerGroups = allGroups
+                     .Where(x => x.Id == proposal.RequestedInfo.ReviewerGroupId)
+                         .ToList();
+
+            }
+
+            var emailTemplate = new vm.EmailTemplate { OptionType = null};
+
+            if (proposal.ExpectedMessage != Constants.RESPONSE_ACTION_VERIFIED)
+            {
+                emailTemplate = (await _capitalRequestServices
+                    .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = Constants.EMAIL_REQUEST_MORE_INFORMATION }))
+                    .FirstOrDefault();
+
+            }
 
             var emailType = emailTemplate?.OptionType ?? string.Empty;
 
@@ -486,8 +504,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             var workflowStepId = workflowStep.WorkflowStepID;
 
+            //var reviewerGroupId = proposal.ActionType == Constants.ACTION_TYPE_VERIFY ?
+            //    proposal.RequestedInfo.ReviewerGroupId :
+            //    proposal.RequestedInfo.RequestingReviewerGroupId;
+
             var reviewerGroupId = proposal.ActionType == Constants.ACTION_TYPE_VERIFY ?
-                proposal.RequestedInfo.ReviewerGroupId :
+                proposal.ReviewerGroupId :
                 proposal.RequestedInfo.RequestingReviewerGroupId;
 
             workflowStepOptions = workflowStepOptions
@@ -526,11 +548,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             var reviewerGroupId = proposal.ActionType == Constants.ACTION_TYPE_ADD_INFO
                 ? proposal.ReplyingGroupId
-                : proposal.ReviewerGroupId;
+                : proposal.ActionType == Constants.ACTION_TYPE_VERIFY
+                    ? proposal.VerifyingGroupId
+                    : proposal.ReviewerGroupId;
 
             var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupId);
 
-
+            //TODO Revisit this. Is this valid since we are poulating reviewer
             if (proposal.Reviewer == null)
             {
                 proposal.ResponseMessage = Constants.RESPONSE_ACTION_TAKEN;
@@ -540,15 +564,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             WorkflowStepOption? workflowStepOption = null;
 
-
             var workflowStepId = workflowStep.WorkflowStepID;
 
-            var workflowStepOptionsViewModel = await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID);
+            var workflowStepOptionsViewModel = proposal.WorkflowStepOptions;
 
             var workflowStepOptions = workflowStepOptionsViewModel
                    .Select(x => _mapper.Map<WorkflowStepOption>(x))
                    .ToList();
-
 
             if (workflowStepOptions.Any())
             {
@@ -574,12 +596,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 {
                     proposal.ResponseMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
                 }
+                if (proposal.ActionType == Constants.ACTION_TYPE_VERIFY)
+                {
+                    proposal.ResponseMessage = Constants.RESPONSE_ACTION_VERIFIED;
+                }
                 else
                 {
-                    //TODO conditional based on scenario actionType                
                     proposal.ResponseMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
                 }
             }
+
             return;
         }
 

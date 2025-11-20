@@ -47,7 +47,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
 
-            if (scenarioId != "SCN004" && scenarioId != "SCN003")
+            if (scenarioId != "SCN003" && scenarioId != "SCN004")
             {
                 proposal.ReviewerGroupId = detail.RequestingGroupId;
                 proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
@@ -273,7 +273,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var requestingGroupName = string.Empty;
             var submitUserId = string.Empty;
 
-            if (scenarioId != "SCN004")
+            if (scenarioId != "SCN003" && scenarioId != "SCN004")
             {
 
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
@@ -288,6 +288,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
+            }
+
+            if (scenarioId != "SCN004")
+            {
                 var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                     .Where(x => !x.IsComplete)
                     .FirstOrDefault();
@@ -297,7 +301,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
                     .Where(x => x.IsComplete == false && x.IsTerminate == false)
                     .ToList();
+
+
             }
+
             var stepNumber = 0;
 
             if (scenarioId == "SCN001")
@@ -308,8 +315,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 proposal.ActionType = Constants.ACTION_TYPE_VERIFY;
                 actionType = proposal.ActionType;
+                
                 expectedMessage = Constants.RESPONSE_REQUEST_FOR_MORE_INFORMATION_SENT;
-
+                proposal.ExpectedMessage = expectedMessage;
                 var increment = 1;
 
                 proposal.RequestedInfo.Id = (await _capitalRequestServices.GetAllRequestedInfos(new RequestedInfoSearchFilter())).Max(x => x.Id) + increment; ;
@@ -399,6 +407,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ExpectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
                 actionType = proposal.ActionType;
                 expectedMessage = Constants.RESPONSE_ADDED_MORE_INFORMATION_SENT;
+                proposal.ExpectedMessage = expectedMessage; 
                 var replyingGroupId = detail.ReplyingGroupId;
                 var replyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
                 proposal.Attachment = null;
@@ -533,9 +542,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.VerifyUserId = detail.SubmitUserId;
                 proposal.ButtonCaption = Constants.BUTTON_CAPTION_VERIFY;
                 proposal.ReviewerId = detail.ReviewerId;
+                proposal.VerifyingGroupId = detail.VerifyingGroupId;
+                //proposal.ReviewerGroupId = detail.VerifyingGroupId;
+                var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+                var verifyingGroupName = verifyingGroup.Name;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
                 proposal.ActionType = Constants.ACTION_TYPE_VERIFY;
                 actionType = proposal.ActionType;
                 expectedMessage = Constants.RESPONSE_ACTION_VERIFIED;
+                proposal.ExpectedMessage = expectedMessage;
 
                 predictiveMethods.Add(
                    new PredictiveMethod
@@ -553,7 +568,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         StepNumber = ++stepNumber,
                         ServiceName = "IPredictiveWorkflowActionService",
                         MethodName = "ValidateVerifyButtonAsync",
-                        Parameters = new List<object> { proposal, requestingGroupId, expectedMessage }
+                        Parameters = new List<object> { proposal, expectedMessage }
                     }
                 );
 
@@ -579,6 +594,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         Parameters = new List<object> { proposal, actionType, expectedMessage }
                     }
                 );
+
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       StepNumber = ++stepNumber,
+                       ServiceName = "IPredictiveDashboardService",
+                       MethodName = "ValidateDashboardStatusAsync",
+                       Parameters = new List<object> { proposal, verifyingGroupName, verifyingGroupName, Constants.DASHBOARD_STATUS_VERIFIED }
+                   }
+               );
+
             }
             else if (scenarioId == "SCN004")
             {

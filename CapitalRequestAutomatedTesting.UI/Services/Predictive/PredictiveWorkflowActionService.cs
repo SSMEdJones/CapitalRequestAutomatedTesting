@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -9,28 +9,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
     public interface IPredictiveWorkflowActionService
     {
         Task<SeleniumStepResult> ValidateWorkflowButtonAsync(vm.Proposal proposal);
-        Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId, string expectedMessage);
+        Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, string expectedMessage);
     }
     public class PredictiveWorkflowActionService : IPredictiveWorkflowActionService
     {
-        private readonly ISSMWorkflowServices _ssmWorkflowServices;
+        //private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
-        private readonly IUserContextService _userContextService;
+        //private readonly IUserContextService _userContextService;
         private readonly IPredictiveWorkflowStepOptionService _predictiveWorkflowStepOptionService;
-        private readonly IMapper _mapper;
+        //private readonly IMapper _mapper;
 
         public PredictiveWorkflowActionService(
-            ISSMWorkflowServices ssmWorkflowServices,
+            //ISSMWorkflowServices ssmWorkflowServices,
             ICapitalRequestServices capitalRequestServices,
-            IUserContextService userContextService,
-            IPredictiveWorkflowStepOptionService predictiveWorkflowStepOptionService,
-            IMapper mapper)
+            //IUserContextService userContextService,
+            IPredictiveWorkflowStepOptionService predictiveWorkflowStepOptionService)
         {
-            _ssmWorkflowServices = ssmWorkflowServices;
+            //_ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
-            _userContextService = userContextService;
+            //_userContextService = userContextService;
             _predictiveWorkflowStepOptionService = predictiveWorkflowStepOptionService;
-            _mapper = mapper;
+            //_mapper = mapper;
         }
 
         public async Task<List<vm.WorkflowAction>> GetWorkflowActionAsync(vm.Proposal proposal)
@@ -60,11 +59,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             };
         }
 
-        public async Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, int reviewerGroupId, string expectedMessage)
+        public async Task<SeleniumStepResult> ValidateVerifyButtonAsync(vm.Proposal proposal, string expectedMessage)
         {
             var responseMessage = string.Empty;
             var buttonIsValid = (await GetWorkflowActionAsync(proposal))
-                .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId)
+                .Where(x => x.ReviewerGroupId == proposal.VerifyingGroupId)
                 .FirstOrDefault();
 
             var actionType = buttonIsValid != null ? buttonIsValid.ActionType : string.Empty;

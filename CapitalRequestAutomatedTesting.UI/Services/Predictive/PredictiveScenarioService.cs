@@ -61,7 +61,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
 
-            if (detail.ScenarioId != "SCN004")
+            if (detail.ScenarioId != "SCN003" && detail.ScenarioId != "SCN004")
             {
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
                 var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
@@ -77,17 +77,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 scenarioDetail.SelectedProperties["Requested Information"] = detail.RequestedInformation;
             }
 
-            if (!string.IsNullOrWhiteSpace(detail.SubmitUserId))
-            {
-                detail.SubmittedBy = (await _scenarioControllerService.GetSubmitUsersAsync(detail.ProposalId))
-                                .FirstOrDefault(u => u.Value == detail.SubmitUserId).Text;
-
-                if (!string.IsNullOrWhiteSpace(detail.SubmittedBy))
-                {
-                    scenarioDetail.SelectedProperties["Submitted By"] = detail.SubmittedBy;
-                }
-
-            }
+            
             scenarioDetail.SelectedProperties["Scenario Name"] = detail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();
 
@@ -111,13 +101,25 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             else if (scenarioId == "SCN003")
             {
-                // stubbed for future scenario
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+
+                scenarioDetail.SelectedProperties["Verified By"] = proposal.Reviewer.FullName;
 
             }
             else if (scenarioId == "SCN004")
             {
+                if (!string.IsNullOrWhiteSpace(detail.SubmitUserId))
+                {
+                    detail.SubmittedBy = (await _scenarioControllerService.GetSubmitUsersAsync(detail.ProposalId))
+                                    .FirstOrDefault(u => u.Value == detail.SubmitUserId).Text;
 
-                //stubbed for future scenario
+                    if (!string.IsNullOrWhiteSpace(detail.SubmittedBy))
+                    {
+                        scenarioDetail.SelectedProperties["Submitted By"] = detail.SubmittedBy;
+                    }
+
+                }
             }
 
 
@@ -524,8 +526,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             else if (scenarioId == "SCN003")
             {
-
                 proposal.ReviewerGroupId = proposal.VerifyingGroupId;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+
                 var workflowStep = proposal.WorkflowStep;
                 var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter());
                 var currentStepNumber = workflowTemplates

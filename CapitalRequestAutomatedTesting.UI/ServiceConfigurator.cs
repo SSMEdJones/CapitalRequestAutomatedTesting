@@ -36,11 +36,14 @@ namespace CapitalRequestAutomatedTesting.UI
 
             // Register the existing instance as a singleton
             services.AddSingleton<IAppConfigurationService>(appConfigService);
+            var debug = appConfigService.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI").LookupValue;
             services.PostConfigureAll<SSMWorkFlowSettings>(options =>
             {
                 options.BaseApiUrl = appConfigService.GetAppKeyValueByKey("CapitalRequest", "SSMWorkflowAPI").LookupValue;
                 options.ProjectReviewLink = appConfigService.GetAppKeyValueByKey("CapitalRequest", "ProjectReviewLink").LookupValue;
             });
+
+            debug = appConfigService.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestApiUrl").LookupValue;
 
             services.PostConfigureAll<CapitalRequestSettings>(options =>
             {
