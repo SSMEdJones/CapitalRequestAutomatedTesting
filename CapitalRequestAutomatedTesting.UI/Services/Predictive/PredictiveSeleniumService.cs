@@ -47,7 +47,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
 
-            if (scenarioId != "SCN004")
+            if (scenarioId != "SCN004" && scenarioId != "SCN003")
             {
                 proposal.ReviewerGroupId = detail.RequestingGroupId;
                 proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
@@ -369,7 +369,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                        MethodName = "ValidateRequestedInformationAsync",
                        Parameters = new List<object> { proposal }
                    }
-               );
+                );
+
                 predictiveMethods.Add(
                     new PredictiveMethod
                     {
@@ -529,13 +530,59 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             else if (scenarioId == "SCN003")
             {
-                // stubbed for future scenario
+                proposal.VerifyUserId = detail.SubmitUserId;
+                proposal.ButtonCaption = Constants.BUTTON_CAPTION_VERIFY;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.ActionType = Constants.ACTION_TYPE_VERIFY;
+                actionType = proposal.ActionType;
+                expectedMessage = Constants.RESPONSE_ACTION_VERIFIED;
 
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       StepNumber = ++stepNumber,
+                       ServiceName = "IPredictiveWorkflowActionService",
+                       MethodName = "ValidateWorkflowButtonAsync",
+                       Parameters = new List<object> { proposal }
+                   }
+               );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        ServiceName = "IPredictiveWorkflowActionService",
+                        MethodName = "ValidateVerifyButtonAsync",
+                        Parameters = new List<object> { proposal, requestingGroupId, expectedMessage }
+                    }
+                );
+
+                if (scenarioDetail.PauseBeforeSubmit)
+                {
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidatePauseBeforeSubmitAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
+                }
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        ServiceName = "IPredictiveWorkflowStepOptionService",
+                        MethodName = "ValidateResponseMessageAsync",
+                        Parameters = new List<object> { proposal, actionType, expectedMessage }
+                    }
+                );
             }
             else if (scenarioId == "SCN004")
             {
                 proposal.SubmitUserId = detail.SubmitUserId;
-                expectedMessage = Constants.RESPONSE_ACTION_VERIFIED;
                 submitUserId = proposal.SubmitUserId;
 
                 predictiveMethods.Add(

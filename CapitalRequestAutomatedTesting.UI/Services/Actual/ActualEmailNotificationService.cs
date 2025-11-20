@@ -460,7 +460,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             string idParam = $"?Id={proposalId}";
             string paramName;
             string paramValue;
-            paramName = "&ReviewerGroupId=";
+            paramName = "&VerifyingGroupId=";
 
             paramValue = reviewerGroupId?.ToString();
 

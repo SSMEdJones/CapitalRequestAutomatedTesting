@@ -151,7 +151,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                                         {
                                             var type = obj.GetType();
                                             var recipients = type.GetProperty("Recipients")?.GetValue(obj)?.ToString();
-                                            var groupId = type.GetProperty("ReviewerGroupId")?.GetValue(obj)?.ToString();
+                                            var groupId = type.GetProperty("VerifyingGroupId")?.GetValue(obj)?.ToString();
                                             return $"{recipients}|{groupId}";
                                         })
                                         .ToList();

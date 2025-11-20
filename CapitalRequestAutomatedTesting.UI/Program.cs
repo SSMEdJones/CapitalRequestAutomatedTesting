@@ -3,13 +3,11 @@ using CapitalRequestAutomatedTesting.UI.Hubs;
 using CapitalRequestAutomatedTesting.UI.Services;
 using Infrastructure.Middleware;
 using Microsoft.AspNetCore.Authentication.Negotiate;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.StaticFiles;
 using NLog;
 using NLog.Extensions.Logging;
 using NLog.Web;
 using System.Diagnostics;
-using System.Reflection;
 using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 

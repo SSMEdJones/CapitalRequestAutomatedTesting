@@ -33,6 +33,10 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [Range(1, int.MaxValue, ErrorMessage = "Please select a valid target group.")]
         public int? TargetGroupId { get; set; }
 
+        [DisplayName("Reviewer Group:")]
+        [Range(1, int.MaxValue, ErrorMessage = "Please select a valid reviewer group.")]
+        public int? VerifyingGroupId { get; set; }
+
         [DisplayName("Reviewer:")]
         [Range(1, int.MaxValue, ErrorMessage = "Please select a reviewer.")]
         public int? ReviewerId { get; set; }
@@ -49,6 +53,9 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         [DisplayName("Submit User:")]
         [ValidateNever]
         public string SubmitUserId { get; set; }
+
+        [DisplayName("Verify User:")]
+        [ValidateNever]
         public string VerifyUserId { get; set; }
 
         [ValidateNever]
@@ -88,11 +95,13 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public List<SelectListItem> TargetGroups { get; set; } = new();
         [IgnoreForLogging]
 
+        public List<SelectListItem> VerifyingGroups { get; set; } = new();
+        [IgnoreForLogging]
+
         public List<SelectListItem> Reviewers { get; set; } = new();
 
         public List<SelectListItem> SubmitUsers { get; set; } = new();
         public List<SelectListItem> VerifyUsers { get; set; } = new();
-
 
         public int RequestCount { get; set; }
 
@@ -130,5 +139,6 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public bool CommitStepReached { get; set; } = false;
 
         public bool PauseBeforeSubmit { get; set; }
+        public bool VerifyAndSendToVPFinance { get; set; }
     }
 }

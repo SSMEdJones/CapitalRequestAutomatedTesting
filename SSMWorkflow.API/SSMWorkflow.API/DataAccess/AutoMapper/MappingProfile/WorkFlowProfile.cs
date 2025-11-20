@@ -52,6 +52,17 @@ namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
             CreateMap<WorkFlowStepOptionViewModel, WorkflowStepResponder>();
 
             //WorkFlowInstanceActionHistory
+            CreateMap<WorkflowInstance, CreateUpdateWorkFlowInstanceActionHistory>()
+                .ForMember(dest => dest.WorkflowInstanceID, o => o.MapFrom(src => src.WorkflowInstanceID))
+                .ForMember(dest => dest.WorkflowStepID, o => o.MapFrom(src => src.CurrentWorkflowStepID))
+                .ForMember(dest => dest.Completed, o => o.MapFrom(src => DateTime.Now));
+
+            CreateMap<WorkflowInstance, WorkflowInstanceActionHistory>()
+                .ForMember(dest => dest.WorkflowInstanceID, o => o.MapFrom(src => src.WorkflowInstanceID))
+                .ForMember(dest => dest.WorkflowStepID, o => o.MapFrom(src => src.CurrentWorkflowStepID))
+                .ForMember(dest => dest.Completed, o => o.MapFrom(src => DateTime.Now));
+
+
             CreateMap<WorkFlowInstanceActionHistoryViewModel, CreateUpdateWorkFlowInstanceActionHistory>();
             CreateMap<CreateUpdateWorkFlowInstanceActionHistory, WorkflowInstanceActionHistory>();
             CreateMap<API.Models.Dashboard, Models.Dashboard>();

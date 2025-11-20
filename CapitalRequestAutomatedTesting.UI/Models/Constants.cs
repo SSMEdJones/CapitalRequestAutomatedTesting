@@ -39,6 +39,9 @@ namespace CapitalRequestAutomatedTesting.UI.Models
         public const string RESPONSE_RESENT = "Email sent to all active reviewers.";
         public const string RESPONSE_VERIFY_WBS = "Verified WBS";
 
+        //New Step 
+        public const string STEP_ACTION_ADDED = "Added step";
+
         //Response Messages
         public const string RESPONSE_ACTION_VERIFIED = "Thank you for verifying this project!";
         public const string RESPONSE_ACTION_TAKEN = "Thank you for trying to take action. Someone has already taken action on this request.";
@@ -109,6 +112,8 @@ namespace CapitalRequestAutomatedTesting.UI.Models
 
         public const string UPLOAD_DIRECTORY_ATTACHMENTS = "UploadDirectoryAttachments";
 
+        //Additional tasks
+        public const string ADDITIONAL_TASK_CREATE_WBS_NUMBERS = "CreateWBSNumbers";
 
 
     }

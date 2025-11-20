@@ -176,7 +176,7 @@ namespace CapitalRequest.API.Models
         [DisplayName("How many WBS numbers are requested?")]
         public int NumberOfWBSNumbersRequested { get; set; }
 
-        //public IList<WBS> WBS { get; set; } = new List<WBS>();
+        public List<Wbs> WBSList { get; set; } = new List<Wbs>();
 
         [IgnoreForLogging]
         [DisplayName("Add a Quotes")]
@@ -553,6 +553,7 @@ namespace CapitalRequest.API.Models
 
 
         public int ReplyingGroupId { get; set; }
+        public int VerifyingGroupId { get; set; }
 
         public int? ReviewerId { get; set; }
 
@@ -562,6 +563,17 @@ namespace CapitalRequest.API.Models
         [IgnoreForLogging]
         public string SubmitUserId { get; set; }
         public string SubmittingUser{ get; set; }
+        [IgnoreForLogging]
+        public string VerifyUserId { get; set; }
+        public string VerifyingUser { get; set; }
+
+        [IgnoreForLogging]
+        public Guid NextWorkflowStepId { get; set; }
+        [IgnoreForLogging]
+        public Guid WorkflowInstanceId { get; set; }
+
+        [IgnoreForLogging]
+        public string NextStepName { get; set; }
     }
 
 }

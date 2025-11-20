@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using System.Diagnostics;
@@ -27,7 +27,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         {
 
             Debug.WriteLine($"In GetRequestedInfoAsync {Environment.NewLine} ProposalId: {proposal.Id} " +
-                $"{ Environment.NewLine} ReviewerGroupId: {proposal.ReviewerGroupId} " +
+                $"{ Environment.NewLine} VerifyingGroupId: {proposal.ReviewerGroupId} " +
                 $"{Environment.NewLine} RequestingReviewerGroupId: {proposal.RequestingGroupId}" + 
                 $"{Environment.NewLine} IsOpen: {isOpen}" );
 

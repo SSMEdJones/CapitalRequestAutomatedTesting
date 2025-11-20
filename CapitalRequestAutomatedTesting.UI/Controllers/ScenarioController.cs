@@ -33,7 +33,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly IScenarioComparer _scenarioComparer;
         private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
-        private readonly ScenarioViewModelBuilder _viewModelBuilder;
+        //private readonly ScenarioViewModelBuilder _viewModelBuilder;
         private readonly IPdfService _pdfService;
         private readonly IHubContext<ScenarioProgressHub> _hubContext;
 
@@ -48,7 +48,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             IActualSeleniumService actualSeleniumService,
             IViewRenderService viewRenderService,
             IScenarioMemoryCache scenarioMemoryCache,
-            ScenarioViewModelBuilder viewModelBuilder,
+            //ScenarioViewModelBuilder viewModelBuilder,
             IScenarioComparer scenarioComparer,
             IFormDataContext formDataContext,
             IPdfService pdfService,
@@ -66,7 +66,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             _actualSeleniumService = actualSeleniumService;
             _viewRenderService = viewRenderService;
             _scenarioMemoryCache = scenarioMemoryCache;
-            _viewModelBuilder = viewModelBuilder;
+            //_viewModelBuilder = viewModelBuilder;
             _scenarioComparer = scenarioComparer;
             _formDataContext = formDataContext;
             _pdfService = pdfService;
@@ -390,6 +390,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                     }
 
                     scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
+                    return scenario;
 
 
                     _logger.LogInformation("Step 2.5/4: Generating Original Data for {ScenarioName}", scenario.DisplayText);
@@ -666,25 +667,33 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         [HttpGet]
         public async Task<JsonResult> GetTargetGroupsAndReviewers(int proposalId, int groupId, string groupType)
         {
-            var targetGroups = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-            var reviewers = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+            var result = await _scenarioControllerService.GetTargetGroupsAndReviewersAsync(proposalId, groupId, groupType);
+            return Json(result);
+            //var targetGroups = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+            //var reviewers = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
 
-            if (groupType == "requesting")
-            {
-                targetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(proposalId, groupId);
-                reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
-            }
-            else if (groupType == "replying")
-            {
-                targetGroups = await _scenarioControllerService.GetRequestingGroupsByReplyingIdAsync(proposalId, groupId);
-                reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
-            }
 
-            return Json(new
-            {
-                targetGroups,
-                reviewers
-            });
+            //if (groupType == "verifying")
+            //{
+            //    reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
+            //}
+
+            //if (groupType == "requesting")
+            //{
+            //    targetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(proposalId, groupId);
+            //    reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
+            //}
+            //else if (groupType == "replying")
+            //{
+            //    targetGroups = await _scenarioControllerService.GetRequestingGroupsByReplyingIdAsync(proposalId, groupId);
+            //    reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
+            //}
+
+            //return Json(new
+            //{
+            //    targetGroups,
+            //    reviewers
+            //});
         }
 
         public async Task<IActionResult> PrintScenarioPdf(int id)

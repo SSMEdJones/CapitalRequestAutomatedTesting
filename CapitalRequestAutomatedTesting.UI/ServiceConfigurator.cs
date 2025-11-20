@@ -88,6 +88,9 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IWBSs, WBSs>();
             services.AddScoped<IWorkflowActions, WorkflowActions>();
             services.AddScoped<IWorkflowTemplates, WorkflowTemplates>();
+            services.AddScoped<IProjectTypes, ProjectTypes>();
+            services.AddScoped<ICapitalPoolIdentifiers, CapitalPoolIdentifiers>();
+            services.AddScoped<ICapitalPools, CapitalPools>();
             services.AddScoped<ICapitalRequestServices, CapitalRequestServices>();
             services.AddScoped<IUserContextService, UserContextService>();
 
@@ -107,6 +110,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveWorkflowService, PredictiveWorkflowService>();
             services.AddScoped<IPredictiveWorkflowStepService, PredictiveWorkflowStepService>();
             services.AddScoped<IPredictiveWorkflowInstanceService, PredictiveWorkflowInstanceService>();
+            services.AddScoped<IPredictiveWorkflowInstanceHistoryService, PredictiveWorkflowInstanceHistoryService>();
             services.AddScoped<IPredictiveWorkflowStakeHolderService, PredictiveWorkflowStakeHolderService>();
 
             #endregion
@@ -147,7 +151,6 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<ITestActionService, WorkflowTestActionService>();
             services.AddScoped<IScenarioControllerService, ScenarioControllerService>();
             services.AddScoped<IScenarioComparer, ScenarioComparer>();
-            services.AddScoped<ScenarioViewModelBuilder>();
             #endregion
             #region Selenium Services
             services.AddScoped<IPredictiveSeleniumService, PredictiveSeleniumService>();

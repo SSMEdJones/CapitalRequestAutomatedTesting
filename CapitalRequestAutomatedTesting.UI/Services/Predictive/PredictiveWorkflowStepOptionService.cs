@@ -19,6 +19,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         Task<List<WorkflowStepOption>> GetFilteredOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId);
         Task<List<WorkflowStepOption>> CreateWorkflowStepOptionsAsync(vm.Proposal proposal, string OptionType, int? requestedInfoId);
         Task<List<WorkflowStepOption>> CreateSubmitWorkflowStepOptionsAsync(vm.Proposal proposal);
+        Task<List<WorkflowStepOption>> CreateVerifyWorkflowStepOptionsAsync(vm.Proposal proposal);
         Task<SeleniumStepResult> ValidateResponseMessageAsync(vm.Proposal proposal, string actionType, string expectedMessage);
         Task<WorkflowStepOption> FindOrCreateWorkflowStepOptionAsync(vm.Proposal proposal, int reviewerGroupId, int reviewerId, string actionType);
         Task<vm.Proposal> PredictiveMessage(vm.Proposal proposal);
@@ -138,6 +139,47 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             return workflowStepOptions;
         }
 
+        public async Task<List<WorkflowStepOption>> CreateVerifyWorkflowStepOptionsAsync(vm.Proposal proposal)
+        {
+            var workflowStepOptions = new List<WorkflowStepOption>();
+
+            var reviewerGroups = proposal.ReviewerGroups;
+
+            foreach (var reviewerGroup in reviewerGroups)
+            {
+                var reviewers = (await GetFilteredReviewersAsync(proposal.Region, proposal.SegmentId, reviewerGroup.Id))
+                            .OrderBy(y => y.Email)
+                            .ToList();
+
+                var emailTemplates = await _capitalRequestServices
+                    .GetAllEmailTemplates(new EmailTemplateSearchFilter());
+
+                var emailType = emailTemplates
+                    .FirstOrDefault(y => y.Id == reviewerGroup.EmailTemplateId)
+                    ?.OptionType;
+
+                foreach (var reviewer in reviewers)
+                {
+                    if (emailType == Constants.EMAIL_TYPE_NOTIFY)
+                    {
+                        continue;
+                    }
+
+                    if (string.IsNullOrEmpty(reviewer.Email))
+                    {
+                        reviewer.Email = proposal.AuthorEmail;
+                    }
+
+                    var workflowStepOption = _mapper.Map<WorkflowStepOption>(reviewer);
+                    workflowStepOption.CreatedBy = proposal.VerifyUserId;
+                    workflowStepOption.OptionType = emailType;
+                    workflowStepOptions.Add(workflowStepOption);
+                }
+            }
+
+            return workflowStepOptions;
+        }
+
         public async Task<List<vm.Reviewer>> GetFilteredReviewersAsync(int region, int segmentId, int reviewerGroupId)
         {
             return await _capitalRequestServices.GetAllReviewers(new ReviewerSearchFilter
@@ -179,7 +221,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                    x.Created <= workflowStep.Created)
             .ToList();
 
-
             var stepNumber = workflowTemplate?.StepNumber ?? 0;
 
             var currentReviewers = await _capitalRequestServices
@@ -214,13 +255,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     current.ReviewerGroupId == deleted.ReviewerGroupId);
 
                 if (!exists)
-                    reviewers.Add(_mapper.Map<vm.Reviewer>(deleted)); // you'll need a cast if types differ
+                    reviewers.Add(_mapper.Map<vm.Reviewer>(deleted)); 
             }
-
 
             reviewers.ForEach(x =>
             {
-                if (x.Email == proposal.Reviewer.Email)
+                if (x.Email == proposal.Reviewer.Email && optionType != Constants.OPTION_TYPE_VERIFY)
                 {
                     return;
                 }
@@ -228,6 +268,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 var created = workflowStep.Created;
                 var createdBy = workflowStep.CreatedBy;
                 var optionId = Guid.Empty;
+
+                var workflowStepOption = new WorkflowStepOption();
+
                 if (optionType == Constants.OPTION_TYPE_ADD_INFO)
                 {
                     var activeOption = proposal.WorkflowStepOptions.Where(w => w.RequestedInfoId == proposal.RequestedInfoId
@@ -238,27 +281,55 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     created = activeOption.Created;
                     createdBy = activeOption.CreatedBy;
 
+                    workflowStepOption = new WorkflowStepOption
+                    {
+                        OptionID = optionId,
+                        OptionName = x.Email,
+                        WorkflowStepID = workflowStep.WorkflowStepID,
+                        ReviewerGroupId = reviewerGroupId,
+                        OptionType = optionType,
+                        RequestedInfoId = requestedInfoId,
+                        Created = created,
+                        CreatedBy = createdBy,
+                        IsComplete = false,
+                        IsTerminate = true,
+                        Updated = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? null : DateTime.Now,
+                        UpdatedBy = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? null : proposal.Reviewer.UserId
+
+                    };
+
 
                 }
-
-
-                var workflowStepOption = new WorkflowStepOption
+                else if (optionType == Constants.OPTION_TYPE_VERIFY)
                 {
-                    OptionID = optionId,
-                    OptionName = x.Email,
-                    WorkflowStepID = workflowStep.WorkflowStepID,
-                    ReviewerGroupId = reviewerGroupId,
-                    OptionType = optionType,
-                    RequestedInfoId = requestedInfoId,
-                    Created = created,
-                    CreatedBy = createdBy,
-                    IsComplete = false,
-                    IsTerminate = true,
-                    Updated = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? null : DateTime.Now,
-                    UpdatedBy = x.Email.ToLower() == proposal.Reviewer.Email.ToLower() ? null : proposal.Reviewer.UserId
+                    var activeOption = proposal.WorkflowStepOptions.Where(w => w.ReviewerGroupId == proposal.ReviewerGroupId
+                                        && !w.IsComplete
+                                        && !w.IsTerminate
+                                        && w.OptionName.ToLower() == x.Email.ToLower())
+                    .FirstOrDefault();
 
-                };
+                    var isActiveOption = activeOption.OptionName.ToLower() == proposal.Reviewer.Email.ToLower();
 
+                    optionId = activeOption.OptionID;
+                    created = activeOption.Created;
+                    createdBy = activeOption.CreatedBy;
+                    workflowStepOption = new WorkflowStepOption
+                    {
+                        OptionID = optionId,
+                        OptionName = x.Email,
+                        WorkflowStepID = workflowStep.WorkflowStepID,
+                        ReviewerGroupId = reviewerGroupId,
+                        OptionType = optionType,
+                        RequestedInfoId = requestedInfoId,
+                        Created = created,
+                        CreatedBy = createdBy,
+                        IsComplete = !isActiveOption ? false : true,
+                        IsTerminate = isActiveOption ? false : true,
+                        Updated = DateTime.Now,
+                        UpdatedBy = proposal.Reviewer.Email.ToLower()
+
+                    };
+                }
 
                 workflowStepOptions.Add(workflowStepOption);
 

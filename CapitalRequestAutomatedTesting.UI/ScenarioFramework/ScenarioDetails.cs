@@ -9,6 +9,8 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public string DisplayText { get; set; }
         public int RequestingGroupId { get; set; }
         public int ReplyingGroupId { get; set; }
+        public int VerifyingGroupId { get; set; }
+
         public int TargetGroupId { get; set; }
         public int ReviewerId { get; set; }
         public string ReviewerEmail { get; set; }

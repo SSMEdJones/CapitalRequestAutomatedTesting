@@ -495,7 +495,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             else
             {
-                paramName = "&ReviewerGroupId=";
+                paramName = "&VerifyingGroupId=";
             }
 
             // Determine paramValue

@@ -46,7 +46,7 @@ public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase
                 $"OptionName mismatch for OptionId {pred.OptionID}. Predicted: '{pred.OptionName}', Actual: '{match.OptionName}'");
 
             Assert.True(pred.ReviewerGroupId == match.ReviewerGroupId,
-                $"ReviewerGroupId mismatch for OptionId {pred.OptionID}. Predicted: '{pred.ReviewerGroupId}', Actual: '{match.ReviewerGroupId}'");
+                $"VerifyingGroupId mismatch for OptionId {pred.OptionID}. Predicted: '{pred.ReviewerGroupId}', Actual: '{match.ReviewerGroupId}'");
 
             Assert.True(pred.IsComplete == match.IsComplete,
                 $"IsComplete mismatch for OptionId {pred.OptionID}. Predicted: {pred.IsComplete}, Actual: {match.IsComplete}");
@@ -89,7 +89,7 @@ public class PredictiveWorkflowStepOptionServiceTests : IntegrationTestBase
             Assert.True(match != null, $"No match found in actual for OptionName {pred.OptionName}");
 
             Assert.True(pred.ReviewerGroupId == match.ReviewerGroupId,
-                $"ReviewerGroupId mismatch for OptionId {pred.OptionName}. Predicted: '{pred.ReviewerGroupId}', Actual: '{match.ReviewerGroupId}'");
+                $"VerifyingGroupId mismatch for OptionId {pred.OptionName}. Predicted: '{pred.ReviewerGroupId}', Actual: '{match.ReviewerGroupId}'");
 
             Assert.True(pred.IsComplete == match.IsComplete,
                 $"IsComplete mismatch for OptionId {pred.OptionName}. Predicted: {pred.IsComplete}, Actual: {match.IsComplete}");

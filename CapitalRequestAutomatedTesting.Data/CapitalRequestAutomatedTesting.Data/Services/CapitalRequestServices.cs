@@ -23,6 +23,8 @@ namespace CapitalRequestAutomatedTesting.Data.Services
 
         //// Proposals
         Task<CapitalRequest.API.Models.Proposal> GetProposal(int id);
+        Task<List<CapitalRequest.API.Models.Proposal>> GetAllProposals(ProposalSearchFilter filter);
+
         Task DeleteProposal(int id);
 
         //// ProvidedInfos
@@ -69,7 +71,9 @@ namespace CapitalRequestAutomatedTesting.Data.Services
         //// DeletedReviewers
         Task<List<CapitalRequest.API.Models.DeletedReviewer>> GetAllDeletedReviewers(DeletedReviewerSearchFilter filter);
 
-
+        Task<List<CapitalRequest.API.Models.ProjectType>> GetAllProjectTypes();
+        Task<List<CapitalRequest.API.Models.CapitalPoolIdentifier>> GetAllCapitalPoolIdentifiers();
+        Task<List<CapitalRequest.API.Models.CapitalPool>> GetAllCapitalPools();
 
     }
 
@@ -89,6 +93,9 @@ namespace CapitalRequestAutomatedTesting.Data.Services
         private readonly IWorkflowActions _workflowActions;
         private readonly IApplicationUsers _applicationUsers;
         private readonly IDeletedReviewers _deletedReviewers;
+        private readonly IProjectTypes _projectTypes;
+        private readonly ICapitalPoolIdentifiers _capitalPoolIdentifiers;
+        private readonly ICapitalPools _capitalPools;
 
         public CapitalRequestServices(
             IAssets assets,
@@ -104,7 +111,10 @@ namespace CapitalRequestAutomatedTesting.Data.Services
             IEmailTemplates emailTemplates,
             IWorkflowActions workflowActions,
             IApplicationUsers applicationUsers,
-            IDeletedReviewers deletedReviewers)
+            IDeletedReviewers deletedReviewers,
+            IProjectTypes projectTypes,
+            ICapitalPoolIdentifiers capitalPoolIdentifiers,
+            ICapitalPools capitalPools)
         {
             _assets = assets;
             _attachments = attachments;
@@ -120,6 +130,9 @@ namespace CapitalRequestAutomatedTesting.Data.Services
             _workflowActions = workflowActions;
             _applicationUsers = applicationUsers;
             _deletedReviewers = deletedReviewers;
+            _projectTypes = projectTypes;
+            _capitalPoolIdentifiers = capitalPoolIdentifiers;
+            _capitalPools = capitalPools;
         }
 
         #region Assets
@@ -175,6 +188,11 @@ namespace CapitalRequestAutomatedTesting.Data.Services
         {
             return _proposals.Get(id);
         }
+        public Task<List<CapitalRequest.API.Models.Proposal>> GetAllProposals(ProposalSearchFilter filter)
+        {
+            return _proposals.GetAll(filter);
+
+        }
 
         public async Task DeleteProposal(int id)
         {
@@ -193,6 +211,15 @@ namespace CapitalRequestAutomatedTesting.Data.Services
         }
         #endregion
 
+        public async Task<List<CapitalRequest.API.Models.ProjectType>> GetAllProjectTypes()
+        {
+            return await _projectTypes.GetAll();
+        }
+
+        public async Task<List<CapitalRequest.API.Models.CapitalPool>> GetAllCapitalPools()
+        {
+            return await _capitalPools.GetAll();
+        }
         #region ProvidedInfos
         public Task<CapitalRequest.API.Models.ProvidedInfo> GetProvidedInfo(int id)
         {
@@ -338,6 +365,12 @@ namespace CapitalRequestAutomatedTesting.Data.Services
         {
             return _deletedReviewers.GetAll(filter);
         }
+
+        public async Task<List<CapitalRequest.API.Models.CapitalPoolIdentifier>> GetAllCapitalPoolIdentifiers()
+        {
+            return await _capitalPoolIdentifiers.GetAll();
+        }
+
     }
 
     #endregion

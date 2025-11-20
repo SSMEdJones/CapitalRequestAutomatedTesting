@@ -1,12 +1,9 @@
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
-using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Collections.Generic;
 using vm = CapitalRequest.API.Models;
 
 
@@ -24,14 +21,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         Task<List<SelectListItem>> GetRequestSelectListAsync();
         Task<List<SelectListItem>> GetRequestingGroupsAsync(int proposalId);
         Task<CapitalRequest.API.Models.Reviewer> GetReviewerByIdAsync(int id);
+        Task<List<SelectListItem>> GetSubmitUsersAsync(int proposalId);
         Task<SeleniumStepResult> ValidateTargetGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
         Task<SeleniumStepResult> ValidateRequestingGroupIdAsync(vm.Proposal proposal, int requestingGroupId, int targetGroupId);
         Task<CapitalRequest.API.Models.ReviewerGroup> GetReviewerGroupByIdAsync(int id);
         Task<List<SelectListItem>> GetRequestingGroupsByReplyingIdAsync(int proposalId, int replyingGroupId);
-        Task<List<SelectListItem>> GetSubmitUsersAsync(int proposalId);
         Task<(List<SelectListItem> RequestingGroups, List<SelectListItem> TargetGroups)> BuildRequestingAndTargetGroupsAsync(int proposalId, int? requestingGroupId);
         Task<ScenarioDetailsViewModel> GetScenarioDetail(string scenarioId, int requestId);
         Task<List<vm.ReviewerGroup>> GetReviewerGroupsForReplyingGroup(int proposalId, int groupId);
+
+        Task<object> GetTargetGroupsAndReviewersAsync(int proposalId, int groupId, string groupType);
+
+        Task<bool> AllGroupsVerifiedAsync(vm.Proposal proposal, string optionType);
         Task<SeleniumStepResult> ValidatePauseBeforeSubmitAsync(vm.Proposal proposal);
         Task<SeleniumStepResult> ValidateFileUploadAsync(string fileName, string contentType);
         Task<SeleniumStepResult> ValidateFileInputVisibilityAsync(vm.Proposal proposal);
@@ -64,8 +65,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public async Task<ScenarioFormViewModel> GenerateScenarioFormViewModel(int? requestId = null)
         {
             var submitted = false;
+            var proposalId = 0;
             if (requestId != null)
             {
+                proposalId = requestId.Value;
                 var proposal = await _capitalRequestServices.GetProposal(requestId.Value);
                 if (proposal != null)
                 {
@@ -75,11 +78,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             }
 
             var scenarioDetails = new List<ScenarioDetailsViewModel>();
-
             if (!submitted && requestId != null)
             {
                 // 🔥 If NOT submitted, only show SCN003 for testing submission
-                var proposalId = requestId.Value;
                 scenarioDetails.Add(new ScenarioDetailsViewModel
                 {
                     ScenarioId = "SCN004",
@@ -116,7 +117,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         PartialViewName = "_VerifyRequest",
                         DisplayText = "Verify a Request",
                         SequenceNumber = 2,
-                        ReplyingGroups = requestId.HasValue ? await GetReplyingGroupsAsync(requestId.Value) : new List<SelectListItem>()
+                        VerifyingGroups = requestId.HasValue ? await GetReviewerGroupsAsync(requestId.Value) : new List<SelectListItem>(),
                     }
 
                 });
@@ -175,12 +176,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public async Task<List<SelectListItem>> GetReplyingGroupsAsync(int proposalId)
         {
 
-            var WorkflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId, Constants.ACTION_TYPE_ADD_INFO))
+            var workflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId, Constants.ACTION_TYPE_ADD_INFO))
                 .Select(x => x.WorkflowPortion)
                 .Distinct()
                 .ToList();
 
-            var groups = await GetAvailableNamesAsync(WorkflowPortions);
+            var groups = await GetAvailableNamesAsync(workflowPortions);
 
             return groups
                 .ToList()
@@ -195,6 +196,28 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         }
 
+        public async Task<List<SelectListItem>> GetReviewerGroupsAsync(int proposalId)
+        {
+
+            var workflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId, Constants.ACTION_TYPE_VERIFY))
+                .Select(x => x.WorkflowPortion)
+                .Distinct()
+                .ToList();
+
+            var groups = await GetAvailableNamesAsync(workflowPortions);
+
+            return groups
+                .ToList()
+                .ConvertAll(x =>
+                {
+                    return new SelectListItem()
+                    {
+                        Text = x.Name,
+                        Value = x.Id.ToString()
+                    };
+                });
+
+        }
         private async Task<List<vm.ReviewerGroup>> GetAvailableNamesAsync(List<string> WorkflowPortions)
         {
             var availableNames = new List<string>();
@@ -532,24 +555,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         }
 
-        public async Task<List<SelectListItem>> GetVerifyUsersAsync(int proposalId)
-        {
-
-            var proposal = await _capitalRequestServices.GetProposal(proposalId);
-            var submitUsers = await GetValidVerifyUsers(proposal);
-
-            return submitUsers
-                .OrderBy(x => x.FullName)
-                .Select(x => new SelectListItem
-                {
-                    Value = x.UserId,
-                    Text = x.FullName
-                })
-                .ToList();
-
-        }
-
-
         private async Task<List<vm.ApplicationUser>> GetValidSubmitUsers(vm.Proposal proposal)
         {
             var submitUsers = await _capitalRequestServices.GetAllApplicationUsers(new ApplicationUserSearchFilter { ApplicationRoleId = Constants.APPLICATION_ROLE_ID_ADMIN });
@@ -572,28 +577,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return submitUsers;
         }
 
-        //left off here need to refactor for only reviewers
-        private async Task<List<vm.ApplicationUser>> GetValidVerifyUsers(vm.Proposal proposal)
-        {
-            var submitUsers = await _capitalRequestServices.GetAllApplicationUsers(new ApplicationUserSearchFilter { ApplicationRoleId = Constants.APPLICATION_ROLE_ID_ADMIN });
 
-            var userId = submitUsers.Where(x => x.UserId == proposal.UserId).FirstOrDefault();
-
-            if (!submitUsers.Where(x => x.UserId == proposal.UserId).Any())
-            {
-
-                submitUsers.Add(new vm.ApplicationUser
-                {
-                    UserId = proposal.UserId,
-                    FullName = proposal.Author,
-                    ApplicationRoleId = Constants.APPLICATION_ROLE_ID_AUTHOR
-
-                });
-
-            }
-
-            return submitUsers;
-        }
         public string GetScenarioViewName(string scenarioId)
         {
             return scenarioId switch
@@ -640,6 +624,29 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return await _capitalRequestServices.GetReviewerGroup(id);
         }
 
+        public async Task<object> GetTargetGroupsAndReviewersAsync(int proposalId, int groupId, string groupType)
+        {
+            var targetGroups = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+            var reviewers = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+
+            // Get reviewers for all group types
+            reviewers = await GetReviewersBySelectedGroupAsync(proposalId, groupId);
+
+            // Get target groups based on group type
+            targetGroups = groupType switch
+            {
+                "requesting" => await GetTargetGroupsByRequestIdAsync(proposalId, groupId),
+                "replying" => await GetRequestingGroupsByReplyingIdAsync(proposalId, groupId),
+                _ => targetGroups
+            };
+
+            return new
+            {
+                targetGroups,
+                reviewers
+            };
+        }
+
         // 🔥 NEW: Generic validation method with configurable delay and messaging
         private async Task<SeleniumStepResult> ExecuteValidationWithDelayAsync(
             string successMessage,
@@ -655,6 +662,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 return SeleniumStepResult.Fail($"{failureMessagePrefix}: {ex.Message}");
             }
+        }
+
+        public async Task<bool> AllGroupsVerifiedAsync(vm.Proposal proposal, string optionType)
+        {
+            var workflowStep = await _ssmWorkflowServices.GetWorkflowStep(proposal.WorkflowStepId);
+
+            var workflowStepOptions = proposal.WorkflowStepOptions
+                .Where(x => x.OptionType == optionType);
+
+            var reviewerGroups = workflowStepOptions
+                .Select(x => x.ReviewerGroupId)
+                .Distinct()
+                .ToList();
+
+            var verifiedGroups = workflowStepOptions
+                .Where(x => x.IsComplete)
+                .Select(y => y.ReviewerGroupId)
+                .Distinct()
+                .ToList();
+
+            return reviewerGroups.Count == verifiedGroups.Count;
         }
 
         // 🔄 REFACTORED: All validation methods now use the common method
@@ -723,7 +751,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             string failureMessage)
         {
             bool isValid = validationCondition();
-            
+
             return new SeleniumStepResult
             {
                 Success = isValid,
@@ -772,7 +800,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             );
         }
 
-        
     }
 }
 
