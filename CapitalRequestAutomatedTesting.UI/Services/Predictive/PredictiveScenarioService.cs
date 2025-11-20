@@ -583,8 +583,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                     if (!await _predictiveWorkflowStepService.AllStepsCompleteAsync(proposal))
                     {
-
-                        //
                         var createStep = true;
 
                         while (createStep)

@@ -390,7 +390,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                     }
 
                     scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
-                    return scenario;
 
 
                     _logger.LogInformation("Step 2.5/4: Generating Original Data for {ScenarioName}", scenario.DisplayText);

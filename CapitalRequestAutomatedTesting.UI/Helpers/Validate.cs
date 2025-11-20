@@ -29,8 +29,8 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
         public static Func<IWebDriver, Task<SeleniumStepResult>> TextIsEmpty(string id, string description)
             => SeleniumHelper.ValidateElementTextIsEmpty(id, description);
 
-        public static Func<IWebDriver, Task<SeleniumStepResult>> DashboardStatus(int dashboardOrder, string expectedName, DateTime? expectedDate)
-            => SeleniumHelper.ValidateDashboardCell(dashboardOrder, expectedName, expectedDate);
+        public static Func<IWebDriver, Task<SeleniumStepResult>> DashboardStatus(int dashboardOrder, string expectedName, DateTime? expectedDate, string? expectedIcon)
+            => SeleniumHelper.ValidateDashboardCell(dashboardOrder, expectedName, expectedDate, expectedIcon);
 
         public static Func<IWebDriver, Task<SeleniumStepResult>> NoRequestsMessage()
             => SeleniumHelper.NoRequestsMessage();

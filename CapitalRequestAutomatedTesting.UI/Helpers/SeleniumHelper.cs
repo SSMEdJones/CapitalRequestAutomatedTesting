@@ -570,7 +570,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
             };
         }
 
-        public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateDashboardCell(int dashboardOrder, string expectedName, DateTime? expectedDate)
+        public static Func<IWebDriver, Task<SeleniumStepResult>> ValidateDashboardCell(int dashboardOrder, string expectedName, DateTime? expectedDate, string? expectedIcon)
         {
             return async driver =>
             {
@@ -583,12 +583,18 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                     var cells = row.FindElements(By.CssSelector("td")).ToList();
                     int anchorIndex = -1;
 
-                    // Find the last fa-check-circle cell
+                    // Find the last fa-check-circle cell (up to 2 occurrences)
+                    int checkCircleCount = 0;
                     for (int i = 0; i < cells.Count; i++)
                     {
-                        if (cells[i].FindElements(By.CssSelector("i.fa-check-circle")).Any())
+                        if (cells[i].FindElements(By.CssSelector(Constants.CHECK_ICON_CLASS)).Any())
                         {
                             anchorIndex = i;
+                            checkCircleCount++;
+                            if (checkCircleCount == 2)
+                            {
+                                break;
+                            }
                         }
                     }
 
@@ -636,9 +642,14 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
                         if (!textParts.Contains(expectedDateStr))
                             issues.Add($"Expected date '{expectedDateStr}' not found in cell.");
 
-                        var hasInfoIcon = reviewCell.FindElements(By.CssSelector("i.fa-info-circle")).Any();
-                        if (!hasInfoIcon && dashboardOrder > 0)
+                        var hasInfoIcon = reviewCell.FindElements(By.CssSelector(Constants.INFO_ICON_CLASS)).Any();
+                        var hasCheckIcon = reviewCell.FindElements(By.CssSelector(Constants.CHECK_ICON_CLASS)).Any();
+
+                        if (!hasInfoIcon && dashboardOrder > 0 && expectedIcon == Constants.INFO_ICON_CLASS)
                             issues.Add("Expected info icon not found in reviewer cell.");
+
+                        if (!hasCheckIcon && dashboardOrder > 0 && expectedIcon == Constants.CHECK_ICON_CLASS)
+                            issues.Add("Verfied info icon not found in reviewer cell.");
 
                         if (issues.Any())
                         {
@@ -852,6 +863,7 @@ namespace CapitalRequestAutomatedTesting.UI.Helpers
         //                    break;
         //                }
         //            }
+        //        }
         //        catch (Exception ex)
         //        {
         //            return new SeleniumStepResult

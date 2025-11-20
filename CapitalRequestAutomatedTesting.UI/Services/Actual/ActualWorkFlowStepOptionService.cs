@@ -13,6 +13,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         //Task<List<WorkflowStepOption>> GetRequestTypeClosedWorkflowStepOptionAsync(vm.Proposal proposal);
         Task<List<WorkflowStepOption>> GetClosedWorkflowStepOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId);
         Task<List<WorkflowStepOption>> GetReOpenedOptionsAsync(string optionType, vm.Proposal proposal);
+        Task<List<WorkflowStepOption>> GetNextStepWorkflowStepOptionsAsync(vm.Proposal proposal);
 
     }
     public class ActualWorkflowStepOptionService : IActualWorkflowStepOptionService
@@ -31,7 +32,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
             _actualWorkflowStepService = actualWorkflowStepService;
-
             _mapper = mapper;
         }
 
@@ -137,6 +137,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         {
             var workflowStep = await _actualWorkflowStepService.GetWorkflowStepAsync(proposal);
             var workflowStepOptionsViewModels = await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID);
+
+            var workflowStepOptions = workflowStepOptionsViewModels
+                .Select(x => _mapper.Map<WorkflowStepOption>(x))
+                .ToList();
+
+            return workflowStepOptions;
+        }
+
+        public async Task<List<WorkflowStepOption>> GetNextStepWorkflowStepOptionsAsync(vm.Proposal proposal)
+        {
+            var workflowStep = await _actualWorkflowStepService.GetWorkflowStepAsync(proposal);
+            var workflowStepOptionsViewModels = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                .Where(x => !x.IsTerminate && !x.IsComplete);
 
             var workflowStepOptions = workflowStepOptionsViewModels
                 .Select(x => _mapper.Map<WorkflowStepOption>(x))

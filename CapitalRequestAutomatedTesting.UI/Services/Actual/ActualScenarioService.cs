@@ -1,4 +1,6 @@
 using AutoMapper;
+using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
@@ -7,6 +9,7 @@ using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
+using SSMWorkflow.API.DataAccess.Models;
 using System.Reflection;
 using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
 
@@ -25,6 +28,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private readonly IFormDataContext _formDataContext;
         private readonly IWebHostEnvironment _environment;
         private readonly IActualReviewerGroupService _actualReviewerGroupService;
+        private readonly IActualWorkflowStepService _actualWorkflowStepService;
         private readonly IMapper _mapper;
 
         public ActualScenarioService(ICapitalRequestServices capitalRequestServices,
@@ -33,6 +37,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             IFormDataContext formDataContext,
             IWebHostEnvironment environment,
             IActualReviewerGroupService actualReviewerGroupService,
+            IActualWorkflowStepService actualWorkflowStepService,
             IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
@@ -41,6 +46,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _formDataContext = formDataContext;
             _environment = environment;
             _actualReviewerGroupService = actualReviewerGroupService;
+            _actualWorkflowStepService = actualWorkflowStepService;
             _mapper = mapper;
 
         }
@@ -388,8 +394,189 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
             else if (scenarioId == "SCN003")
             {
-                // stubbed for future scenario
+                var optionType = Constants.OPTION_TYPE_VERIFY;
 
+                var workflowStep = proposal.WorkflowStep;
+                var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter());
+                var currentStepNumber = workflowTemplates
+                    .Where(x => x.StepName == workflowStep.StepName)
+                    .First()
+                    .StepNumber;
+
+                var nextStepNumber = currentStepNumber + 1;
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowStepOptionService",
+                        MethodName = "GetClosedWorkflowStepOptionsAsync",
+                        Parameters = new List<object> { proposal, optionType, null },
+                        Operation = CrudOperationType.Update
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowStepResponderService",
+                        MethodName = "GetWorkflowStepResponderAsync",
+                        Parameters = new List<object> { proposal, optionType, optionType },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                actualMethods.Add(
+                    new ActualMethod
+                    {
+                        ServiceName = "IActualWorkflowInstanceHistoryService",
+                        MethodName = "GetWorkflowInstanceHistoryAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                if (await _actualWorkflowStepService.AllGroupsVerifiedAsync(proposal))
+                {
+                    actualMethods.Add(
+                        new ActualMethod
+                        {
+                            ServiceName = "IActualWorkflowStepService",
+                            MethodName = "GetMarkStepCompleteAsync",
+                            Parameters = new List<object> { proposal },
+                            Operation = CrudOperationType.Update
+                        }
+                    );
+
+                    if (!await _actualWorkflowStepService.AllStepsCompleteAsync(proposal))
+                    {
+                        var createStep = true;
+
+                        while (createStep)
+                        {
+                            var reviewerGroups = await _actualReviewerGroupService.GetFilteredReviewerGroupsAsync(nextStepNumber);
+                            var filteredReviewerGroups = _actualReviewerGroupService.FilterReviewerGroups(reviewerGroups, proposal, nextStepNumber);
+
+                            proposal.ReviewerGroups = filteredReviewerGroups;
+
+                            var workflowTemplate = workflowTemplates
+                                .Where(x => x.StepNumber == nextStepNumber)
+                                .FirstOrDefault();
+
+                            if (!proposal.VerifyAndSendToVPFinance)
+                            {
+                                if (workflowTemplate.Conditional != null && workflowTemplate.Conditional.IndexOf(".") > 0)
+                                {
+                                    var tableAndColumn = workflowTemplate.Conditional.Split(".");
+                                    if (tableAndColumn.Length > 0)
+                                    {
+                                        createStep = (bool)proposal.GetType().GetProperty(tableAndColumn[1]).GetValue(proposal, null);
+                                    }
+                                }
+                            }
+
+                            if (createStep)
+                            {
+                                CreateUpdateWorkFlowStep createWorkflowStep;
+
+                                proposal.WorkflowInstanceId = Guid.NewGuid();
+                                proposal.NextWorkflowStepId = Guid.NewGuid();
+                                proposal.NextStepName = workflowTemplates.FirstOrDefault(x => x.StepNumber == nextStepNumber).StepName;
+
+                                actualMethods.Add(
+                                    new ActualMethod
+                                    {
+                                        ServiceName = "IActualWorkflowStepService",
+                                        MethodName = "GetNextStepCreatedAsync",
+                                        Parameters = new List<object> { proposal },
+                                        Operation = CrudOperationType.Insert
+                                    }
+                                );
+
+                                actualMethods.Add(
+                                    new ActualMethod
+                                    {
+                                        ServiceName = "IActualWorkflowSakeholderService",
+                                        MethodName = "GetNextStepWorkflowStakeholdersAsync",
+                                        Parameters = new List<object> { proposal },
+                                        Operation = CrudOperationType.Insert
+                                    }
+                                );
+
+                                actualMethods.Add(
+                                    new ActualMethod
+                                    {
+                                        ServiceName = "IActualWorkflowStepOptionService",
+                                        MethodName = "GetNextStepWorkflowStepOptionsAsync",
+                                        Parameters = new List<object> { proposal },
+                                        Operation = CrudOperationType.Insert
+                                    }
+                                );
+                                //left off here need to create method
+                                actualMethods.Add(
+                                    new ActualMethod
+                                    {
+                                        ServiceName = "IActualWorkflowStepOptionService",
+                                        MethodName = "GetNextStepWorkflowInstanceHistoryAsync",
+                                        Parameters = new List<object> { proposal },
+                                        Operation = CrudOperationType.Insert
+                                    }
+                                );
+
+
+
+
+
+                                //predictiveMethods.Add(
+                                //    new PredictiveMethod
+                                //    {
+                                //        ServiceName = "IPredictiveWorkflowInstanceHistoryService",
+                                //        MethodName = "CreateNextStepWorkflowInstanceHistoryAsync",
+                                //        Parameters = new List<object> { proposal },
+                                //        Operation = CrudOperationType.Insert
+                                //    }
+                                //);
+
+                                //if (!string.IsNullOrWhiteSpace(workflowTemplate.AdditionalTask))
+                                //{
+                                //    if (workflowTemplate.AdditionalTask == Constants.ADDITIONAL_TASK_CREATE_WBS_NUMBERS)
+                                //    {
+                                //        predictiveMethods.Add(
+                                //            new PredictiveMethod
+                                //            {
+                                //                ServiceName = "IPredictiveWbsService",
+                                //                MethodName = "CreateWBSNumbersAsync",
+                                //                Parameters = new List<object> { proposal },
+                                //                Operation = CrudOperationType.Update
+                                //            }
+                                //        );
+                                //        //public void CreateWBSNumbers(vm.Proposal proposal, AuthUser authUser)
+                                //        //{
+                                //        //    var WBSNumbers = _WBSRepo.CreateWBSNumbers(proposal.Id);
+                                //        //    WBSNumbers.ToList()
+                                //        //        .ForEach(x =>
+                                //        //        {
+                                //        //            x.Updated = DateTime.Now;
+                                //        //            x.UpdatedBy = authUser.User_Id;
+                                //        //            _WBSRepo.UpdateWBS(x);
+                                //        //        });
+
+                                //        //    return;
+                                //        //}
+                                //    }
+                                //}
+
+                                break;
+                            }
+                            else
+                            {
+                                nextStepNumber++;
+                            }
+
+
+
+                        }
+                    }
+
+                }
             }
             else if (scenarioId == "SCN004")
             {

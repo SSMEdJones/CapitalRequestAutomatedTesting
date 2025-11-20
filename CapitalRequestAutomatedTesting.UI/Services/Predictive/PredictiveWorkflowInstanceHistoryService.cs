@@ -14,18 +14,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
     {
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
-        private readonly IPredictiveWorkflowStepService _predictiveWorkflowStepService;
         private readonly IMapper _mapper;
 
         public PredictiveWorkflowInstanceHistoryService(
             ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
-            IPredictiveWorkflowStepService predictiveWorkflowStepService,
             IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
-            _predictiveWorkflowStepService = predictiveWorkflowStepService;
             _mapper = mapper;
         }
 

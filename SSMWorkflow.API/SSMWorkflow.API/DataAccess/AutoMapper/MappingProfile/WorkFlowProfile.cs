@@ -64,6 +64,7 @@ namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
 
 
             CreateMap<WorkFlowInstanceActionHistoryViewModel, CreateUpdateWorkFlowInstanceActionHistory>();
+            CreateMap<WorkFlowInstanceActionHistoryViewModel, WorkflowInstanceActionHistory>();
             CreateMap<CreateUpdateWorkFlowInstanceActionHistory, WorkflowInstanceActionHistory>();
             CreateMap<API.Models.Dashboard, Models.Dashboard>();
             CreateMap<Models.Dashboard, API.Models.Dashboard>();

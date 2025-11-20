@@ -1,5 +1,6 @@
 using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
+using CapitalRequestAutomatedTesting.UI.Models;
 using SSMWorkflow.API.DataAccess.Models;
 using vm = CapitalRequest.API.Models;
 
@@ -8,16 +9,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
     public interface IActualWorkflowStakeHolderService
     {
         Task<List<WorkflowStakeholder>> GetWorkflowStakeHoldersAsync(vm.Proposal proposal);
+        Task<List<WorkflowStakeholder>> GetNextStepWorkflowStakeholdersAsync(vm.Proposal proposal);
     }
     public class ActualWorkflowStakeHolderService : IActualWorkflowStakeHolderService
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
+        private readonly ICapitalRequestServices _capitalRequestServices;
+
         private IMapper _mapper;
 
-        public ActualWorkflowStakeHolderService(ISSMWorkflowServices ssmWorkFlowStepServices,
+        public ActualWorkflowStakeHolderService(
+            ISSMWorkflowServices ssmWorkFlowStepServices,
+            ICapitalRequestServices capitalRequestServices,
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkFlowStepServices;
+            _capitalRequestServices = capitalRequestServices;
             _mapper = mapper;
         }
 
@@ -32,6 +39,54 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return workflowStakeHolders;
         }
 
+        public async Task<List<WorkflowStakeholder>> GetNextStepWorkflowStakeholdersAsync(vm.Proposal proposal)
+        {
+            var workflowStakeHolders = new List<WorkflowStakeholder>();
+
+            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                .FirstOrDefault(x => !x.IsComplete);
+
+            var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(
+                    new CapitalRequest.API.DataAccess.Models.WorkflowTemplateSearchFilter()
+                );
+
+            var currentStepNumber = workflowTemplates.FirstOrDefault(x => x.StepName == workflowStep.StepName).StepNumber;
+            var previousStepNumber = currentStepNumber - 1;
+            //var previousStep = workflowTemplates
+            //    .FirstOrDefault(x => x.StepNumber == previousStepNumber);
+
+            var allGroups = await _capitalRequestServices.GetAllReviewerGroups(
+                new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter
+                {
+                    ReviewerType = Constants.REVIEW_TYPE_REVIEW
+                });
+
+            var previousStepGroups = allGroups
+                .Where(x => x.StepNumber == previousStepNumber)
+                .ToList();
+
+            var workFlowStakeholderViewModels = (await _ssmWorkflowServices.GetAllWorkFlowStakeholders(proposal.WorkflowId))
+                .Where(x => x.WorkflowID == proposal.WorkflowId)
+                .ToList();
+
+
+            workFlowStakeholderViewModels.ForEach(x =>
+            {
+                var Name = x.Stakeholder;
+                if (previousStepGroups.Any(g => g.Name == Name))
+                {
+                    return;
+
+                }
+
+                workflowStakeHolders.Add(_mapper.Map<WorkflowStakeholder>(x));
+            });
+
+            return workflowStakeHolders;
+        }
+
 
     }
+
+   
 }

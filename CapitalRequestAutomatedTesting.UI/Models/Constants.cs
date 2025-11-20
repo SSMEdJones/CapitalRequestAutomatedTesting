@@ -98,6 +98,10 @@ namespace CapitalRequestAutomatedTesting.UI.Models
         public const string DASHBOARD_STATUS_CLEAR = " ";
         public const string DASHBOARD_STATUS_SUBMITTED = " ";
 
+        public const string CHECK_ICON_CLASS = "i.fa-check-circle";
+        public const string INFO_ICON_CLASS = "i.fa-info-circle";
+
+
         //Access Maintenance
         public const string APPLICATION_ROLE_NAME_ADMIN = "Admin";
         public const string APPLICATION_ROLE_NAME_SYSTEM = "System";

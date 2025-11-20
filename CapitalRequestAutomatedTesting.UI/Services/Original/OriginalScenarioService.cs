@@ -62,14 +62,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Original
 
         public async Task<ScenarioDataViewModel> GenerateScenarioDataAsync(ScenarioDetailsViewModel scenarioDetail)
         {
+            //TODO pick back up when time allows, for now focus is on completing scenarios
             var scenarioDataViewModel = new ScenarioDataViewModel();
             var scenarioId = scenarioDetail.ScenarioId;
 
-            var methods = await GetScenarioMethodsAsync(scenarioDetail);
-            scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
+            //var methods = await GetScenarioMethodsAsync(scenarioDetail);
+            //scenarioDataViewModel = await ExecuteScenarioMethodsAsync(methods, scenarioDetail);
 
-            scenarioDataViewModel.ScenarioId = scenarioId;
-            scenarioDataViewModel.IsOriginalData = true;
+            //scenarioDataViewModel.ScenarioId = scenarioId;
+            //scenarioDataViewModel.IsOriginalData = true;
 
             return scenarioDataViewModel;
         }

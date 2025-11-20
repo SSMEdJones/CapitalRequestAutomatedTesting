@@ -133,6 +133,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualWorkflowInstanceService, ActualWorkflowInstanceService>();
             services.AddScoped<IActualWorkflowStakeHolderService, ActualWorkflowStakeHolderService>();
             services.AddScoped<IActualReviewerGroupService, ActualReviewerGroupService>();
+            services.AddScoped<IActualWorkflowInstanceHistoryService, ActualWorkflowInstanceHistoryService>();
 
 
             #endregion
