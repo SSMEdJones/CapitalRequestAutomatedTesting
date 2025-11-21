@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.Models;
@@ -15,12 +15,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
     public class ActualWorkflowStepResponderService : IActualWorkflowStepResponderService
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
+        private readonly ICapitalRequestServices _capitalRequestServices;
+
         private IMapper _mapper;
 
         public ActualWorkflowStepResponderService(ISSMWorkflowServices ssmWorkflowServices,
+            ICapitalRequestServices capitalRequestServices,
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
+            _capitalRequestServices = capitalRequestServices;
             _mapper = mapper;
         }
 
@@ -32,9 +36,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var workflowStepResponders = await _ssmWorkflowServices.GetAllAddWorkFlowStepResponder(workflowStep.WorkflowStepID);
             var workflowStepOption = GetWorkflowStepOption(proposal, optionType);
 
-            var reviewerGroupId = responderType == Constants.ACTION_TYPE_REQUEST
-                ? proposal.RequestingGroupId
-                : proposal.ReviewerGroupId;
+            var reviewerGroupId = proposal.VerifyingGroupId != 0
+                    ? proposal.VerifyingGroupId
+                    : responderType == Constants.ACTION_TYPE_REQUEST
+                        ? proposal.RequestingGroupId
+                        : proposal.ReviewerGroupId;
+
 
             var durationMinutes = proposal.ExecutionDurationMinutes ?? 3;
 
@@ -62,7 +69,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             var isTerminated = false;
 
-            var reviewerGroupId = optionType == Constants.ACTION_TYPE_ADD_INFO ? proposal.ReviewerGroupId : proposal.RequestingGroupId;
+            var reviewerGroupId = proposal.VerifyingGroupId != 0
+                    ? proposal.VerifyingGroupId
+                    : optionType == Constants.ACTION_TYPE_ADD_INFO
+                        ? proposal.ReviewerGroupId
+                        : proposal.RequestingGroupId;
+
             if (workflowStepOptions.Any())
             {
                 var optionsByGroup = workflowStepOptions

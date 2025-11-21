@@ -326,7 +326,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         IsComplete = !isActiveOption ? false : true,
                         IsTerminate = isActiveOption ? false : true,
                         Updated = DateTime.Now,
-                        UpdatedBy = proposal.Reviewer.Email.ToLower()
+                        UpdatedBy = proposal.Reviewer.UserId
 
                     };
                 }

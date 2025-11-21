@@ -39,6 +39,12 @@ namespace CapitalRequestAutomatedTesting.UI.Models
         public const string RESPONSE_RESENT = "Email sent to all active reviewers.";
         public const string RESPONSE_VERIFY_WBS = "Verified WBS";
 
+
+        //Button Actions
+        public const string BUTTON_ACTION_REQUEST_MORE_INFORMATION = "Requested More Information";
+        public const string BUTTON_ACTION_RETURN_MORE_INFORMATION = "Returned Requested Information";
+        public const string BUTTON_ACTION_VERIFY_PROJECT = "Verify Project";
+
         //New Step 
         public const string STEP_ACTION_ADDED = "Added step";
 

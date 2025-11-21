@@ -166,7 +166,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             // Resolve service type
             if (serviceName == $"{nameSpace}IPredictiveRequestedInfoService")
                 serviceType = typeof(IPredictiveRequestedInfoService);
-            if (serviceName == $"{nameSpace}IPredictiveProvidedInfoService")
+            else if (serviceName == $"{nameSpace}IPredictiveProvidedInfoService")
                 serviceType = typeof(IPredictiveProvidedInfoService);
             else if (serviceName == $"{nameSpace}IPredictiveWorkflowStepResponderService")
                 serviceType = typeof(IPredictiveWorkflowStepResponderService);
@@ -176,8 +176,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 serviceType = typeof(IPredictiveWorkflowStepService);
             else if (serviceName == $"{nameSpace}IPredictiveEmailNotificationService")
                 serviceType = typeof(IPredictiveEmailNotificationService);
-            else if (serviceName == $"{nameSpace}IPredictiveScenarioService")
-                serviceType = typeof(IPredictiveScenarioService);
             else if (serviceName == $"{nameSpace}IPredictiveAttachmentService")
                 serviceType = typeof(IPredictiveAttachmentService);
             else if (serviceName == $"{nameSpace}IPredictiveWorkflowService")
@@ -186,6 +184,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 serviceType = typeof(IPredictiveWorkflowInstanceService);
             else if (serviceName == $"{nameSpace}IPredictiveWorkflowStakeHolderService")
                 serviceType = typeof(IPredictiveWorkflowStakeHolderService);
+            else if (serviceName == $"{nameSpace}IPredictiveWorkflowInstanceHistoryService")
+                serviceType = typeof(IPredictiveWorkflowInstanceHistoryService);
+            else if (serviceName == $"{nameSpace}IPredictiveWbsService")
+                serviceType = typeof(IPredictiveWbsService);
 
             if (serviceType == null)
             {
@@ -705,16 +707,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
 
                         }
-                        //
-                        predictiveMethods.Add(
-                            new PredictiveMethod
-                            {
-                                ServiceName = "IPredictiveWorkflowStepService",
-                                MethodName = "CreateNextStepAsync",
-                                Parameters = new List<object> { proposal },
-                                Operation = CrudOperationType.Insert
-                            }
-                        );
 
                         predictiveMethods.Add(
                             new PredictiveMethod
@@ -727,11 +719,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         );
 
                     }
-
-
-
                 }
-
             }
             else if (scenarioId == "SCN004")
             {

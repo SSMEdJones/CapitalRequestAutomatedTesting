@@ -2,6 +2,7 @@ namespace CapitalRequest.API.DataAccess.Models
 {
     public class ProposalSearchFilter
     {
+        public int? CapitalFundingYear { get; set; }
         public string? ProjectName { get; set; }
         public int? Region { get; set; }
         public int? SegmentId { get; set; }

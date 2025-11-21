@@ -18,23 +18,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         Task<List<EmailNotification>> CreateEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser);
         Task<List<EmailNotification>> CreateSubmitEmailNotificationsAsync(vm.Proposal proposal);
         Task<string> GenerateEmailMessageAsync(vm.EmailTemplate emailTemplate, vm.Reviewer reviewer, vm.ReviewerGroup requestingGroup, vm.Proposal proposal);
+        Task<List<EmailNotification>> CreateNextStepEmailNotificationsAsync(vm.Proposal proposal);
         string GenerateActionString(vm.ReviewerGroup reviewerGroup, vm.ReviewerGroup requestingGroup, string emailActionTemplate, string fullName, string requestingUser);
     }
     public class PredictiveEmailNotificationService : IPredictiveEmailNotificationService
     {
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
+        private readonly IPredictiveWorkflowStepService _predictiveWorkflowStepService;        
         private readonly SSMWorkFlowSettings _ssmWorkFlowSettings;
         private readonly IMapper _mapper;
 
         public PredictiveEmailNotificationService(
             ISSMWorkflowServices ssmWorkflowServices,
             ICapitalRequestServices capitalRequestServices,
+            IPredictiveWorkflowStepService predictiveWorkflowStepService,
             IOptionsMonitor<SSMWorkFlowSettings> ssmWorkFlowSettings,
             IMapper mapper)
         {
             _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
+            _predictiveWorkflowStepService = predictiveWorkflowStepService;
             _ssmWorkFlowSettings = ssmWorkFlowSettings.CurrentValue;
             _mapper = mapper;
         }
@@ -129,6 +133,94 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 emailNotifications.Add(emailNotification);
             };
+
+            return emailNotifications;
+        }
+
+
+        public async Task<List<EmailNotification>> CreateNextStepEmailNotificationsAsync(vm.Proposal proposal)
+        {
+            var emailNotifications = new List<EmailNotification>();
+            var nextWorkflowStep = await _predictiveWorkflowStepService.CreateNextStepAsync(proposal);
+
+            var workflowTemplate = (await _capitalRequestServices
+                .GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = nextWorkflowStep.StepName }))
+                .FirstOrDefault();
+
+            var stepNumber = workflowTemplate.StepNumber;
+
+            var reviewerGroups = proposal.ReviewerGroups
+                .Where(x => x.StepNumber == stepNumber)
+                .ToList();
+
+            foreach (var reviewerGroup in reviewerGroups)
+            {
+                var reviewerGroupdId = reviewerGroup.Id;
+                var reviewers = (await GetReviewers(proposal))
+                    .Where(x => x.ReviewerGroupId == reviewerGroupdId)
+                    .OrderBy(x => x.Email)
+                    .Select(z => _mapper.Map<vm.Reviewer>(z))
+                    .ToList();
+
+                foreach (var reviewer in reviewers)
+                {
+                    //var emailActionTemplate = workflowTemplate.StepName;
+                    var fullName = reviewer.FullName;
+
+                    //var action = emailActionTemplate;
+
+                    var emailTemplateId = (int)reviewerGroup.EmailTemplateId;
+
+                    var emailTemplate = await _capitalRequestServices.GetEmailTemplate(emailTemplateId);
+
+                    if (emailTemplate.Priority == Constants.EMAIL_PRIORITY_NORMAL)
+                    {
+                        var existing = emailNotifications.FirstOrDefault(x =>
+                            x.Priority == Constants.EMAIL_PRIORITY_NORMAL &&
+                            x.ReviewerGroupId == reviewerGroupdId.ToString());
+
+                        if (existing != null)
+                        {
+                            existing.Recipients += $", {reviewer.Email}";
+                            continue;
+                        }
+                    }
+
+                    var emailMessage = await GenerateEmailMessageAsync(emailTemplate, reviewer, proposal);
+
+                    var emallQueryViewModel = new EmailQueryViewModel
+                    {
+                        EmailTemplateId = reviewerGroup.EmailTemplateId.ToString(),
+                        ReviewerGroupId = reviewerGroup.Id.ToString(),
+                        Action = "",
+                        OptionId = null,
+                        RequestedInfoId = null
+                    };
+
+                    var emailQuery = GenerateEmailQuery(emallQueryViewModel);
+                    var emailNotification = new EmailNotification
+                    {
+                        WorkflowStepId = Guid.Empty,
+                        WorkflowName = proposal.ProjectName,
+                        WorkflowDescription = proposal.ProjectDescription,
+                        WorkflowState = workflowTemplate.StepName,
+                        StepName = workflowTemplate.StepName,
+                        StepDescription = workflowTemplate.StepDescription,
+                        Action = workflowTemplate.StepDescription,
+                        EmailMessage = emailMessage,
+                        Recipients = reviewer.Email,
+                        Subject = emailTemplate.Subject,
+                        Priority = emailTemplate.Priority,
+                        EmailQuery = emailQuery,
+                        ReviewerGroupId = reviewerGroupdId.ToString(),
+                        Created = DateTime.Now
+                    };
+
+                    emailNotifications.Add(emailNotification);
+
+                }
+
+            }
 
             return emailNotifications;
         }

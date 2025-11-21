@@ -1,59 +1,28 @@
 using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
-using CapitalRequestAutomatedTesting.UI.Models;
 using Microsoft.Extensions.Options;
 using SSMWorkflow.API.DataAccess.ConfigurationSettings;
-using SSMWorkflow.API.DataAccess.Models;
-using SSMWorkflow.API.Models;
-using System.Diagnostics;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 {
     public interface IPredictiveWbsService
     {
-        Workflow CreateWorkflow(vm.Proposal proposal);
+        Task<List<vm.Wbs>> CreateWBSNumbersAsync(vm.Proposal proposal);
     }
     public class PredictiveWbsService : IPredictiveWbsService
     {
-        private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
-        private readonly IUserContextService _userContextService;
-        private readonly SSMWorkFlowSettings _ssmWorkFlowSettings;
 
-        private readonly IMapper _mapper;
 
-        public PredictiveWbsService(
-            ISSMWorkflowServices ssmWorkflowServices,
-            ICapitalRequestServices capitalRequestServices,
-            IUserContextService userContextService,
-            IOptionsMonitor<SSMWorkFlowSettings> ssmWorkFlowSettings,
-            IMapper mapper)
+        public PredictiveWbsService(ICapitalRequestServices capitalRequestServices)
         {
-            _ssmWorkflowServices = ssmWorkflowServices;
             _capitalRequestServices = capitalRequestServices;
-            _userContextService = userContextService;
-            _ssmWorkFlowSettings = ssmWorkFlowSettings.CurrentValue;
-            _mapper = mapper;
-        }
-
-        public Workflow CreateWorkflow(vm.Proposal proposal)
-        {
-            // Resolve WorkflowOptionId
-            var workflow = _mapper.Map<Workflow>(proposal);
-
-            workflow.StakeholderNotificationType = Constants.STAKE_HOLDER_NOTIFICATION_TYPE;
-            workflow.CompleteMessage = Constants.COMPLETE_MESSAGE;
-            workflow.CancelledMessage = Constants.CANCELLED_MESSAGE;
-            workflow.ProjectReviewLink = _ssmWorkFlowSettings.ProjectReviewLink;
-
-            return workflow;
         }
 
         public async Task<List<vm.Wbs>> CreateWBSNumbersAsync(vm.Proposal proposal)
         {
-
             proposal.WBSList = await _capitalRequestServices.GetAllWbss(
             new WbsSearchFilter
             {
@@ -75,7 +44,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         {
             var proposalId = proposal.Id;
             var allWBS = await _capitalRequestServices.GetAllWbss(new WbsSearchFilter());
-            var proposals = await _capitalRequestServices.GetAllProposals(new ProposalSearchFilter());
+            var proposals = await _capitalRequestServices.GetAllProposals(new ProposalSearchFilter { CapitalFundingYear = proposal.CapitalFundingYear });
             var projectTypes = await _capitalRequestServices.GetAllProjectTypes();
             var capitalPoolIdentifiers = await _capitalRequestServices.GetAllCapitalPoolIdentifiers();
             var capitalPools = await _capitalRequestServices.GetAllCapitalPools();
@@ -99,8 +68,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     w.ProposalId,
                     SortOrder = proposal.WBSList.OrderBy(y => y.Id).ToList().IndexOf(w) + 1,
                     w.TypeOfProject,
-                    CapitalPool = p.CapitalPool,
-                    CapitalPoolIdentifiers = p.CapitalPoolIdentifiers,
+                    p.CapitalPool,
+                    p.CapitalPoolIdentifiers,
                     WBSNumber = string.Join("-",
                         t.ShortName,
                         p.CompanyCode,

@@ -73,6 +73,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                 var response = await _capitalRequestSettings.BaseApiUrl
                      .AppendPathSegment("Proposal")
                      .SetQueryParam("ProjectName", filter.ProjectName)
+                     .SetQueryParam("CapitalFundingYear", filter.CapitalFundingYear)
                      .SetQueryParam("Region", filter.Region)
                      .SetQueryParam("SegmentId", filter.SegmentId)
                      .SetQueryParam("CapitalPool", filter.CapitalPool)

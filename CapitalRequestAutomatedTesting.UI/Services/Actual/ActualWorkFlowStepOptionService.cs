@@ -35,12 +35,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _mapper = mapper;
         }
 
+
+        //TODO new method or update existing but need to account for completed workflowOptions being pulled.
+
         public async Task<List<WorkflowStepOption>> GetClosedWorkflowStepOptionsAsync(vm.Proposal proposal, string optionType, int? requestedInfoId = null)
         {
             var workflowStep = proposal.WorkflowStep;
 
             //TODO Verify which reviewer group to use
-            var reviewerGroupId = requestedInfoId == null ? proposal.RequestingGroupId : proposal.ReviewerGroupId;
+            var reviewerGroupId = proposal.VerifyingGroupId != 0
+                ? proposal.VerifyingGroupId
+                : requestedInfoId == null
+                    ? proposal.RequestingGroupId
+                    : proposal.ReviewerGroupId;
 
                 // Get all workflow step options with appropriate filtering
             var allOptionsQuery = proposal.WorkflowStepOptions

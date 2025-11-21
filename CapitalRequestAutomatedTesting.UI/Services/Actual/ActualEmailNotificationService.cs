@@ -1,5 +1,6 @@
 using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Extensions;
 using CapitalRequestAutomatedTesting.UI.Helpers;
@@ -21,6 +22,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
     {
 
         Task<List<EmailNotification>> GetEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser);
+        Task<List<EmailNotification>> GetNextStepEmailNotificationsAsync(vm.Proposal proposal, ScenarioDetailsViewModel? scenarioDetail);
         Task<List<EmailNotification>> GetSubmitEmailNotificationsAsync(vm.Proposal proposal, ScenarioDetailsViewModel scenarioDetail);
 
         List<EmailNotification> FilterEmailNotifications(
@@ -36,16 +38,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
     {
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
+        private readonly IActualWorkflowStepService _actualWorkflowStepService;
         private readonly SSMWorkFlowSettings _ssmWorkFlowSettings;
         private readonly IMapper _mapper;
 
         public ActualEmailNotificationService(ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
+            IActualWorkflowStepService actualWorkflowStepService,
             IOptionsMonitor<SSMWorkFlowSettings> ssmWorkFlowSettings,
             IMapper mapper)
         {
             _capitalRequestServices = capitalRequestServices;
             _ssmWorkflowServices = ssmWorkflowServices;
+            _actualWorkflowStepService = actualWorkflowStepService;
             _ssmWorkFlowSettings = ssmWorkFlowSettings.CurrentValue;
             _mapper = mapper;
         }
@@ -58,6 +63,344 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var relevantNotifications = EmailNotifcationHelper.FilterRelevantNotifications(allNotifications, emailTemplateId, reviewerGroupId, requestedInfoId);
 
             return relevantNotifications;
+        }
+
+        public async Task<List<EmailNotification>> GetEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser)
+        {
+            var workflowStep = proposal.WorkflowStep;
+            var workflowStepId = workflowStep.WorkflowStepID;
+
+            var reviewerGroupdId = 0;
+            var requestingGroupId = 0;
+            var reviewerGroup = new vm.ReviewerGroup();
+            var requestingGroup = new vm.ReviewerGroup();
+            var reviewers = new List<vm.Reviewer>();
+            var fullName = string.Empty;
+
+            if (emailType != Constants.EMAIL_INITIAL_EMAIL)
+            {
+                reviewerGroupdId = proposal.ReviewerGroupId;
+                requestingGroupId = proposal.RequestingGroupId;
+
+                reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
+                requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
+                reviewers = (await GetReviewers(proposal))
+                     .Where(x => x.ReviewerGroupId == reviewerGroupdId)
+                     .Select(z => _mapper.Map<vm.Reviewer>(z))
+                     .ToList();
+
+                fullName = proposal.Reviewer.FullName;
+            }
+
+            var emailTemplate = (await _capitalRequestServices
+                    .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = emailType }))
+                    .FirstOrDefault();
+
+            var workflowTemplate = (await _capitalRequestServices
+                    .GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep.StepName }))
+                    .FirstOrDefault();
+
+            var emailTemplateType = emailType == Constants.EMAIL_REQUEST_MORE_INFORMATION
+                ? Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION
+                : emailType == Constants.EMAIL_TEMPLATE_RETURN_OF_REQUESTED_INFORMATION
+                    ? Constants.EMAIL_INITIAL_EMAIL
+                    : Constants.EMAIL_TEMPLATE_INITIAL_EMAIL;
+
+
+            //var action = EmailNotifcationHelper.GenerateActionString(reviewerGroup.Name, requestingGroup.Name, emailTemplateType, fullName, requestingUser);
+            var action = string.Empty;
+            if (emailType == Constants.EMAIL_INITIAL_EMAIL)
+            {
+                action = Constants.EMAIL_TEMPLATE_INITIAL_EMAIL;
+            }
+            else
+            {
+                action = EmailNotifcationHelper.GenerateActionString(reviewerGroup, requestingGroup, emailTemplateType, fullName, requestingUser);
+            }
+
+            var emallQueryViewModel = new EmailQueryViewModel
+            {
+                WorkflowStepId = workflowStep.WorkflowStepID.ToString(),
+                EmailTemplateId = emailTemplate.Id.ToString(),
+                ReviewerGroupId = requestingGroupId.ToString(),
+                Action = action,
+                OptionId = proposal.RequestedInfo.WorkflowStepOptionId != null ? $"'{proposal.RequestedInfo.WorkflowStepOptionId}'" : "NULL",
+                RequestedInfoId = proposal.RequestedInfo.Id.ToString()
+            };
+
+            var emailNotifications = new List<EmailNotification>();
+
+            var allEmailNotifications = (await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId }))
+                .Where(x => x.Created.HasValue && x.Created.Value.Date == DateTime.Now.Date)
+                .ToList();
+
+            var durationMinutes = proposal.ExecutionDurationMinutes + 5 ?? 3;
+            if (emailType != Constants.EMAIL_REQUEST_MORE_INFORMATION)
+            {
+                reviewerGroupdId = requestingGroupId;
+                reviewers = (await GetReviewers(proposal))
+                     .Where(x => x.ReviewerGroupId == reviewerGroupdId)
+                     .Select(z => _mapper.Map<vm.Reviewer>(z))
+                     .ToList();
+            }
+
+            var relevantNotifications = new List<EmailNotification>();
+
+            if (emailType == Constants.EMAIL_INITIAL_EMAIL)
+            {
+                relevantNotifications = allEmailNotifications
+                    .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
+                                x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, durationMinutes))
+                    .ToList();
+
+            }
+            else
+            {
+                relevantNotifications = allEmailNotifications
+                    .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
+                                x.EmailQueryDetails.EmailTemplateId == emailTemplate.Id.ToString() &&
+                                x.EmailQueryDetails.ReviewerGroupId == reviewerGroupdId.ToString() &&
+                                x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString() &&
+                                x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, durationMinutes))
+                    .ToList();
+
+            }
+
+            emailNotifications = (from data in relevantNotifications
+                                  from recipient in data.Recipients.Split(',')
+                                  join reviewer in reviewers on recipient.Trim() equals reviewer.Email
+                                  select data)
+                        .Distinct()
+                        .ToList();
+
+            return emailNotifications;
+        }
+
+        public async Task<List<EmailNotification>> GetNextStepEmailNotificationsAsync(vm.Proposal proposal, ScenarioDetailsViewModel? scenarioDetail)
+        {
+            //var workflowStep = proposal.WorkflowStep;
+            var workflowID = proposal.WorkflowId;
+            var workflowStep = await _actualWorkflowStepService.GetNextStepCreatedAsync(proposal);
+            var workflowStepId = workflowStep.WorkflowStepID;
+
+            var emailNotifications = await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId });
+
+            var notifications = new List<EmailNotification>();
+            var emailQuery = string.Empty;
+
+
+            var workflowTemplate = (await _capitalRequestServices
+                .GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep.StepName }))
+                .FirstOrDefault();
+
+            var stepNumber = workflowTemplate.StepNumber;
+
+            var reviewerGroups = proposal.ReviewerGroups
+                .Where(x => x.StepNumber == stepNumber)
+                .ToList();
+
+            foreach (var reviewerGroup in proposal.ReviewerGroups)
+            {
+                var reviewerGroupdId = reviewerGroup.Id;
+                var reviewers = (await GetReviewers(proposal))
+                    .Where(x => x.ReviewerGroupId == reviewerGroupdId)
+                    .OrderBy(x => x.Email)
+                    .Select(z => _mapper.Map<vm.Reviewer>(z))
+                    .ToList();
+
+                foreach (var reviewer in reviewers)
+                {
+                    var emailActionTemplate = Constants.EMAIL_TEMPLATE_INITIAL_EMAIL;
+                    var fullName = reviewer.FullName;
+
+                    var action = emailActionTemplate;
+
+                    var emailTemplateId = (int)reviewerGroup.EmailTemplateId;
+                    var emailTemplate = new vm.EmailTemplate();
+
+                    emailTemplate = await _capitalRequestServices.GetEmailTemplate(emailTemplateId);
+
+                    if (emailTemplate.Priority == Constants.EMAIL_PRIORITY_NORMAL)
+                    {
+                        var existing = notifications.FirstOrDefault(x =>
+                            x.Priority == Constants.EMAIL_PRIORITY_NORMAL &&
+                            x.ReviewerGroupId == reviewerGroupdId.ToString());
+
+                        if (existing != null)
+                        {
+                            existing.Recipients += $", {reviewer.Email}";
+                            continue;
+                        }
+                    }
+
+                    var emailMessage = await GenerateEmailMessageAsync(emailTemplate, reviewer, proposal);
+
+                    var emallQueryViewModel = new EmailQueryViewModel
+                    {
+                        WorkflowStepId = workflowStepId.ToString(),
+                        EmailTemplateId = reviewerGroup.EmailTemplateId.ToString(),
+                        ReviewerGroupId = reviewerGroup.Id.ToString(),
+                        Action = "",
+                        OptionId = null,
+                        RequestedInfoId = null
+                    };
+
+                    emailQuery = GenerateEmailQuery(emallQueryViewModel);
+                    var emailNotification = new EmailNotification
+                    {
+                        WorkflowStepId = workflowStepId,
+                        WorkflowName = proposal.ProjectName,
+                        WorkflowDescription = proposal.ProjectDescription,
+                        WorkflowState = workflowStep.StepName,
+                        StepName = workflowStep.StepName,
+                        StepDescription = workflowStep.StepDescription,
+                        Action = workflowStep.StepDescription,
+                        EmailMessage = emailMessage,
+                        Recipients = reviewer.Email,
+                        Subject = emailTemplate.Subject,
+                        Priority = emailTemplate.Priority,
+                        EmailQuery = emailQuery,
+                        ReviewerGroupId = reviewerGroupdId.ToString(),
+                        Created = DateTime.Now
+                    };
+
+
+                    notifications.Add(emailNotification);
+
+                }
+
+            }
+            //TODO Refactor Create new backfill service required when there is no email
+            if (scenarioDetail != null)
+            {
+
+                //Update actualEmailNotifications ReviewerGroupId based on matches with Notifications
+                var notificationLookup = notifications
+                    .GroupBy(en => new
+                    {
+                        EmailMessage = en.EmailMessage?.Trim(),
+                        Recipients = en.Recipients?.Trim().ToLowerInvariant()
+                    })
+                    .ToDictionary(g => g.Key, g => g.First().ReviewerGroupId);
+
+                foreach (var emailNotification in emailNotifications)
+                {
+                    var key = new
+                    {
+                        EmailMessage = emailNotification.EmailMessage?.Trim(),
+                        Recipients = emailNotification.Recipients?.Trim().ToLowerInvariant()
+                    };
+
+                    if (notificationLookup.TryGetValue(key, out var reviewerGroupId))
+                    {
+                        emailNotification.ReviewerGroupId = reviewerGroupId;
+                    }
+                }
+
+                //Update Predictive EmailNotifications from actual data for later matching
+
+                var predictiveData = scenarioDetail.PredictiveData;
+                var tables = predictiveData.Tables;
+
+                // Make sure the table exists
+                if (tables.TryGetValue("EmailNotification", out var emailTable))
+                {
+                    // Get the first record's data and cast it
+                    var recordEntry = emailTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                    var predictiveNotifications = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.EmailNotification>;
+                    if (predictiveNotifications != null)
+                    {
+                        foreach (var email in predictiveNotifications)
+                        {
+                            email.EmailQuery = emailQuery;
+                            email.WorkflowStepId = workflowStepId;
+                        }
+                    }
+                }
+
+                if (tables.TryGetValue("WorkflowStep", out var stepTable))
+                {
+                    // Get the first record's data and cast it
+                    var recordEntry = stepTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                    var predictiveStep = recordEntry?.Data as SSMWorkflow.API.DataAccess.Models.WorkflowStep;
+                    if (predictiveStep != null)
+                    {
+                        predictiveStep.WorkflowID = workflowID;
+                    }
+                }
+
+                if (tables.TryGetValue("WorkflowStepOption", out var optionTable))
+                {
+                    // Get the first record's data and cast it
+                    var recordEntry = optionTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                    var predictiveOptions = recordEntry?.Data as List<SSMWorkflow.API.DataAccess.Models.WorkflowStepOption>;
+                    if (predictiveOptions != null)
+                    {
+                        foreach (var option in predictiveOptions)
+                        {
+                            option.WorkflowStepID = workflowStepId;
+                        }
+                    }
+                }
+
+                if (tables.TryGetValue("WorkflowInstance", out var instanceTable))
+                {
+                    // Get the first record's data and cast it
+                    var recordEntry = instanceTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                    var predictiveInstance = recordEntry?.Data as WorkflowInstance;
+                    if (predictiveInstance != null)
+                    {
+                        predictiveInstance.WorkflowID = workflowID;
+                        predictiveInstance.CurrentWorkflowStepID = workflowStepId;
+                        predictiveInstance.CurrentWorkflowState = workflowStep.StepName;
+                    }
+                }
+
+                if (tables.TryGetValue("WorkflowStakeHolder", out var holderTable))
+                {
+                    // Get the first record's data and cast it
+                    var recordEntry = holderTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+
+                    var predictiveHolders = recordEntry?.Data as List<WorkflowStakeholder>;
+                    if (predictiveHolders != null)
+                    {
+                        foreach (var holder in predictiveHolders)
+                        {
+                            holder.WorkflowID = workflowID;
+                        }
+                    }
+                }
+
+
+                if (tables.TryGetValue("WorkflowInstanceActionHistory", out var instanceHistoryTable))
+                {
+                    // Get the first record's data and cast it
+                    var recordEntry = instanceHistoryTable.Records.FirstOrDefault();
+                    Debug.WriteLine($"Data type: {recordEntry?.Data?.GetType().FullName}");
+                    var workflowInstanceActionHistory = recordEntry?.Data as WorkflowInstanceActionHistory;
+
+                    var predictiveInstanceHistory = recordEntry?.Data as WorkflowInstance;
+                    if (predictiveInstanceHistory != null)
+                    {
+                        
+                        predictiveInstanceHistory.WorkflowID = workflowID;
+                        predictiveInstanceHistory.WorkflowInstanceID = workflowInstanceActionHistory.WorkflowInstanceID;
+                        predictiveInstanceHistory.CurrentWorkflowStepID = workflowStepId;
+                        predictiveInstanceHistory.CurrentWorkflowState = workflowStep.StepName;
+                    }
+                }
+            }
+
+            return emailNotifications;
         }
 
         public async Task<List<EmailNotification>> GetSubmitEmailNotificationsAsync(vm.Proposal proposal, ScenarioDetailsViewModel? scenarioDetail)
@@ -118,7 +461,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     emailQuery = GenerateEmailQuery(emallQueryViewModel);
                     var emailNotification = new EmailNotification
                     {
-                        WorkflowStepId = Guid.Empty,
+                        WorkflowStepId = workflowStep.WorkflowStepID,
                         WorkflowName = proposal.ProjectName,
                         WorkflowDescription = proposal.ProjectDescription,
                         WorkflowState = workflowStep.StepName,
@@ -254,120 +597,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return emailNotifications;
 
         }
-
-
-
-        public async Task<List<EmailNotification>> GetEmailNotificationsAsync(vm.Proposal proposal, string emailType, string requestingUser)
-        {
-            var workflowStep = proposal.WorkflowStep;
-            var workflowStepId = workflowStep.WorkflowStepID;
-
-            var reviewerGroupdId = 0;
-            var requestingGroupId = 0;
-            var reviewerGroup = new vm.ReviewerGroup();
-            var requestingGroup = new vm.ReviewerGroup();
-            var reviewers = new List<vm.Reviewer>();
-            var fullName = string.Empty;
-
-            if (emailType != Constants.EMAIL_INITIAL_EMAIL)
-            {
-                reviewerGroupdId = proposal.ReviewerGroupId;
-                requestingGroupId = proposal.RequestingGroupId;
-
-                reviewerGroup = await _capitalRequestServices.GetReviewerGroup(reviewerGroupdId);
-                requestingGroup = await _capitalRequestServices.GetReviewerGroup(requestingGroupId);
-                reviewers = (await GetReviewers(proposal))
-                     .Where(x => x.ReviewerGroupId == reviewerGroupdId)
-                     .Select(z => _mapper.Map<vm.Reviewer>(z))
-                     .ToList();
-
-                fullName = proposal.Reviewer.FullName;
-            }
-
-            var emailTemplate = (await _capitalRequestServices
-                    .GetAllEmailTemplates(new EmailTemplateSearchFilter { Name = emailType }))
-                    .FirstOrDefault();
-
-            var workflowTemplate = (await _capitalRequestServices
-                    .GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep.StepName }))
-                    .FirstOrDefault();
-
-            var emailTemplateType = emailType == Constants.EMAIL_REQUEST_MORE_INFORMATION
-                ? Constants.EMAIL_TEMPLATE_REQUEST_MORE_INFORMATION
-                : emailType == Constants.EMAIL_TEMPLATE_RETURN_OF_REQUESTED_INFORMATION
-                    ? Constants.EMAIL_INITIAL_EMAIL
-                    : Constants.EMAIL_TEMPLATE_INITIAL_EMAIL;
-
-
-            //var action = EmailNotifcationHelper.GenerateActionString(reviewerGroup.Name, requestingGroup.Name, emailTemplateType, fullName, requestingUser);
-            var action = string.Empty;
-            if (emailType == Constants.EMAIL_INITIAL_EMAIL)
-            {
-                action = Constants.EMAIL_TEMPLATE_INITIAL_EMAIL;
-            }
-            else
-            {
-                action = EmailNotifcationHelper.GenerateActionString(reviewerGroup, requestingGroup, emailTemplateType, fullName, requestingUser);
-            }
-
-            var emallQueryViewModel = new EmailQueryViewModel
-            {
-                WorkflowStepId = workflowStep.WorkflowStepID.ToString(),
-                EmailTemplateId = emailTemplate.Id.ToString(),
-                ReviewerGroupId = requestingGroupId.ToString(),
-                Action = action,
-                OptionId = proposal.RequestedInfo.WorkflowStepOptionId != null ? $"'{proposal.RequestedInfo.WorkflowStepOptionId}'" : "NULL",
-                RequestedInfoId = proposal.RequestedInfo.Id.ToString()
-            };
-
-            var emailNotifications = new List<EmailNotification>();
-
-            var allEmailNotifications = (await _ssmWorkflowServices.GetAllEmailNotifications(new EmailNotificationSearchFilter { WorkflowStepId = workflowStepId }))
-                .Where(x => x.Created.HasValue && x.Created.Value.Date == DateTime.Now.Date)
-                .ToList();
-
-            var durationMinutes = proposal.ExecutionDurationMinutes + 5 ?? 3;
-            if (emailType != Constants.EMAIL_REQUEST_MORE_INFORMATION)
-            {
-                reviewerGroupdId = requestingGroupId;
-                reviewers = (await GetReviewers(proposal))
-                     .Where(x => x.ReviewerGroupId == reviewerGroupdId)
-                     .Select(z => _mapper.Map<vm.Reviewer>(z))
-                     .ToList();
-            }
-
-            var relevantNotifications = new List<EmailNotification>();
-
-            if (emailType == Constants.EMAIL_INITIAL_EMAIL)
-            {
-                relevantNotifications = allEmailNotifications
-                    .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
-                                x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, durationMinutes))
-                    .ToList();
-
-            }
-            else
-            {
-                relevantNotifications = allEmailNotifications
-                    .Where(x => x.EmailQueryDetails.WorkflowStepId == workflowStepId.ToString() &&
-                                x.EmailQueryDetails.EmailTemplateId == emailTemplate.Id.ToString() &&
-                                x.EmailQueryDetails.ReviewerGroupId == reviewerGroupdId.ToString() &&
-                                x.EmailQueryDetails.RequestedInfoId == proposal.RequestedInfo.Id.ToString() &&
-                                x.Created.HasValue && x.Created.Value.IsFuzzyMatch(DateTime.Now, durationMinutes))
-                    .ToList();
-
-            }
-
-            emailNotifications = (from data in relevantNotifications
-                                  from recipient in data.Recipients.Split(',')
-                                  join reviewer in reviewers on recipient.Trim() equals reviewer.Email
-                                  select data)
-                        .Distinct()
-                        .ToList();
-
-            return emailNotifications;
-        }
-
 
 
         public string NormalizeHtml(string html)

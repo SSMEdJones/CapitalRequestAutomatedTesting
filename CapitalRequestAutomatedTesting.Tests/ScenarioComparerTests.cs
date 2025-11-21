@@ -28,7 +28,7 @@ namespace CapitalRequestAutomatedTesting.Tests
         }
 
         [Fact]
-        public async Task CompareData_WithValidData_ReturnsScenarioComparisonResult()
+        public async Task CompareData_WithValidData_ReturnsScenario4ComparisonResult()
         {
 
             // Arrange
@@ -60,7 +60,42 @@ namespace CapitalRequestAutomatedTesting.Tests
             Assert.NotNull(result);
         }
 
+        //[Fact]
+        //public async Task CompareData_WithValidData_ReturnsScenario3ComparisonResult()
+        //{
 
+        //    // Arrange
+        //    int proposalId = 2959;
+        //    var proposal = await _capitalRequestServices.GetProposal(proposalId);
+
+        //    proposal.ReviewerGroupId = 4;
+
+        //    proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+        //        .Where(x => !x.IsComplete)
+        //        .FirstOrDefault();
+
+        //    var scenario = new ScenarioDetailsViewModel
+        //    {
+        //        ScenarioId = "SCN003",
+        //        ProposalId = proposalId,
+        //        VerifyingGroupId = 4,
+        //        ReviewerId = 10875,
+        //    };
+
+        //    scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
+        //    scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
+
+        //    var predictive = scenario.PredictiveData;
+        //    var actual = scenario.ActualData;
+
+        //    //var scenarioComparisonResult = _service.CompareData(predictive, actual);
+
+        //    var result = _service.CompareData(predictive, actual);
+
+        //    AnalyzeDifferences(result);
+        //    // Assert
+        //    Assert.NotNull(result);
+        //}
         private void AnalyzeDifferences(ScenarioComparisonResult result)
         {
             Debug.WriteLine("=== DIFFERENCE ANALYSIS ===");

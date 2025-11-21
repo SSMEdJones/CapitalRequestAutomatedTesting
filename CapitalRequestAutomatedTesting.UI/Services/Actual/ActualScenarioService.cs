@@ -104,14 +104,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             // Resolve service type
             if (serviceName == $"{nameSpace}IActualRequestedInfoService")
                 serviceType = typeof(IActualRequestedInfoService);
+            else if (serviceName == $"{nameSpace}IActualProvidedInfoService")
+                serviceType = typeof(IActualProvidedInfoService);
             else if (serviceName == $"{nameSpace}IActualWorkflowStepResponderService")
                 serviceType = typeof(IActualWorkflowStepResponderService);
             else if (serviceName == $"{nameSpace}IActualWorkflowStepOptionService")
                 serviceType = typeof(IActualWorkflowStepOptionService);
             else if (serviceName == $"{nameSpace}IActualEmailNotificationService")
                 serviceType = typeof(IActualEmailNotificationService);
-            else if (serviceName == $"{nameSpace}IActualScenarioService")
-                serviceType = typeof(IActualScenarioService);
             else if (serviceName == $"{nameSpace}IActualAttachmentService")
                 serviceType = typeof(IActualAttachmentService);
             else if (serviceName == $"{nameSpace}IActualWorkflowService")
@@ -120,8 +120,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 serviceType = typeof(IActualWorkflowStepService);
             else if (serviceName == $"{nameSpace}IActualWorkflowInstanceService")
                 serviceType = typeof(IActualWorkflowInstanceService);
+            else if (serviceName == $"{nameSpace}IActualWorkflowInstanceHistoryService")
+                serviceType = typeof(IActualWorkflowInstanceHistoryService);
             else if (serviceName == $"{nameSpace}IActualWorkflowStakeHolderService")
                 serviceType = typeof(IActualWorkflowStakeHolderService);
+            else if (serviceName == $"{nameSpace}IActualWbsService")
+                serviceType = typeof(IActualWbsService);
 
             if (serviceType == null) return scenarioDataViewModel;
 
@@ -168,6 +172,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return serviceName switch
             {
                 "IActualRequestedInfoService" => "RequestedInfo",
+                "IActualProvidedInfoService" => "ProvidedInfo",
                 "IActualWorkflowStepResponderService" => "WorkflowStepResponder",
                 "IActualWorkflowStepOptionService" => "WorkflowStepOption",
                 "IActualEmailNotificationService" => "EmailNotification",
@@ -175,7 +180,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 "IActualWorkflowService" => "Workflow",
                 "IActualWorkflowStepService" => "WorkflowStep",
                 "IActualWorkflowInstanceService" => "WorkflowInstance",
+                "IActualWorkflowInstanceHistoryService" => "WorkflowInstanceActionHistory",
                 "IActualWorkflowStakeHolderService" => "WorkflowStakeHolder",
+                "IActualWbsService" => "Wbs",
                 _ => "UnknownTable"
             };
         }
@@ -213,6 +220,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
                 .Where(x => !x.IsComplete)
                 .FirstOrDefault();
+
+            proposal.WorkflowStepId = proposal.WorkflowStep.WorkflowStepID;
 
             proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
 
@@ -394,8 +403,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
             else if (scenarioId == "SCN003")
             {
+                proposal.VerifyingGroupId = detail.VerifyingGroupId;
                 var optionType = Constants.OPTION_TYPE_VERIFY;
-
+                var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+                proposal.ReviewerGroupName = reviewerGroup.Name;
                 var workflowStep = proposal.WorkflowStep;
                 var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter());
                 var currentStepNumber = workflowTemplates
@@ -510,11 +521,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                         Operation = CrudOperationType.Insert
                                     }
                                 );
-                                //left off here need to create method
                                 actualMethods.Add(
                                     new ActualMethod
                                     {
-                                        ServiceName = "IActualWorkflowStepOptionService",
+                                        ServiceName = "IActualWorkflowInstanceHistoryService",
                                         MethodName = "GetNextStepWorkflowInstanceHistoryAsync",
                                         Parameters = new List<object> { proposal },
                                         Operation = CrudOperationType.Insert
@@ -522,56 +532,39 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                 );
 
 
+                                if (!string.IsNullOrWhiteSpace(workflowTemplate.AdditionalTask))
+                                {
+                                    if (workflowTemplate.AdditionalTask == Constants.ADDITIONAL_TASK_CREATE_WBS_NUMBERS)
+                                    {
 
+                                        actualMethods.Add(
+                                            new ActualMethod
+                                            {
+                                                ServiceName = "IActualWbsService",
+                                                MethodName = "GetWBSNumbersAsync",
+                                                Parameters = new List<object> { proposal },
+                                                Operation = CrudOperationType.Update
+                                            }
+                                        );
 
+                                        actualMethods.Add(
+                                            new ActualMethod
+                                            {
+                                                ServiceName = "IActualEmailNotificationService",
+                                                MethodName = "GetNextStepEmailNotificationsAsync",
+                                                Parameters = new List<object> { proposal, scenarioDetail },
+                                                Operation = CrudOperationType.Update
+                                            }
+                                        );
+                                    }
 
-                                //predictiveMethods.Add(
-                                //    new PredictiveMethod
-                                //    {
-                                //        ServiceName = "IPredictiveWorkflowInstanceHistoryService",
-                                //        MethodName = "CreateNextStepWorkflowInstanceHistoryAsync",
-                                //        Parameters = new List<object> { proposal },
-                                //        Operation = CrudOperationType.Insert
-                                //    }
-                                //);
-
-                                //if (!string.IsNullOrWhiteSpace(workflowTemplate.AdditionalTask))
-                                //{
-                                //    if (workflowTemplate.AdditionalTask == Constants.ADDITIONAL_TASK_CREATE_WBS_NUMBERS)
-                                //    {
-                                //        predictiveMethods.Add(
-                                //            new PredictiveMethod
-                                //            {
-                                //                ServiceName = "IPredictiveWbsService",
-                                //                MethodName = "CreateWBSNumbersAsync",
-                                //                Parameters = new List<object> { proposal },
-                                //                Operation = CrudOperationType.Update
-                                //            }
-                                //        );
-                                //        //public void CreateWBSNumbers(vm.Proposal proposal, AuthUser authUser)
-                                //        //{
-                                //        //    var WBSNumbers = _WBSRepo.CreateWBSNumbers(proposal.Id);
-                                //        //    WBSNumbers.ToList()
-                                //        //        .ForEach(x =>
-                                //        //        {
-                                //        //            x.Updated = DateTime.Now;
-                                //        //            x.UpdatedBy = authUser.User_Id;
-                                //        //            _WBSRepo.UpdateWBS(x);
-                                //        //        });
-
-                                //        //    return;
-                                //        //}
-                                //    }
-                                //}
-
-                                break;
+                                    break;
+                                }
                             }
                             else
                             {
                                 nextStepNumber++;
                             }
-
-
 
                         }
                     }
@@ -664,7 +657,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
             return actualMethods;
         }
-
 
     }
 }
