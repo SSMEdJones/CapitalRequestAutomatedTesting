@@ -115,5 +115,36 @@ namespace CapitalRequestAutomatedTesting.Tests
 
         }
 
+        [Fact]
+        public async Task GetClosedOptionsAsync_When_Verify_ReturnsCorrectOptions()
+        {
+            var proposalId = 2958; // Example proposal ID
+            var optionType = "Verify";
+            var reviewerEmail = "takashi.fujimoto@ssmhealth.com";
+
+            //var workflowStepId = Guid.Parse("53E451AC-8057-F011-A31B-0050569736FD");
+
+            var proposal = await _capitalRequestservices.GetProposal(proposalId);
+            proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                     .Where(x => !x.IsComplete)
+                     .FirstOrDefault();
+
+            var workflowStepId = proposal.WorkflowStep.WorkflowStepID;
+
+            proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID))
+                        .ToList();
+            proposal.VerifyingGroupId = 3;
+            proposal.ReviewerGroupId = proposal.VerifyingGroupId;
+            proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStepId);
+
+            //};
+            // Act
+            var result = await _service.GetClosedWorkflowStepOptionsAsync(proposal, optionType, null);
+            // Assert
+            Assert.Equal(3, result.Count);
+            Assert.Contains(result, x => x.OptionName == reviewerEmail);
+            Assert.Contains(result, x => x.OptionName == "pamela.shumway@ssmhealth.com");
+            Assert.Contains(result, x => x.OptionName == "edward.jones@ssmhealth.com");
+        }
     }
 }

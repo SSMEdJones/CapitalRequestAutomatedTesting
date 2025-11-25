@@ -80,6 +80,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                 .ToList();
 
+            if (proposal.VerifyingGroupId != 0)
+            {
+                relevantOptions = deduplicated
+                    .Where(x => x.Updated.HasValue)
+                    .ToList();
+
+            }
+
             var actual = relevantOptions
                 .Select(x => _mapper.Map<WorkflowStepOption>(x))
                 .ToList();

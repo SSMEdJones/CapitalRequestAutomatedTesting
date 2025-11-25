@@ -32,7 +32,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         public List<IFormFile>? AddInfoFiles { get; set; }
         public List<FileUploadData> FileUploads { get; set; } = new List<FileUploadData>();
-
+        public bool VerifyAndSendToVPFinance { get; set; }
 
     }
 }

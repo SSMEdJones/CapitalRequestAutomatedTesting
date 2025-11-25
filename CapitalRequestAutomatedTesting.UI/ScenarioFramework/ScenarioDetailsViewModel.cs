@@ -140,5 +140,8 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 
         public bool PauseBeforeSubmit { get; set; }
         public bool VerifyAndSendToVPFinance { get; set; }
+
+        public bool IsVpOfOps { get; set; }
+
     }
 }

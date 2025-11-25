@@ -52,7 +52,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
 
-            if (detail.ScenarioId != "SCN003"  && detail.ScenarioId != "SCN004")
+            if (detail.ScenarioId != "SCN003" && detail.ScenarioId != "SCN004")
             {
 
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
@@ -141,7 +141,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var workflowButtonText = string.Empty;
             var dashboardOrder = new int();
             var reviewer = new CapitalRequest.API.Models.Reviewer();
-
 
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
 
@@ -572,6 +571,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 workflowButtonText = "Workflow";
                 workflowPortion = $"{verifyingGroup.StepNumber} -{verifyingGroup.Name}";
                 var verifyButtonId = "btnVerify";
+                if (detail.VerifyAndSendToVPFinance)
+                {
+                    verifyButtonId = "btnVerifyAndSend";
+                }
+
                 var verifyProjectButton = Constants.BUTTON_ACTION_VERIFY_PROJECT;
                 var expectedName = proposal.Reviewer.UserId;
 
@@ -589,7 +593,19 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                 });
 
-                if(scenarioDetail.PauseBeforeSubmit)
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = $"Click '{verifyButtonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
+                    Action = new SeleniumDsl()
+                    .BeginWith(Execute.ClickButtonInRow(workflowPortion, verifyButtonText))
+                    .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
+                    .Then(Validate.ButtonById(verifyButtonId, verifyProjectButton))
+                    .Build("Clicked Verify and confirmed page transition")
+                });
+
+
+                if (scenarioDetail.PauseBeforeSubmit)
                 {
                     actualSteps.Add(new SeleniumScenarioStep
                     {
@@ -662,22 +678,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 }
                 else
                 {
-                    actualSteps.Add(new SeleniumScenarioStep
-                    {
-                        StepNumber = ++stepNumber,
-                        Description = $"Click '{verifyButtonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
-                        Action = new SeleniumDsl()
-                        .BeginWith(Execute.ClickButtonInRow(workflowPortion, verifyButtonText))
-                        .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
-                        .Then(Validate.ButtonById(verifyButtonId, verifyProjectButton))
-                        .Build("Clicked Request and confirmed page transition")
-                    });
-
                     // Automated submission path
                     actualSteps.Add(new SeleniumScenarioStep
                     {
                         StepNumber = ++stepNumber,
-                        Description = "Press Verify and verify success message",
+                        Description = "Press Verify Project and verify success message",
                         Action = new SeleniumDsl()
                             .BeginWith(Execute.ClickButtonById(verifyButtonId, "Verify Project button"))
                             .Then(Validate.ElementTextById("responseMessage", Constants.RESPONSE_ACTION_VERIFIED, "Submission success message"))
@@ -866,7 +871,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             startTime = DateTime.Now;
 
             // Get initial count to detect new notifications
-            var initialNotifications = await _actualEmailNotificationService.GetSubmitEmailNotificationsAsync(proposal, null);
+            var initialNotifications = await _actualEmailNotificationService.GetSubmitEmailNotificationsAsync(proposal);
             var initialCount = initialNotifications?.Count ?? 0;
 
             Debug.WriteLine($"🔍 {scenarioId}: Initial email notification count: {initialCount}");
@@ -875,7 +880,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             {
                 try
                 {
-                    var currentNotifications = await _actualEmailNotificationService.GetSubmitEmailNotificationsAsync(proposal, null);
+                    var currentNotifications = await _actualEmailNotificationService.GetSubmitEmailNotificationsAsync(proposal);
                     var currentCount = currentNotifications?.Count ?? 0;
 
                     Debug.WriteLine($"🔍 {scenarioId}: Current email notification count: {currentCount}");

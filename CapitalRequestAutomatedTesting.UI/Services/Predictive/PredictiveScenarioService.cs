@@ -101,9 +101,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             else if (scenarioId == "SCN003")
             {
+                var verifiedGroup = await _capitalRequestServices.GetReviewerGroup(detail.VerifyingGroupId);
                 proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
 
+                scenarioDetail.SelectedProperties["Verified Group"] = verifiedGroup.Name;
                 scenarioDetail.SelectedProperties["Verified By"] = proposal.Reviewer.FullName;
 
             }

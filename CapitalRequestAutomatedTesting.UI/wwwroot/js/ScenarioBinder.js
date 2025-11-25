@@ -98,6 +98,12 @@ export const ScenarioBinder = {
     const verifyingGroupSelect = this.getField(partial, "verifyingGroupId");
     if (verifyingGroupSelect) {
       this.bindGroupChange(partial, proposalId, "verifying");
+
+      if (verifyingGroupSelect.options.length === 2 && verifyingGroupSelect.value === "") {
+        DevLogger.info("Auto-selecting single verifying group", verifyingGroupSelect.options[1].text);
+        verifyingGroupSelect.selectedIndex = 1;
+        verifyingGroupSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
     }
 
 
@@ -719,6 +725,12 @@ export const ScenarioBinder = {
     const verifyingGroupSelect = this.getField(partial, "verifyingGroupId");
     if (verifyingGroupSelect) {
       this.bindGroupChange(partial, proposalId, "verifying");
+      if (verifyingGroupSelect.options.length === 2 && verifyingGroupSelect.value === "") {
+        DevLogger.info("Auto-selecting single verifying group", verifyingGroupSelect.options[1].text);
+        verifyingGroupSelect.selectedIndex = 1;
+        verifyingGroupSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
     }
 
 

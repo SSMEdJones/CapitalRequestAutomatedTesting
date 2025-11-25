@@ -125,6 +125,8 @@ namespace CapitalRequestAutomatedTesting.UI.Models
         //Additional tasks
         public const string ADDITIONAL_TASK_CREATE_WBS_NUMBERS = "CreateWBSNumbers";
 
+        public const string WORKFLOW_ACTION_GROUP_VPOPS = "3 -VP Ops";
+
 
     }
 }

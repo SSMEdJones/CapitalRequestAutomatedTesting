@@ -633,16 +633,35 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     }
                 );
 
-                predictiveMethods.Add(
-                    new PredictiveMethod
-                    {
-                        StepNumber = ++stepNumber,
-                        StepName = "Validate Submit button",
-                        ServiceName = "IScenarioControllerService",
-                        MethodName = "ValidateSubmitButtonAsync",
-                        Parameters = new List<object> { proposal }
-                    }
-                );
+
+                if (proposal.VerifyAndSendToVPFinance)
+                {
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            StepName = "Validate Send to VF Finance button",
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidateSendToVPFButtonAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
+
+                }
+                else
+                {
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            StepName = "Validate Submit button",
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidateSubmitButtonAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
+
+                }
 
                 if (scenarioDetail.PauseBeforeSubmit)
                 {

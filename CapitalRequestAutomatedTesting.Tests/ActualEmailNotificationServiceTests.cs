@@ -122,7 +122,7 @@ namespace CapitalRequestAutomatedTesting.Tests
             proposal.ReviewerGroups = _actualReviewerGroupService.FilterReviewerGroups(reviewerGroups, proposal, Constants.STEP_ONE);
                 
             // Act
-            var actual = await _service.GetSubmitEmailNotificationsAsync(proposal, scenario);
+            var actual = await _service.GetSubmitEmailNotificationsAsync(proposal);
 
             // Assert
             Assert.NotNull(actual);

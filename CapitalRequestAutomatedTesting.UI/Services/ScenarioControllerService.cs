@@ -92,6 +92,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             }
             else
             {
+                var isVpOps = false;
+
+                if (requestId.HasValue)
+                {
+                    var workflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(requestId.Value, Constants.ACTION_TYPE_VERIFY))
+                        .Distinct()
+                        .ToList();
+
+                    isVpOps = workflowPortions.Any(x => x.WorkflowPortion == Constants.WORKFLOW_ACTION_GROUP_VPOPS) ? true : false;
+                }
+
+
                 // 🔥 If submitted, show SCN001 and SCN002 for request/reply workflow
                 scenarioDetails.AddRange(new[]
                 {
@@ -118,6 +130,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         DisplayText = "Verify a Request",
                         SequenceNumber = 3, 
                         VerifyingGroups = requestId.HasValue ? await GetReviewerGroupsAsync(requestId.Value) : new List<SelectListItem>(),
+                        IsVpOfOps = isVpOps
                     }
                 });
             }
@@ -770,7 +783,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             );
         }
 
-        // Refactor ValidateSubmitButtonAsync to use the common method
         public SeleniumStepResult ValidateSubmitButtonAsync(vm.Proposal proposal)
         {
             return ExecuteValidationWithCondition(
@@ -780,7 +792,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             );
         }
 
-        // Refactor ValidateAttachmentTabAsync to use the common method
+        public SeleniumStepResult ValidateSendToVPFButtonAsync(vm.Proposal proposal)
+        {
+            return ExecuteValidationWithCondition(
+                () => proposal.IsVpOfOps && proposal.VerifyAndSendToVPFinance ,
+                "Send to VP Finance button validation passed.",
+                "Send to VP Finance button not found for this Request."
+            );
+        }
+
         public SeleniumStepResult ValidateAttachmentTabAsync(vm.Proposal proposal)
         {
             return ExecuteValidationWithCondition(

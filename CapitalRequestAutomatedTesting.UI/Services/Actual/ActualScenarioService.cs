@@ -1,6 +1,5 @@
 using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
@@ -82,9 +81,156 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 scenarioDataViewModel = await ExecuteScenarioMethodAsync(method, scenarioDetail, scenarioData);
             }
 
+            // Update predictive data with actual workflow values after all methods are executed
+            await UpdatePredictiveDataAsync(scenarioDetail, scenarioDataViewModel);
+
             return scenarioDataViewModel;
         }
 
+        /// <summary>
+        /// Updates predictive data structures with actual workflow values.
+        /// This ensures predictive data matches actual execution state regardless of email notifications.
+        /// </summary>
+        private async Task UpdatePredictiveDataAsync(ScenarioDetailsViewModel scenarioDetail, ScenarioDataViewModel scenarioDataViewModel)
+        {
+            if (scenarioDetail?.PredictiveData?.Tables == null)
+                return;
+
+            var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
+
+            // Ensure we have the current workflow step
+            if (proposal.WorkflowId != null && proposal.WorkflowId != Guid.Empty)
+            {
+                proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                    .Where(x => !x.IsComplete)
+                    .FirstOrDefault();
+            }
+
+            var workflowID = proposal.WorkflowId;
+            var workflowStepId = proposal.WorkflowStep?.WorkflowStepID ?? Guid.Empty;
+            var workflowStep = proposal.WorkflowStep;
+
+            // Get email query from scenario data if available
+            var emailQuery = GetEmailQueryFromScenarioData(scenarioDataViewModel);
+
+            var predictiveData = scenarioDetail.PredictiveData;
+            var tables = predictiveData.Tables;
+
+            // Update EmailNotification table
+            if (tables.TryGetValue("EmailNotification", out var emailTable))
+            {
+                var recordEntry = emailTable.Records.FirstOrDefault();
+                if (recordEntry?.Data is List<EmailNotification> predictiveNotifications)
+                {
+                    foreach (var email in predictiveNotifications)
+                    {
+                        email.EmailQuery = emailQuery;
+                        email.WorkflowStepId = workflowStepId;
+                    }
+                }
+            }
+
+            // Update WorkflowStep table
+            if (tables.TryGetValue("WorkflowStep", out var stepTable))
+            {
+                var recordEntry = stepTable.Records.FirstOrDefault();
+                if (recordEntry?.Data is WorkflowStep predictiveStep)
+                {
+                    predictiveStep.WorkflowID = workflowID;
+                }
+            }
+
+            var workflowStepOption = (await _ssmWorkflowServices.GetAllAddWorkFlowStepResponder(workflowStepId))
+                .OrderByDescending(x => x.Created)
+                .FirstOrDefault();
+
+            if (workflowStepOption != null)
+            {
+                var workflowStepOptionID = workflowStepOption.WorkflowStepOptionID;
+
+                if (tables.TryGetValue("WorkflowStepResponder", out var responderTable))
+                {
+                    var recordEntry = responderTable.Records.FirstOrDefault();
+                    if (recordEntry?.Data is WorkflowStepResponder workflowStepResponder)
+                    {
+                        if (workflowStepResponder.WorkflowStepOptionID == Guid.Empty)
+                            workflowStepResponder.WorkflowStepOptionID = workflowStepOptionID;
+                    }
+                }
+            }
+
+            // Update WorkflowStepOption table
+            if (tables.TryGetValue("WorkflowStepOption", out var optionTable))
+            {
+                var recordEntry = optionTable.Records.FirstOrDefault();
+                if (recordEntry?.Data is List<WorkflowStepOption> predictiveOptions)
+                {
+                    foreach (var option in predictiveOptions)
+                    {
+                        option.WorkflowStepID = workflowStepId;
+                    }
+                }
+            }
+
+            // Update WorkflowInstance table
+            if (tables.TryGetValue("WorkflowInstance", out var instanceTable))
+            {
+                var recordEntry = instanceTable.Records.FirstOrDefault();
+                if (recordEntry?.Data is WorkflowInstance predictiveInstance)
+                {
+                    predictiveInstance.WorkflowID = workflowID;
+                    predictiveInstance.CurrentWorkflowStepID = workflowStepId;
+                    predictiveInstance.CurrentWorkflowState = workflowStep?.StepName;
+                }
+            }
+
+            // Update WorkflowStakeHolder table
+            if (tables.TryGetValue("WorkflowStakeHolder", out var holderTable))
+            {
+                var recordEntry = holderTable.Records.FirstOrDefault();
+                if (recordEntry?.Data is List<WorkflowStakeholder> predictiveHolders)
+                {
+                    foreach (var holder in predictiveHolders)
+                    {
+                        holder.WorkflowID = workflowID;
+                    }
+                }
+            }
+
+            // Update WorkflowInstanceActionHistory table
+            if (tables.TryGetValue("WorkflowInstanceActionHistory", out var instanceHistoryTable))
+            {
+                var recordEntry = instanceHistoryTable.Records.FirstOrDefault();
+                if (recordEntry?.Data is WorkflowInstanceActionHistory workflowInstanceActionHistory)
+                {
+                    // Note: The original code had an issue where it was casting to WorkflowInstance instead of WorkflowInstanceActionHistory
+                    // Fixed to properly update the action history object
+                    workflowInstanceActionHistory.WorkflowInstanceID = workflowInstanceActionHistory.WorkflowInstanceID; ;
+                    workflowInstanceActionHistory.WorkflowStepID = workflowStepId;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Extracts email query from scenario data for predictive data updates
+        /// </summary>
+        private string GetEmailQueryFromScenarioData(ScenarioDataViewModel scenarioDataViewModel)
+        {
+            if (scenarioDataViewModel?.Tables?.TryGetValue("EmailNotification", out var emailTable) == true)
+            {
+                var recordEntry = emailTable.Records.FirstOrDefault();
+                if (recordEntry?.Data is List<SSMWorkflow.API.Models.EmailNotification> notifications)
+                {
+                    return notifications.FirstOrDefault()?.EmailQuery ?? string.Empty;
+                }
+                else if (recordEntry?.Data is SSMWorkflow.API.Models.EmailNotification notification)
+                {
+                    return notification.EmailQuery ?? string.Empty;
+                }
+            }
+
+            return string.Empty;
+        }
 
         public async Task<ScenarioDataViewModel> ExecuteScenarioMethodAsync(ActualMethod method, ScenarioDetailsViewModel scenarioDetail, ScenarioDataViewModel scenarioDataViewModel)
         {
@@ -403,6 +549,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
             else if (scenarioId == "SCN003")
             {
+                proposal.VerifyAndSendToVPFinance = detail.VerifyAndSendToVPFinance;
                 proposal.VerifyingGroupId = detail.VerifyingGroupId;
                 var optionType = Constants.OPTION_TYPE_VERIFY;
                 var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
@@ -552,7 +699,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                             {
                                                 ServiceName = "IActualEmailNotificationService",
                                                 MethodName = "GetNextStepEmailNotificationsAsync",
-                                                Parameters = new List<object> { proposal, scenarioDetail },
+                                                Parameters = new List<object> { proposal },
                                                 Operation = CrudOperationType.Update
                                             }
                                         );
@@ -560,6 +707,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                                     break;
                                 }
+                                break;
                             }
                             else
                             {
@@ -632,7 +780,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     {
                         ServiceName = "IActualEmailNotificationService",
                         MethodName = "GetSubmitEmailNotificationsAsync",
-                        Parameters = new List<object> { proposal, scenarioDetail },
+                        Parameters = new List<object> { proposal },
                         Operation = CrudOperationType.Insert
                     }
                 );

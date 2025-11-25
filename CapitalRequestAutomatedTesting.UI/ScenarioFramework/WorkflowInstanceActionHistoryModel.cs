@@ -4,7 +4,6 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class WorkflowInstanceActionHistoryModel
     {
-        public Guid WorkflowInstanceActionHistoryID { get; set; }
 
         public Guid WorkflowInstanceID { get; set; }
 

@@ -41,7 +41,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             return workflowInstanceActionHistory;
         }
 
-        public async Task<WorkflowInstanceActionHistory> CreateNextStepWorkflowInstanceHistoryAsync(vm.Proposal proposal, string responseType)
+        public async Task<WorkflowInstanceActionHistory> CreateNextStepWorkflowInstanceHistoryAsync(vm.Proposal proposal)
         {
             var workflowInstances = await _ssmWorkflowServices.GetAllWorkflowInstances(proposal.WorkflowId);
 

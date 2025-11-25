@@ -255,7 +255,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     current.ReviewerGroupId == deleted.ReviewerGroupId);
 
                 if (!exists)
-                    reviewers.Add(_mapper.Map<vm.Reviewer>(deleted)); 
+                    reviewers.Add(_mapper.Map<vm.Reviewer>(deleted));
             }
 
             reviewers.ForEach(x =>
@@ -415,7 +415,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             var allGroups = await GetReviewerGroupsAsync(proposal, workflowStep);
 
-            if (proposal.ExpectedMessage == Constants.RESPONSE_ACTION_VERIFIED )
+            if (proposal.ExpectedMessage == Constants.RESPONSE_ACTION_VERIFIED)
             {
                 reviewerGroups = allGroups;
             }
@@ -427,7 +427,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             }
 
-            var emailTemplate = new vm.EmailTemplate { OptionType = null};
+            var emailTemplate = new vm.EmailTemplate { OptionType = null };
 
             if (proposal.ExpectedMessage != Constants.RESPONSE_ACTION_VERIFIED)
             {
@@ -508,14 +508,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             //    proposal.RequestedInfo.ReviewerGroupId :
             //    proposal.RequestedInfo.RequestingReviewerGroupId;
 
-            var reviewerGroupId = proposal.ActionType == Constants.ACTION_TYPE_VERIFY ?
-                proposal.ReviewerGroupId :
-                proposal.RequestedInfo.RequestingReviewerGroupId;
+            var reviewerGroupId = proposal.VerifyingGroupId != 0
+                ? proposal.VerifyingGroupId
+                : proposal.ActionType == Constants.ACTION_TYPE_VERIFY
+                    ? proposal.ReviewerGroupId
+                    : proposal.RequestedInfo.RequestingReviewerGroupId;
 
             workflowStepOptions = workflowStepOptions
                 .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY &&
-                x.ReviewerGroupId == reviewerGroupId &&
-                x.IsComplete)
+                        x.ReviewerGroupId == reviewerGroupId &&
+                        x.IsComplete)
                 .ToList();
 
             var openReply = requests.Where(x => x.ReviewerGroupId == proposal.RequestingGroupId);
@@ -571,6 +573,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var workflowStepOptions = workflowStepOptionsViewModel
                    .Select(x => _mapper.Map<WorkflowStepOption>(x))
                    .ToList();
+
+            var reviewers = (await GetReviewers(proposal))
+                .Where(x => x.ReviewerGroupId == reviewerGroupId &&
+                 x.RegionId == proposal.Region)
+                .Select(z => _mapper.Map<vm.Reviewer>(z))
+                .ToList();
+
+            if (!workflowStepOptions.Any(x => x.OptionType.ToLower() == proposal.Reviewer.Email.ToLower()))
+            {
+                var newWorkflowStepOption = _mapper.Map<WorkflowStepOption>(proposal.Reviewer);
+                newWorkflowStepOption.OptionType = workflowStepOptions.FirstOrDefault().OptionType;
+
+                workflowStepOptions.Add(newWorkflowStepOption);
+            }
 
             if (workflowStepOptions.Any())
             {
