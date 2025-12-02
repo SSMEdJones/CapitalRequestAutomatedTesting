@@ -7,6 +7,7 @@ using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
 using SSMWorkflow.API.DataAccess.Models;
+using System.Linq;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
@@ -302,17 +303,40 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 }
                 else if (optionType == Constants.OPTION_TYPE_VERIFY)
                 {
-                    var activeOption = proposal.WorkflowStepOptions.Where(w => w.ReviewerGroupId == proposal.ReviewerGroupId
+                    var activeOption = proposal.WorkflowStepOptions
+                            .Where(w => w.ReviewerGroupId == proposal.ReviewerGroupId
                                         && !w.IsComplete
                                         && !w.IsTerminate
                                         && w.OptionName.ToLower() == x.Email.ToLower())
                     .FirstOrDefault();
 
-                    var isActiveOption = activeOption.OptionName.ToLower() == proposal.Reviewer.Email.ToLower();
+                    var isActiveOption = activeOption == null ? false : activeOption.OptionName.ToLower() == proposal.Reviewer.Email.ToLower();
 
-                    optionId = activeOption.OptionID;
-                    created = activeOption.Created;
-                    createdBy = activeOption.CreatedBy;
+                    if (isActiveOption || activeOption != null)
+                    {
+                        optionId = activeOption.OptionID;
+                        created = activeOption.Created;
+                        createdBy = activeOption.CreatedBy;
+
+                    }
+                    else
+                    {
+                        activeOption = proposal.WorkflowStepOptions
+                            .Where(w => w.ReviewerGroupId == proposal.ReviewerGroupId
+                                    && !w.IsComplete
+                                    && w.OptionName.ToLower() == x.Email.ToLower())
+                            .OrderByDescending(w => w.Created)
+                            .FirstOrDefault();
+
+                        if (activeOption != null)
+                        {
+                            optionId = activeOption.OptionID;
+                            created = activeOption.Created;
+                            createdBy = activeOption.CreatedBy;
+
+                        }
+                    }
+
                     workflowStepOption = new WorkflowStepOption
                     {
                         OptionID = optionId,
@@ -322,7 +346,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         OptionType = optionType,
                         RequestedInfoId = requestedInfoId,
                         Created = created,
-                        CreatedBy = createdBy,
+                        CreatedBy = createdBy,  
                         IsComplete = !isActiveOption ? false : true,
                         IsTerminate = isActiveOption ? false : true,
                         Updated = DateTime.Now,
@@ -504,10 +528,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             }
             var workflowStepId = workflowStep.WorkflowStepID;
 
-            //var reviewerGroupId = proposal.ActionType == Constants.ACTION_TYPE_VERIFY ?
-            //    proposal.RequestedInfo.ReviewerGroupId :
-            //    proposal.RequestedInfo.RequestingReviewerGroupId;
-
             var reviewerGroupId = proposal.VerifyingGroupId != 0
                 ? proposal.VerifyingGroupId
                 : proposal.ActionType == Constants.ACTION_TYPE_VERIFY
@@ -580,6 +600,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 .Select(z => _mapper.Map<vm.Reviewer>(z))
                 .ToList();
 
+            // simulate AddWorkflowStepOption
             if (!workflowStepOptions.Any(x => x.OptionType.ToLower() == proposal.Reviewer.Email.ToLower()))
             {
                 var newWorkflowStepOption = _mapper.Map<WorkflowStepOption>(proposal.Reviewer);

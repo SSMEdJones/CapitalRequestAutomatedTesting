@@ -55,7 +55,18 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         public async Task<bool> AllGroupsVerifiedAsync(vm.Proposal proposal)
         {
             var workflowStepOptions = proposal.WorkflowStepOptions
-                .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY);
+                .Where(x => x.OptionType == Constants.OPTION_TYPE_VERIFY)
+                .Select(y => _mapper.Map<WorkflowStepOption>(y))
+                .ToList();
+
+            // simulate AddWorkflowStepOption
+            if (!workflowStepOptions.Any(x => x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower()))
+            {
+                var newWorkflowStepOption = _mapper.Map<WorkflowStepOption>(proposal.Reviewer);
+                newWorkflowStepOption.OptionType = workflowStepOptions.FirstOrDefault().OptionType;
+
+                workflowStepOptions.Add(newWorkflowStepOption);
+            }
 
             var verifyingOption = workflowStepOptions
                 .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId && x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
@@ -111,6 +122,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var nextWorkflowStep = _mapper.Map<WorkflowStep>(workflowTemplate);
 
             nextWorkflowStep.WorkflowStepID = proposal.NextWorkflowStepId;
+            nextWorkflowStep.WorkflowID = proposal.WorkflowId;
             nextWorkflowStep.CreatedBy = proposal.Reviewer.UserId;
 
             return nextWorkflowStep;

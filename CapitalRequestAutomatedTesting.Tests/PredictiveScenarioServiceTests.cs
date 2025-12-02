@@ -119,18 +119,20 @@ public class PredictiveScenarioServiceTests : IntegrationTestBase
         // Arrange
         var scenario = new ScenarioDetailsViewModel
         {
-            ProposalId = 2910,
+            ProposalId = 2787,
             ScenarioId = "SCN003",
-            PartialViewName = "_ReplyToRequest",
-            DisplayText = "Reply to Request",
-            RequestingGroupId = 4,
-            ReplyingGroupId = 5,
-            ReviewerId = 37807,
-            RequestedInformation = "Supply Chain requesting more information from EPMO as Pam Shumway via Workflow Automated Testing - Request More Information Scenario.",
-            ReturnedInformation = "EPMO replying to request for more information from Supply Chain as Gavin Harrell via Workflow Automated Testing - Reply to Request Scenario.",
-            RequestedInfoId = 691,
+            PartialViewName = "_VerifyRequest",
+            DisplayText = "Verify Request",
+            RequestingGroupId = 0,
+            ReplyingGroupId = 0,
+            VerifyingGroupId = 9,
+            ReviewerId = 14090,
+            RequestedInformation = string.Empty,
+            ReturnedInformation = string.Empty,
+            RequestedInfoId = 0,
             PredictiveCompletionStep = 0,
-            CanExecuteActualSteps = true
+            CanExecuteActualSteps = true,
+            VerifyAndSendToVPFinance = true
         };
 
         // Act

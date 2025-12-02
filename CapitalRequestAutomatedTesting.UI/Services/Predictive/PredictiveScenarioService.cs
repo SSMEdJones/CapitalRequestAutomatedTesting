@@ -9,6 +9,7 @@ using CapitalRequestAutomatedTesting.UI.Services.Actual;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
 using SSMWorkflow.API.DataAccess.Models;
+using SSMWorkflow.API.Models;
 using System.Diagnostics;
 using System.Reflection;
 using static CapitalRequestAutomatedTesting.UI.Services.Predictive.IPredictiveWorkflowStepService;
@@ -77,7 +78,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 scenarioDetail.SelectedProperties["Requested Information"] = detail.RequestedInformation;
             }
 
-            
+
             scenarioDetail.SelectedProperties["Scenario Name"] = detail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = detail.ProposalId.ToString();
 
@@ -301,6 +302,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
 
+            if (detail.ReviewerId != 0)
+            {
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+            }
+
             if (detail.ScenarioId != "SCN004")
             {
 
@@ -312,6 +319,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
                    .Where(x => x.IsComplete == false && x.IsTerminate == false)
                    .ToList();
+
+                // simulate AddWorkflowStepOption
+                if (!workflowStepOptions.Any(x => x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower()))
+                {
+                    var newWorkflowStepOption = _mapper.Map<WorkflowStepOption>(proposal.Reviewer);
+                    newWorkflowStepOption.OptionType = workflowStepOptions.FirstOrDefault().OptionType;
+
+                    workflowStepOptions.Add(_mapper.Map<WorkFlowStepOptionViewModel>(newWorkflowStepOption));
+                }
 
                 proposal.WorkflowStepId = workflowStep.WorkflowStepID;
                 proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
@@ -533,7 +549,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ReviewerGroupId = proposal.VerifyingGroupId;
                 proposal.ReviewerId = detail.ReviewerId;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
-
+                proposal.VerifyAndSendToVPFinance = detail.VerifyAndSendToVPFinance;
                 var workflowStep = proposal.WorkflowStep;
                 var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter());
                 var currentStepNumber = workflowTemplates
@@ -635,7 +651,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                                     {
                                         ServiceName = "IPredictiveWorkflowInstanceService",
                                         MethodName = "CreateNextStepWorkflowInstanceAsync",
-                                        Parameters = new List<object> { proposal},
+                                        Parameters = new List<object> { proposal },
                                         Operation = CrudOperationType.Insert
                                     }
                                 );
@@ -645,7 +661,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                                     {
                                         ServiceName = "IPredictiveWorkflowStakeHolderService",
                                         MethodName = "CreateNextStepWorkflowStakeholdersAsync",
-                                        Parameters = new List<object> { proposal},
+                                        Parameters = new List<object> { proposal },
                                         Operation = CrudOperationType.Insert
                                     }
                                 );
@@ -683,19 +699,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                                                 Operation = CrudOperationType.Update
                                             }
                                         );
-                                        //public void CreateWBSNumbers(vm.Proposal proposal, AuthUser authUser)
-                                        //{
-                                        //    var WBSNumbers = _WBSRepo.CreateWBSNumbers(proposal.Id);
-                                        //    WBSNumbers.ToList()
-                                        //        .ForEach(x =>
-                                        //        {
-                                        //            x.Updated = DateTime.Now;
-                                        //            x.UpdatedBy = authUser.User_Id;
-                                        //            _WBSRepo.UpdateWBS(x);
-                                        //        });
 
-                                        //    return;
-                                        //}
                                     }
                                 }
 

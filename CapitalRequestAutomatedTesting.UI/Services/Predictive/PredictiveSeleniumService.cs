@@ -412,6 +412,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 var replyingGroup = await _capitalRequestServices.GetReviewerGroup(detail.ReplyingGroupId);
                 proposal.Attachment = null;
 
+
                 var filter = new RequestedInfoSearchFilter
                 {
                     ProposalId = detail.ProposalId,
@@ -543,14 +544,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 proposal.ButtonCaption = Constants.BUTTON_CAPTION_VERIFY;
                 proposal.ReviewerId = detail.ReviewerId;
                 proposal.VerifyingGroupId = detail.VerifyingGroupId;
-                //proposal.ReviewerGroupId = detail.VerifyingGroupId;
-                var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
-                var verifyingGroupName = verifyingGroup.Name;
                 proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
                 proposal.ActionType = Constants.ACTION_TYPE_VERIFY;
+                proposal.ExpectedMessage = Constants.RESPONSE_ACTION_VERIFIED;
+                proposal.VerifyAndSendToVPFinance = detail.VerifyAndSendToVPFinance;
+                proposal.IsVpOfOps = proposal.VerifyAndSendToVPFinance;
+
                 actionType = proposal.ActionType;
-                expectedMessage = Constants.RESPONSE_ACTION_VERIFIED;
-                proposal.ExpectedMessage = expectedMessage;
+                expectedMessage = proposal.ExpectedMessage;
+
+                var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+                var verifyingGroupName = verifyingGroup.Name;
 
                 predictiveMethods.Add(
                    new PredictiveMethod
@@ -571,6 +575,30 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         Parameters = new List<object> { proposal, expectedMessage }
                     }
                 );
+
+                if (detail.VerifyAndSendToVPFinance)
+                {
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidateSendToVPFButtonAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
+                }
+                else {
+                    predictiveMethods.Add(
+                        new PredictiveMethod
+                        {
+                            StepNumber = ++stepNumber,
+                            ServiceName = "IScenarioControllerService",
+                            MethodName = "ValidateVerifyButtonAsync",
+                            Parameters = new List<object> { proposal }
+                        }
+                    );
+                }
 
                 if (scenarioDetail.PauseBeforeSubmit)
                 {
