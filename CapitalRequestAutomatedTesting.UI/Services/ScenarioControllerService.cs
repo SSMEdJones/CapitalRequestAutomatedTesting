@@ -128,7 +128,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         ScenarioId = "SCN003",
                         PartialViewName = "_VerifyRequest",
                         DisplayText = "Verify a Request",
-                        SequenceNumber = 3, 
+                        SequenceNumber = 3,
                         VerifyingGroups = requestId.HasValue ? await GetReviewerGroupsAsync(requestId.Value) : new List<SelectListItem>(),
                         IsVpOfOps = isVpOps
                     }
@@ -427,6 +427,32 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             return reviewerGroups;
         }
 
+        public async Task<List<SelectListItem>> GetVerifyingGroupsByVerifyingIdAsync(int proposalId, int groupId)
+        {
+            var groups = new List<SelectListItem>();
+
+            var reviewerGroups = new List<vm.ReviewerGroup>();
+
+
+            var groupFilter = new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter { ReviewerType = Constants.REVIEW_TYPE_REVIEW };
+            reviewerGroups = (await _capitalRequestServices.GetAllReviewerGroups(groupFilter))
+                .Where(x => x.Id == groupId)
+                .ToList();
+
+            groups = reviewerGroups
+                .ToList()
+                .ConvertAll(x =>
+                {
+                    return new SelectListItem()
+                    {
+                        Text = x.Name,
+                        Value = x.Id.ToString()
+                    };
+                });
+
+            return groups;
+        }
+
         public async Task<List<CapitalRequest.API.Models.Reviewer>> GetFilteredReviewers(int proposalId, int requestingGroupId)
         {
             var proposal = await _capitalRequestServices.GetProposal(proposalId);
@@ -529,7 +555,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public async Task<List<SelectListItem>> GetReviewersBySelectedGroupAsync(int proposalId, int reviewerGroupId)
         {
             var proposal = await _capitalRequestServices.GetProposal(proposalId);
-            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId)).FirstOrDefault();
+            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps((Guid)proposal.WorkflowId)).FirstOrDefault(x => !x.IsComplete);
 
             var workflowTemplate = (await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter { StepName = workflowStep.StepName })).FirstOrDefault();
 
@@ -649,6 +675,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             {
                 "requesting" => await GetTargetGroupsByRequestIdAsync(proposalId, groupId),
                 "replying" => await GetRequestingGroupsByReplyingIdAsync(proposalId, groupId),
+                "verifying" => await GetVerifyingGroupsByVerifyingIdAsync(proposalId, groupId),
                 _ => targetGroups
             };
 
@@ -804,7 +831,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public SeleniumStepResult ValidateSendToVPFButtonAsync(vm.Proposal proposal)
         {
             return ExecuteValidationWithCondition(
-                () => proposal.IsVpOfOps && proposal.VerifyAndSendToVPFinance ,
+                () => proposal.IsVpOfOps && proposal.VerifyAndSendToVPFinance,
                 "Send to VP Finance button validation passed.",
                 "Send to VP Finance button not found for this Request."
             );

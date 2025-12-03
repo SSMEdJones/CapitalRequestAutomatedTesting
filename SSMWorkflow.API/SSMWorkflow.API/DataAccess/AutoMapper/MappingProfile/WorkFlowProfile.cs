@@ -46,7 +46,8 @@ namespace SSMWorkflow.API.DataAccess.AutoMapper.MappingProfile
             CreateMap<WorkflowStepResponder, WorkFlowStepResponderViewModel>();
 
             CreateMap<WorkflowStepOption, WorkflowStepResponder>()
-                .ForMember(dest => dest.WorkflowStepID, o => o.MapFrom(src => src.WorkflowStepID));
+                .ForMember(dest => dest.WorkflowStepID, o => o.MapFrom(src => src.WorkflowStepID))
+                .ForMember(dest => dest.WorkflowStepOptionID, o => o.MapFrom(src => src.OptionID));
 
            
             CreateMap<WorkFlowStepOptionViewModel, WorkflowStepResponder>();

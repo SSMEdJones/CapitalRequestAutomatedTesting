@@ -52,7 +52,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 .ToList();
 
             var verifiedGroups = workflowStepOptions
-                .Where(x => x.IsComplete)
+                .Where(x => x.IsComplete  && x.ReviewerGroupId == proposal.VerifyingGroupId)
                 .Select(y => y.ReviewerGroupId)
                 .Distinct()
                 .ToList();

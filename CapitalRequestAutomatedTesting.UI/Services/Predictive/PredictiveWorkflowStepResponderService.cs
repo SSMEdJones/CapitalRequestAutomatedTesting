@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using SSMWorkflow.API.DataAccess.Models;
@@ -38,7 +38,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             // Resolve WorkflowStepOptionId
             var reviewerGroupId = proposal.ReviewerGroupId;
             var reviewerId = proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0;
-            var actionType = responderType == Constants.RESPONDER_REQUEST ? Constants.OPTION_TYPE_VERIFY : Constants.ACTION_TYPE_ADD_INFO;
+            var actionType = responderType == Constants.RESPONDER_REQUEST || responderType == Constants.OPTION_TYPE_VERIFY
+                ? Constants.OPTION_TYPE_VERIFY
+                : Constants.ACTION_TYPE_ADD_INFO;
+
             var workflowStepOption = await _predictiveWorkflowStepOptionService.FindOrCreateWorkflowStepOptionAsync(proposal, reviewerGroupId, reviewerId, actionType);
 
             // Generate WorkflowStepResponder object

@@ -1,4 +1,4 @@
-﻿using CapitalRequestAutomatedTesting.UI.Enums;
+using CapitalRequestAutomatedTesting.UI.Enums;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
@@ -10,7 +10,7 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public TimeSpan? ActualExecutionDuration { get; set; }
         public List<PredictiveMethod> PredictiveMethods { get; set; } = new();
 
-        public Dictionary<string, TableData> Tables { get; internal set; } = new Dictionary<string, TableData>();
+        public Dictionary<string, TableData> Tables { get; set; } = new Dictionary<string, TableData>();
         public bool IsOriginalData { get; internal set; }
 
         // Stores field-level data grouped by table and row

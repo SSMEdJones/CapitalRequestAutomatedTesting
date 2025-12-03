@@ -33,25 +33,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         public async Task<WorkflowInstanceActionHistory> GetWorkflowInstanceHistoryAsync(vm.Proposal proposal)
         {
             var action = GetHistoryAction(proposal);
-            var workflowInstance = (await _ssmWorkflowServices.GetAllWorkflowInstances(proposal.WorkflowId))
-                .FirstOrDefault(x => x.CurrentWorkflowStepID == proposal.WorkflowStepId);
+            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId)).FirstOrDefault();
 
-            var workflowInstanceActionHistorys = await _ssmWorkflowServices.GetAllWorkflowInstanceActionHistory(
-                new WorkFlowInstanceActionHistorySearchFilter
-                {
-                    WorkflowInstanceID = workflowInstance.WorkflowInstanceID
-                });
-
-            var worklowInstanceActionHistory = workflowInstanceActionHistorys
-                .FirstOrDefault(x => x.Action == action);
-
-            return _mapper.Map<WorkflowInstanceActionHistory>(worklowInstanceActionHistory);
-        }
-
-        public async Task<WorkflowInstanceActionHistory> GetNextStepWorkflowInstanceHistoryAsync(vm.Proposal proposal)
-        {
-            var workflowStep = await _actualWorkflowStepService.GetWorkflowStepAsync(proposal);
-            var action = $"Added step {workflowStep.StepName}";
             var workflowInstance = (await _ssmWorkflowServices.GetAllWorkflowInstances(proposal.WorkflowId))
                 .FirstOrDefault(x => x.CurrentWorkflowStepID == workflowStep.WorkflowStepID);
 
@@ -67,13 +50,34 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return _mapper.Map<WorkflowInstanceActionHistory>(worklowInstanceActionHistory);
         }
 
+        public async Task<List<WorkflowInstanceActionHistory>> GetNextStepWorkflowInstanceHistoryAsync(vm.Proposal proposal)
+        {
+            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId)).FirstOrDefault(x => !x.IsComplete);
+
+            var workflowInstance = (await _ssmWorkflowServices.GetAllWorkflowInstances(proposal.WorkflowId))
+                .FirstOrDefault(x => x.CurrentWorkflowStepID == workflowStep.WorkflowStepID);
+
+            var workflowInstanceActionHistorys = (await _ssmWorkflowServices.GetAllWorkflowInstanceActionHistory(
+                new WorkFlowInstanceActionHistorySearchFilter
+                {
+                    WorkflowInstanceID = workflowInstance.WorkflowInstanceID
+                }))
+                .ToList();
+
+            var workflowInstanceActionHistories  = workflowInstanceActionHistorys
+                .Select(x => _mapper.Map<WorkflowInstanceActionHistory>(x))
+                .ToList();
+
+            return workflowInstanceActionHistories;
+        }
+
 
         private string GetHistoryAction(Proposal proposal)
         {
             var reviewerName = proposal.Reviewer.FullName;
             var reviewerGroupName = proposal.ReviewerGroupName;
             var reqId = proposal.Id;
-            var today = DateTime.Now.ToString("MM/dd/yyyy");
+            var today = DateTime.Now.ToString("MM/d/yyyy");
             var action = $"{reviewerName} Verified for Reviewer Group {reviewerGroupName} for Req Id {reqId} on {today}.";
 
             return action;

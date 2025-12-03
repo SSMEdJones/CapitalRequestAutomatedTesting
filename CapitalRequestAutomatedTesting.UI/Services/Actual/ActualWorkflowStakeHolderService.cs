@@ -9,7 +9,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
     public interface IActualWorkflowStakeHolderService
     {
         Task<List<WorkflowStakeholder>> GetWorkflowStakeHoldersAsync(vm.Proposal proposal);
-        Task<List<WorkflowStakeholder>> GetNextStepWorkflowStakeholdersAsync(vm.Proposal proposal);
+        Task<List<WorkflowStakeholder>> GetNextStepWorkflowStakeHoldersAsync(vm.Proposal proposal);
     }
     public class ActualWorkflowStakeHolderService : IActualWorkflowStakeHolderService
     {
@@ -39,7 +39,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             return workflowStakeHolders;
         }
 
-        public async Task<List<WorkflowStakeholder>> GetNextStepWorkflowStakeholdersAsync(vm.Proposal proposal)
+        public async Task<List<WorkflowStakeholder>> GetNextStepWorkflowStakeHoldersAsync(vm.Proposal proposal)
         {
             var workflowStakeHolders = new List<WorkflowStakeholder>();
 
@@ -51,9 +51,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 );
 
             var currentStepNumber = workflowTemplates.FirstOrDefault(x => x.StepName == workflowStep.StepName).StepNumber;
-            var previousStepNumber = currentStepNumber - 1;
-            //var previousStep = workflowTemplates
-            //    .FirstOrDefault(x => x.StepNumber == previousStepNumber);
 
             var allGroups = await _capitalRequestServices.GetAllReviewerGroups(
                 new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter
@@ -62,11 +59,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 });
 
             var previousStepGroups = allGroups
-                .Where(x => x.StepNumber == previousStepNumber)
+                .Where(x => x.StepNumber < currentStepNumber || x.Name == Constants.REVIEWER_GROUP_AUTHOR)
                 .ToList();
 
             var workFlowStakeholderViewModels = (await _ssmWorkflowServices.GetAllWorkFlowStakeholders(proposal.WorkflowId))
-                .Where(x => x.WorkflowID == proposal.WorkflowId)
+                .Where(x => x.WorkflowID == proposal.WorkflowId && x.Stakeholder != Constants.REVIEWER_GROUP_AUTHOR)
                 .ToList();
 
 

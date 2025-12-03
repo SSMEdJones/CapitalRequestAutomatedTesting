@@ -128,6 +128,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             return nextWorkflowStep;
 
         }
+
+        public async Task<WorkflowStep> MarkStepCompleteAsync(vm.Proposal proposal)
+        {
+            var workflowSteps = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                .OrderByDescending(x => x.Created);
+
+            var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
+            workflowStep.IsComplete = true; 
+            workflowStep.Updated = DateTime.Now;
+            workflowStep.UpdatedBy = proposal.Reviewer.UserId;
+
+
+            return _mapper.Map<WorkflowStep>(workflowStep);
+        }
     }
 
 }

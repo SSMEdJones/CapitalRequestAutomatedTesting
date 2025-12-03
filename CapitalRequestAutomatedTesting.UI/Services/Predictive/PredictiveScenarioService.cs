@@ -317,7 +317,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
 
                 var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
-                   .Where(x => x.IsComplete == false && x.IsTerminate == false)
+                   .Where(x => !x.IsComplete && !x.IsTerminate)
                    .ToList();
 
                 // simulate AddWorkflowStepOption
@@ -329,10 +329,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     workflowStepOptions.Add(_mapper.Map<WorkFlowStepOptionViewModel>(newWorkflowStepOption));
                 }
 
+                proposal.WorkflowStepOptions = workflowStepOptions;
+
                 proposal.WorkflowStepId = workflowStep.WorkflowStepID;
                 proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
 
-                proposal.WorkflowStepOptions = workflowStepOptions;
                 proposal.VerifyingGroupId = detail.VerifyingGroupId;
 
                 if (detail.ScenarioId != "SCN003")

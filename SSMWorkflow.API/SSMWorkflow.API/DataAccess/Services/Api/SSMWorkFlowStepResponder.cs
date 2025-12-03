@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Flurl;
 using Flurl.Http;
 using Microsoft.Extensions.Options;

@@ -167,7 +167,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 {
                     foreach (var option in predictiveOptions)
                     {
-                        option.WorkflowStepID = workflowStepId;
+                        if (option.WorkflowStepID == Guid.Empty)
+                        {
+                            option.WorkflowStepID = workflowStepId;
+                        }
+                            
                     }
                 }
             }
@@ -553,9 +557,21 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 proposal.VerifyingGroupId = detail.VerifyingGroupId;
                 var optionType = Constants.OPTION_TYPE_VERIFY;
                 var reviewerGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+
+                var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter());
+
+                var workflowTemplate = workflowTemplates.FirstOrDefault(x => x.StepNumber == reviewerGroup.StepNumber);
+
+                proposal.WorkflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                    .Where(x => x.StepName == workflowTemplate.StepName)
+                    .FirstOrDefault();
+
+                proposal.WorkflowStepId = proposal.WorkflowStep.WorkflowStepID;
+                proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(proposal.WorkflowStep.WorkflowStepID)).ToList();
+
+
                 proposal.ReviewerGroupName = reviewerGroup.Name;
                 var workflowStep = proposal.WorkflowStep;
-                var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter());
                 var currentStepNumber = workflowTemplates
                     .Where(x => x.StepName == workflowStep.StepName)
                     .First()
@@ -615,7 +631,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
                             proposal.ReviewerGroups = filteredReviewerGroups;
 
-                            var workflowTemplate = workflowTemplates
+                            workflowTemplate = workflowTemplates
                                 .Where(x => x.StepNumber == nextStepNumber)
                                 .FirstOrDefault();
 
@@ -652,8 +668,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                 actualMethods.Add(
                                     new ActualMethod
                                     {
-                                        ServiceName = "IActualWorkflowSakeholderService",
-                                        MethodName = "GetNextStepWorkflowStakeholdersAsync",
+                                        ServiceName = "IActualWorkflowStakeHolderService",
+                                        MethodName = "GetNextStepWorkflowStakeHoldersAsync",
                                         Parameters = new List<object> { proposal },
                                         Operation = CrudOperationType.Insert
                                     }

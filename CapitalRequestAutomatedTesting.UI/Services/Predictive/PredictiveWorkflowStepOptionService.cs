@@ -172,7 +172,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     }
 
                     var workflowStepOption = _mapper.Map<WorkflowStepOption>(reviewer);
-                    workflowStepOption.CreatedBy = proposal.VerifyUserId;
+                    workflowStepOption.CreatedBy = proposal.Reviewer.UserId;
                     workflowStepOption.OptionType = emailType;
                     workflowStepOptions.Add(workflowStepOption);
                 }
@@ -203,9 +203,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var reviewerGroupId = proposal.ReviewerGroupId;
 
             //TODO Make sure to only include proper reviewers and dates
-            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
-                .Where(x => !x.IsComplete)
-                .FirstOrDefault();
+            //var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+            //    .Where(x => !x.IsComplete)
+            //    .FirstOrDefault();
+            var workflowStep = proposal.WorkflowStep;
 
             var stepCreated = workflowStep.Created;
 
@@ -305,10 +306,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 {
                     var activeOption = proposal.WorkflowStepOptions
                             .Where(w => w.ReviewerGroupId == proposal.ReviewerGroupId
-                                        && !w.IsComplete
-                                        && !w.IsTerminate
                                         && w.OptionName.ToLower() == x.Email.ToLower())
-                    .FirstOrDefault();
+                            .OrderByDescending(w => w.Created)
+                            .FirstOrDefault();
 
                     var isActiveOption = activeOption == null ? false : activeOption.OptionName.ToLower() == proposal.Reviewer.Email.ToLower();
 
@@ -322,9 +322,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     else
                     {
                         activeOption = proposal.WorkflowStepOptions
-                            .Where(w => w.ReviewerGroupId == proposal.ReviewerGroupId
-                                    && !w.IsComplete
-                                    && w.OptionName.ToLower() == x.Email.ToLower())
+                            .Where(w => w.ReviewerGroupId == proposal.ReviewerGroupId && w.OptionName.ToLower() == x.Email.ToLower())
                             .OrderByDescending(w => w.Created)
                             .FirstOrDefault();
 

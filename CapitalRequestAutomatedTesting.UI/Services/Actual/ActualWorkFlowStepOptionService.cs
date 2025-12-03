@@ -21,7 +21,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
         private readonly ISSMWorkflowServices _ssmWorkflowServices;
         private readonly ICapitalRequestServices _capitalRequestServices;
         private readonly IActualWorkflowStepService _actualWorkflowStepService;
-        private IMapper _mapper;
+        private readonly IMapper _mapper;
 
         public ActualWorkflowStepOptionService(
             ISSMWorkflowServices ssmWorkflowServices,
@@ -162,7 +162,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 
         public async Task<List<WorkflowStepOption>> GetNextStepWorkflowStepOptionsAsync(vm.Proposal proposal)
         {
-            var workflowStep = await _actualWorkflowStepService.GetWorkflowStepAsync(proposal);
+            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                .FirstOrDefault(x => x.IsComplete == false);
+
             var workflowStepOptionsViewModels = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
                 .Where(x => !x.IsTerminate && !x.IsComplete);
 
