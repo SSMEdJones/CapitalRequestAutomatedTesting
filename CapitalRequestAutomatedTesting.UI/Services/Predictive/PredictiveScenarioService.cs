@@ -1,6 +1,5 @@
 using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
-using CapitalRequest.API.DataAccess.Services.Api;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Enums;
 using CapitalRequestAutomatedTesting.UI.Helpers;
@@ -12,7 +11,6 @@ using SSMWorkflow.API.DataAccess.Models;
 using SSMWorkflow.API.Models;
 using System.Diagnostics;
 using System.Reflection;
-using static CapitalRequestAutomatedTesting.UI.Services.Predictive.IPredictiveWorkflowStepService;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
@@ -108,6 +106,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 scenarioDetail.SelectedProperties["Verified Group"] = verifiedGroup.Name;
                 scenarioDetail.SelectedProperties["Verified By"] = proposal.Reviewer.FullName;
+                if (scenarioDetail.IsVpOfOps)
+                {
+                    scenarioDetail.SelectedProperties["Verify And Send To VPFinance"] = $"{scenarioDetail.VerifyAndSendToVPFinance}";
+                }
+
 
             }
             else if (scenarioId == "SCN004")
@@ -558,6 +561,40 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 .First()
                 .StepNumber;
 
+                proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                    .Where(x => !x.IsTerminate && x.OptionType == Constants.OPTION_TYPE_VERIFY)
+                   .ToList();
+
+                if (scenarioDetail.IsTestMode)
+                {
+
+                    workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                        .Where(x => x.IsComplete)
+                        .LastOrDefault();
+
+                    var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                       .ToList();
+
+                    currentStepNumber = workflowTemplates
+                        .Where(x => x.StepName == workflowStep.StepName)
+                        .First()
+                        .StepNumber;
+
+                    // simulate AddWorkflowStepOption
+                    if (!workflowStepOptions.Any(x => x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower()))
+                    {
+                        var newWorkflowStepOption = _mapper.Map<WorkflowStepOption>(proposal.Reviewer);
+                        newWorkflowStepOption.OptionType = workflowStepOptions.FirstOrDefault().OptionType;
+
+                        workflowStepOptions.Add(_mapper.Map<WorkFlowStepOptionViewModel>(newWorkflowStepOption));
+                    }
+
+                    proposal.WorkflowStepOptions = workflowStepOptions;
+                    proposal.WorkflowStepId = workflowStep.WorkflowStepID;
+                    proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
+
+                }
+
                 var nextStepNumber = currentStepNumber + 1;
 
                 predictiveMethods.Add(
@@ -704,6 +741,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                                     }
                                 }
 
+                                predictiveMethods.Add(
+                                    new PredictiveMethod
+                                    {
+                                        ServiceName = "IPredictiveEmailNotificationService",
+                                        MethodName = "CreateNextStepEmailNotificationsAsync",
+                                        Parameters = new List<object> { proposal },
+                                        Operation = CrudOperationType.Insert
+                                    }
+                                );
+
                                 break;
                             }
                             else
@@ -714,16 +761,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
 
                         }
-
-                        predictiveMethods.Add(
-                            new PredictiveMethod
-                            {
-                                ServiceName = "IPredictiveEmailNotificationService",
-                                MethodName = "CreateNextStepEmailNotificationsAsync",
-                                Parameters = new List<object> { proposal },
-                                Operation = CrudOperationType.Insert
-                            }
-                        );
 
                     }
                 }

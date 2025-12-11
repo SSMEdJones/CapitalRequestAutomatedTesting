@@ -1,4 +1,4 @@
-﻿namespace CapitalRequest.API.DataAccess.Models
+namespace CapitalRequest.API.DataAccess.Models
 {
     public class ReviewerSearchFilter
     {

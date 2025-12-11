@@ -53,6 +53,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             workflowStepResponder.CreatedBy = proposal.Reviewer.UserId;
             workflowStepResponder.Created = DateTime.Now;
             workflowStepResponder.WorkflowStepOptionID = workflowStepOption.OptionID;
+            workflowStepResponder.WorkflowStepID = Guid.Empty;
 
             return workflowStepResponder;
         }

@@ -9,6 +9,7 @@ using CapitalRequestAutomatedTesting.UI.Services.Predictive;
 using Infrastructure.ApiDiagnostics;
 using Infrastructure.Utilities.Xml;
 using SSMWorkflow.API.DataAccess.Models;
+using System.Diagnostics;
 using System.Reflection;
 using RequestedInfoSearchFilter = CapitalRequest.API.DataAccess.Models.RequestedInfoSearchFilter;
 
@@ -97,6 +98,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 return;
 
             var proposal = await _capitalRequestServices.GetProposal(scenarioDetail.ProposalId);
+            proposal.VerifyingGroupId = scenarioDetail.VerifyingGroupId.Value;
 
             // Ensure we have the current workflow step
             if (proposal.WorkflowId != null && proposal.WorkflowId != Guid.Empty)
@@ -144,6 +146,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 .OrderByDescending(x => x.Created)
                 .FirstOrDefault();
 
+            if (workflowStepOption == null)
+            {
+                var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+
+                var currentStepNumber = verifyingGroup.StepNumber;
+                var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter());
+                var workflowTemplate = workflowTemplates.FirstOrDefault(x => x.StepNumber == currentStepNumber);
+
+                var workflowStepID = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                    .FirstOrDefault(x => x.StepName == workflowTemplate.StepName)?.WorkflowStepID;
+
+                workflowStepOption = (await _ssmWorkflowServices.GetAllAddWorkFlowStepResponder(workflowStepID.Value))
+                 .OrderByDescending(x => x.Created)
+                 .FirstOrDefault();
+
+            }
+
             if (workflowStepOption != null)
             {
                 var workflowStepOptionID = workflowStepOption.WorkflowStepOptionID;
@@ -153,8 +172,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     var recordEntry = responderTable.Records.FirstOrDefault();
                     if (recordEntry?.Data is WorkflowStepResponder workflowStepResponder)
                     {
+                        if (workflowStepResponder.WorkflowStepID == Guid.Empty)
+                            workflowStepResponder.WorkflowStepID = workflowStepOption.WorkflowStepID; ;
+
                         if (workflowStepResponder.WorkflowStepOptionID == Guid.Empty)
-                            workflowStepResponder.WorkflowStepOptionID = workflowStepOptionID;
+                            workflowStepResponder.WorkflowStepOptionID = workflowStepOption.WorkflowStepOptionID;
                     }
                 }
             }
@@ -162,16 +184,17 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             // Update WorkflowStepOption table
             if (tables.TryGetValue("WorkflowStepOption", out var optionTable))
             {
-                var recordEntry = optionTable.Records.FirstOrDefault();
-                if (recordEntry?.Data is List<WorkflowStepOption> predictiveOptions)
+                foreach (var recordEntry in optionTable.Records)
                 {
-                    foreach (var option in predictiveOptions)
+                    if (recordEntry?.Data is List<WorkflowStepOption> predictiveOptions)
                     {
-                        if (option.WorkflowStepID == Guid.Empty)
+                        foreach (var option in predictiveOptions)
                         {
-                            option.WorkflowStepID = workflowStepId;
+                            if (option.WorkflowStepID == Guid.Empty)
+                            {
+                                option.WorkflowStepID = workflowStepId;
+                            }
                         }
-                            
                     }
                 }
             }
@@ -202,17 +225,88 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             }
 
             // Update WorkflowInstanceActionHistory table
-            if (tables.TryGetValue("WorkflowInstanceActionHistory", out var instanceHistoryTable))
+            if (tables.TryGetValue("WorkflowInstanceActionHistory", out var historyTable))
             {
-                var recordEntry = instanceHistoryTable.Records.FirstOrDefault();
-                if (recordEntry?.Data is WorkflowInstanceActionHistory workflowInstanceActionHistory)
+                foreach (var recordEntry in historyTable.Records)
                 {
-                    // Note: The original code had an issue where it was casting to WorkflowInstance instead of WorkflowInstanceActionHistory
-                    // Fixed to properly update the action history object
-                    workflowInstanceActionHistory.WorkflowInstanceID = workflowInstanceActionHistory.WorkflowInstanceID; ;
-                    workflowInstanceActionHistory.WorkflowStepID = workflowStepId;
+                    if (recordEntry?.Data is List<WorkflowInstanceActionHistory> predictiveHistory)
+                    {
+                        if (scenarioDataViewModel.Tables.TryGetValue("WorkflowInstanceActionHistory", out var actualTable))
+                        {
+                            // Store the record count from predictive (outer loop)
+                            var predictiveRecordCount = predictiveHistory.Count;
+
+                            Debug.WriteLine($"[WorkflowInstanceActionHistory] Processing predictive record with {predictiveRecordCount} items");
+
+                            var actualEntry = actualTable.Records.FirstOrDefault();
+                            if (actualEntry?.Data is List<WorkflowInstanceActionHistory> actualHistory)
+                            {
+                                // Find the matching actual entry by record count
+                                var matchingActualEntry = actualTable.Records
+                                    .FirstOrDefault(entry => entry?.Data is List<WorkflowInstanceActionHistory> list &&
+                                                           list.Count == predictiveRecordCount);
+
+                                if (matchingActualEntry?.Data is List<WorkflowInstanceActionHistory> matchingActualHistory)
+                                {
+                                    Debug.WriteLine($"[WorkflowInstanceActionHistory] Found matching actual record with {matchingActualHistory.Count} items");
+
+                                    // Now align records by index within the matching count group
+                                    for (int i = 0; i < predictiveRecordCount; i++)
+                                    {
+                                        var predictiveRecord = predictiveHistory[i];
+                                        var actualRecord = matchingActualHistory[i]; // This uses the matching record count group
+
+                                        Debug.WriteLine($"Aligning record {i} within {predictiveRecordCount}-item group");
+
+                                        // Update predictive record with corresponding actual values
+                                        if (predictiveRecord.WorkflowStepID == Guid.Empty)
+                                            predictiveRecord.WorkflowStepID = actualRecord.WorkflowStepID;
+
+                                        if (predictiveRecord.WorkflowInstanceID == Guid.Empty)
+                                            predictiveRecord.WorkflowInstanceID = actualRecord.WorkflowInstanceID;
+
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
+            //if (tables.TryGetValue("WorkflowInstanceActionHistory", out var historyTable))
+            //{
+            //    foreach (var recordEntry in historyTable.Records)
+            //    {
+
+            //        if (recordEntry?.Data is List<WorkflowInstanceActionHistory> predictiveHistory)
+            //        {
+            //            if (scenarioDataViewModel.Tables.TryGetValue("WorkflowInstanceActionHistory", out var actualTable))
+            //            {
+            //                var actualEntry = actualTable.Records.FirstOrDefault();
+            //                if (actualEntry?.Data is List<WorkflowInstanceActionHistory> actualHistory)
+            //                {
+            //                    // Get the first actual history item to use for backfilling
+            //                    var firstActualItem = actualHistory.FirstOrDefault();
+
+            //                    if (firstActualItem != null)
+            //                    {
+            //                        // Update each predictive item with values from the first actual item
+            //                        foreach (var history in predictiveHistory)
+            //                        {
+            //                            if (history.WorkflowStepID == Guid.Empty)
+            //                                history.WorkflowStepID = firstActualItem.WorkflowStepID;
+
+            //                            if (history.WorkflowInstanceID == Guid.Empty)
+            //                                history.WorkflowInstanceID = firstActualItem.WorkflowInstanceID;
+
+            //                        }
+            //                    }
+            //                }
+
+            //            }
+
+            //        }
+            //    }
+            //}
         }
 
         /// <summary>
@@ -666,6 +760,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                 );
 
                                 actualMethods.Add(
+                                   new ActualMethod
+                                   {
+                                       ServiceName = "IActualWorkflowInstanceService",
+                                       MethodName = "GetNextStepWorkflowInstanceAsync",
+                                       Parameters = new List<object> { proposal },
+                                       Operation = CrudOperationType.Insert
+                                   }
+                               );
+                                actualMethods.Add(
                                     new ActualMethod
                                     {
                                         ServiceName = "IActualWorkflowStakeHolderService",
@@ -694,6 +797,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                     }
                                 );
 
+                                actualMethods.Add(
+                                    new ActualMethod
+                                    {
+                                        ServiceName = "IActualEmailNotificationService",
+                                        MethodName = "GetNextStepEmailNotificationsAsync",
+                                        Parameters = new List<object> { proposal },
+                                        Operation = CrudOperationType.Insert
+                                    }
+                                );
 
                                 if (!string.IsNullOrWhiteSpace(workflowTemplate.AdditionalTask))
                                 {
@@ -710,16 +822,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                                             }
                                         );
 
-                                        actualMethods.Add(
-                                            new ActualMethod
-                                            {
-                                                ServiceName = "IActualEmailNotificationService",
-                                                MethodName = "GetNextStepEmailNotificationsAsync",
-                                                Parameters = new List<object> { proposal },
-                                                Operation = CrudOperationType.Update
-                                            }
-                                        );
                                     }
+
 
                                     break;
                                 }

@@ -141,6 +141,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         public async Task<List<EmailNotification>> CreateNextStepEmailNotificationsAsync(vm.Proposal proposal)
         {
             var emailNotifications = new List<EmailNotification>();
+
+            //var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+
+            //var currentStepNumber = verifyingGroup.StepNumber;
+
             var nextWorkflowStep = await _predictiveWorkflowStepService.CreateNextStepAsync(proposal);
 
             var workflowTemplate = (await _capitalRequestServices

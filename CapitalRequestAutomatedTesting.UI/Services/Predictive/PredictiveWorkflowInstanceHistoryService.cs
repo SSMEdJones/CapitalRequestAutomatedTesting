@@ -9,7 +9,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 {
     public interface IPredictiveWorkflowInstanceHistoryService
     {
-        Task<WorkflowInstanceActionHistory> CreateWorkflowInstanceHistoryAsync(vm.Proposal proposal, string responseType);
+        Task<List<WorkflowInstanceActionHistory>> CreateWorkflowInstanceHistoryAsync(vm.Proposal proposal, string responseType);
         Task<List<WorkflowInstanceActionHistory>> CreateNextStepWorkflowInstanceHistoryAsync(vm.Proposal proposal);
     }
     public class PredictiveWorkflowInstanceHistoryService : IPredictiveWorkflowInstanceHistoryService
@@ -28,7 +28,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             _mapper = mapper;
         }
 
-        public async Task<WorkflowInstanceActionHistory> CreateWorkflowInstanceHistoryAsync(vm.Proposal proposal, string responseType)
+        public async Task<List<WorkflowInstanceActionHistory>> CreateWorkflowInstanceHistoryAsync(vm.Proposal proposal, string responseType)
         {
             var workflowIntances = await _ssmWorkflowServices.GetAllWorkflowInstances(proposal.WorkflowId);
 
@@ -36,27 +36,32 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 .Select( x =>  _mapper.Map<WorkflowInstance>(x))
                 .FirstOrDefault();
 
+            var workflowInstanceActionHistories = new List<WorkflowInstanceActionHistory>();    
             var workflowInstanceActionHistory = _mapper.Map<WorkflowInstanceActionHistory>(workflowInstance);
             workflowInstanceActionHistory.CompletedBy = proposal.Reviewer.UserId;
             workflowInstanceActionHistory.Action = await GetHistoryActionString(responseType, proposal);
 
-            return workflowInstanceActionHistory;
+            workflowInstanceActionHistories.Add(workflowInstanceActionHistory);
+
+            return workflowInstanceActionHistories;
         }
 
         public async Task<List<WorkflowInstanceActionHistory>> CreateNextStepWorkflowInstanceHistoryAsync(vm.Proposal proposal)
         {
             var workflowInstanceActionHistories = new List<WorkflowInstanceActionHistory>();
+            var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+
+            var currentStepNumber = verifyingGroup.StepNumber;
+
             var workflowInstances = await _ssmWorkflowServices.GetAllWorkflowInstances(proposal.WorkflowId);
 
             var workflowInstance = workflowInstances
                 .Select(x => _mapper.Map<WorkflowInstance>(x))
                 .FirstOrDefault();
 
-            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId)).FirstOrDefault(x => !x.IsComplete);
-
             var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new CapitalRequest.API.DataAccess.Models.WorkflowTemplateSearchFilter());
-            var workflowTemplate = workflowTemplates.FirstOrDefault(x => x.StepName == workflowStep.StepName);
-            var nextStep = workflowTemplates.FirstOrDefault(x => x.StepNumber == workflowTemplate.StepNumber++);
+            var workflowTemplate = workflowTemplates.FirstOrDefault(x => x.StepNumber == currentStepNumber);
+            var nextStep = workflowTemplates.FirstOrDefault(x => x.StepNumber == workflowTemplate.StepNumber + 1);
 
             var actionList = new List<string>
             {
@@ -66,8 +71,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             actionList.ForEach(x =>
             {
+                var completedBy = x.Contains("Added step") ? proposal.Reviewer.UserId : "_SYSTEM";
+
                 var workflowInstanceActionHistory = _mapper.Map<WorkflowInstanceActionHistory>(workflowInstance);
-                workflowInstanceActionHistory.CompletedBy = proposal.Reviewer.UserId;
+                workflowInstanceActionHistory.WorkflowInstanceID = Guid.Empty;
+                workflowInstanceActionHistory.WorkflowStepID = Guid.Empty;
+                workflowInstanceActionHistory.CompletedBy = completedBy;
                 workflowInstanceActionHistory.Action = x;
 
                 workflowInstanceActionHistories.Add(workflowInstanceActionHistory);

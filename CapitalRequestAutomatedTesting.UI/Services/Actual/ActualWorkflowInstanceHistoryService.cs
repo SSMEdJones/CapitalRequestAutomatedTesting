@@ -9,7 +9,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 {
     public interface IActualWorkflowInstanceHistoryService
     {
-        Task<WorkflowInstanceActionHistory> GetWorkflowInstanceHistoryAsync(vm.Proposal proposal);
+        Task<List<WorkflowInstanceActionHistory>> GetWorkflowInstanceHistoryAsync(vm.Proposal proposal);
+        Task<List<WorkflowInstanceActionHistory>> GetNextStepWorkflowInstanceHistoryAsync(vm.Proposal proposal);
     }
     public class ActualWorkflowInstanceHistoryService : IActualWorkflowInstanceHistoryService
     {
@@ -30,7 +31,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _mapper = mapper;
         }
 
-        public async Task<WorkflowInstanceActionHistory> GetWorkflowInstanceHistoryAsync(vm.Proposal proposal)
+        public async Task<List<WorkflowInstanceActionHistory>> GetWorkflowInstanceHistoryAsync(vm.Proposal proposal)
         {
             var action = GetHistoryAction(proposal);
             var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId)).FirstOrDefault();
@@ -47,7 +48,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var worklowInstanceActionHistory = workflowInstanceActionHistorys
                 .FirstOrDefault(x => x.Action == action);
 
-            return _mapper.Map<WorkflowInstanceActionHistory>(worklowInstanceActionHistory);
+            var workflowInstanceActionHistories = new List<WorkflowInstanceActionHistory>
+            {
+                _mapper.Map<WorkflowInstanceActionHistory>(worklowInstanceActionHistory)
+            };
+
+            return workflowInstanceActionHistories;
         }
 
         public async Task<List<WorkflowInstanceActionHistory>> GetNextStepWorkflowInstanceHistoryAsync(vm.Proposal proposal)
@@ -64,7 +70,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                 }))
                 .ToList();
 
-            var workflowInstanceActionHistories  = workflowInstanceActionHistorys
+            var workflowInstanceActionHistories = workflowInstanceActionHistorys
                 .Select(x => _mapper.Map<WorkflowInstanceActionHistory>(x))
                 .ToList();
 

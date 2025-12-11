@@ -72,8 +72,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 .Where(x => x.ReviewerGroupId == proposal.ReviewerGroupId && x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower())
                 .FirstOrDefault();
 
-            var workflowStep = await _ssmWorkflowServices.GetWorkflowStep(proposal.WorkflowStepId);
-            
             var reviewerGroups = workflowStepOptions
                 .Select(x => x.ReviewerGroupId)
                 .Distinct()
@@ -84,7 +82,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 .Select(y => y.ReviewerGroupId)
                 .Distinct()
                 .ToList();
-
 
             return reviewerGroups.Count == verifiedGroups.Count;
         }
@@ -131,14 +128,22 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
         public async Task<WorkflowStep> MarkStepCompleteAsync(vm.Proposal proposal)
         {
-            var workflowSteps = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
-                .OrderByDescending(x => x.Created);
 
-            var workflowStep = workflowSteps.FirstOrDefault(x => !x.IsComplete);
+            var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+
+            var currentStepNumber = verifyingGroup.StepNumber;
+
+            var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter());
+            var workflowTemplate = workflowTemplates.FirstOrDefault(x => x.StepNumber == currentStepNumber);
+
+
+            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                .Where(x => x.StepName == workflowTemplate.StepName)
+                .FirstOrDefault();
+
             workflowStep.IsComplete = true; 
             workflowStep.Updated = DateTime.Now;
             workflowStep.UpdatedBy = proposal.Reviewer.UserId;
-
 
             return _mapper.Map<WorkflowStep>(workflowStep);
         }

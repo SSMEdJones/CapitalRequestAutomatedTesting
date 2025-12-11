@@ -45,20 +45,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
         public async Task<List<WorkflowStakeholder>> CreateNextStepWorkflowStakeholdersAsync(vm.Proposal proposal)
         {
-            var stakeholderViewModels = await _ssmWorkflowServices.GetAllWorkFlowStakeholders(proposal.WorkflowId);
 
-            var workflowStakeholders = stakeholderViewModels
-                .Select(x => _mapper.Map<WorkflowStakeholder>(x))
-                .ToList();
+            var workflowStakeholders = new List<WorkflowStakeholder>();
 
-            var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(
-                    new CapitalRequest.API.DataAccess.Models.WorkflowTemplateSearchFilter()
-                );
+            var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
 
-            var workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
-                .FirstOrDefault(x => !x.IsComplete);
-
-            var currentStepNumber = workflowTemplates.FirstOrDefault(x => x.StepName == workflowStep.StepName).StepNumber;
+            var currentStepNumber = verifyingGroup.StepNumber;
 
             var allGroups = await _capitalRequestServices.GetAllReviewerGroups(
                 new CapitalRequest.API.DataAccess.Models.ReviewerGroupSearchFilter
@@ -67,11 +59,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 });
 
             var previousStepGroups = allGroups
-                .Where(x => x.StepNumber < currentStepNumber || x.Name == Constants.REVIEWER_GROUP_AUTHOR)
-                .ToList();
-
-            var workFlowStakeholderViewModels = (await _ssmWorkflowServices.GetAllWorkFlowStakeholders(proposal.WorkflowId))
-                .Where(x => x.WorkflowID == proposal.WorkflowId && x.Stakeholder != Constants.REVIEWER_GROUP_AUTHOR)
+                .Where(x => x.StepNumber < currentStepNumber + 1 || x.Name == Constants.REVIEWER_GROUP_AUTHOR)
                 .ToList();
 
             var filteredReviewerGroups = proposal.ReviewerGroups;
@@ -84,10 +72,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 }
 
                 var workFlowStakeholder = _mapper.Map<WorkflowStakeholder>(reviewerGroup);
-                workFlowStakeholder.CreatedBy = proposal.VerifyUserId;
+                workFlowStakeholder.Created = DateTime.Now;
+                workFlowStakeholder.CreatedBy = proposal.Reviewer.UserId;
+                workFlowStakeholder.WorkflowID = proposal.WorkflowId;
 
                 workflowStakeholders.Add(workFlowStakeholder);
             });
+
 
             return workflowStakeholders;
         }

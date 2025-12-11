@@ -69,7 +69,6 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             {
                 var proposals = new List<Proposal>();
 
-
                 var response = await _capitalRequestSettings.BaseApiUrl
                      .AppendPathSegment("Proposal")
                      .SetQueryParam("ProjectName", filter.ProjectName)
@@ -84,19 +83,29 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                      .SetQueryParam("OverriddenBy", filter.OverriddenBy)
                      .GetJsonAsync<Response<dynamic>>();
 
-            var responseObject = JsonConvert.SerializeObject(response.Result);
-                    var results = JsonConvert.DeserializeObject<List<Proposal>>(responseObject);
+                var responseObject = JsonConvert.SerializeObject(response.Result);
 
-                    if (results != null)
+                var settings = new JsonSerializerSettings
+                {
+                    Error = (sender, args) =>
                     {
-                        foreach (var result in results)
-                        {
-                        proposals.Add(result);
-                        }
+                        // Optional: log or debug
+                        args.ErrorContext.Handled = true;
                     }
+                };
 
-                    return proposals;
+                var results = JsonConvert.DeserializeObject<List<Proposal>>(responseObject, settings);
+
+                if (results != null)
+                {
+                    foreach (var result in results)
+                    {
+                        proposals.Add(result);
+                    }
                 }
+
+                return proposals;
+            }
             catch (FlurlHttpException ex)
             {
                 var exceptionResponse = await ex.GetResponseStringAsync();

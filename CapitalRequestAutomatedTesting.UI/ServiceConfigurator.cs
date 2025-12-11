@@ -115,6 +115,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveWorkflowInstanceService, PredictiveWorkflowInstanceService>();
             services.AddScoped<IPredictiveWorkflowInstanceHistoryService, PredictiveWorkflowInstanceHistoryService>();
             services.AddScoped<IPredictiveWorkflowStakeHolderService, PredictiveWorkflowStakeHolderService>();
+            services.AddScoped<IPredictiveWbsService, PredictiveWbsService>();
 
             #endregion
 
@@ -134,6 +135,7 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IActualWorkflowStakeHolderService, ActualWorkflowStakeHolderService>();
             services.AddScoped<IActualReviewerGroupService, ActualReviewerGroupService>();
             services.AddScoped<IActualWorkflowInstanceHistoryService, ActualWorkflowInstanceHistoryService>();
+            services.AddScoped<IActualWbsService, ActualWbsService>();
 
 
             #endregion

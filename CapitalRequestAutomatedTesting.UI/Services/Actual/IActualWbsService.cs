@@ -8,7 +8,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
 {
     public interface IActualWbsService
     {
-        Task<Wbs> GetWBSNumbersAsync(vm.Proposal proposal);
+        Task<List<vm.Wbs>> GetWBSNumbersAsync(vm.Proposal proposal);
     }
     public class ActualWbsService : IActualWbsService
     {
@@ -24,15 +24,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             _mapper = mapper;
         }
 
-        public async Task<Wbs> GetWBSNumbersAsync(vm.Proposal proposal)
+        public async Task<List<vm.Wbs>> GetWBSNumbersAsync(vm.Proposal proposal)
         {
-            var Wbs = await _capitalRequestServices.GetAllWbss(
+            var wbs = await _capitalRequestServices.GetAllWbss(
             new WbsSearchFilter
             {
                 ProposalId = proposal.Id
             });
 
-            return _mapper.Map<Wbs>(Wbs);
+            return wbs.Select(x => _mapper.Map<vm.Wbs>(x)).ToList(); 
         }       
     }
 }

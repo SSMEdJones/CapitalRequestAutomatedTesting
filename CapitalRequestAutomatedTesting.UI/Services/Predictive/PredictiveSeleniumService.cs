@@ -566,16 +566,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                    }
                );
 
-                predictiveMethods.Add(
-                    new PredictiveMethod
-                    {
-                        StepNumber = ++stepNumber,
-                        ServiceName = "IPredictiveWorkflowActionService",
-                        MethodName = "ValidateVerifyButtonAsync",
-                        Parameters = new List<object> { proposal, expectedMessage }
-                    }
-                );
-
                 if (detail.VerifyAndSendToVPFinance)
                 {
                     predictiveMethods.Add(

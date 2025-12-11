@@ -5,13 +5,13 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class ScenarioDataViewModel
     {
-        public string ScenarioId { get; internal set; }
+        public string ScenarioId { get; set; }
         public int? ActualExecutionDurationMinutes { get; set; }
         public TimeSpan? ActualExecutionDuration { get; set; }
         public List<PredictiveMethod> PredictiveMethods { get; set; } = new();
 
         public Dictionary<string, TableData> Tables { get; set; } = new Dictionary<string, TableData>();
-        public bool IsOriginalData { get; internal set; }
+        public bool IsOriginalData { get; set; }
 
         // Stores field-level data grouped by table and row
         //public Dictionary<string, Dictionary<string, Dictionary<string, object>>> Data { get; set; } = new();

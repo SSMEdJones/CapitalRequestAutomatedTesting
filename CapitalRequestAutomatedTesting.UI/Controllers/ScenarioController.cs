@@ -33,7 +33,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         private readonly IScenarioComparer _scenarioComparer;
         private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
-        //private readonly ScenarioViewModelBuilder _viewModelBuilder;
         private readonly IPdfService _pdfService;
         private readonly IHubContext<ScenarioProgressHub> _hubContext;
 
@@ -48,7 +47,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             IActualSeleniumService actualSeleniumService,
             IViewRenderService viewRenderService,
             IScenarioMemoryCache scenarioMemoryCache,
-            //ScenarioViewModelBuilder viewModelBuilder,
             IScenarioComparer scenarioComparer,
             IFormDataContext formDataContext,
             IPdfService pdfService,
@@ -66,7 +64,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             _actualSeleniumService = actualSeleniumService;
             _viewRenderService = viewRenderService;
             _scenarioMemoryCache = scenarioMemoryCache;
-            //_viewModelBuilder = viewModelBuilder;
             _scenarioComparer = scenarioComparer;
             _formDataContext = formDataContext;
             _pdfService = pdfService;
@@ -156,7 +153,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                                 }
                                 break; // Success
                             }
-                            catch (IOException ) when (i < 2)
+                            catch (IOException) when (i < 2)
                             {
                                 await Task.Delay(100);
                             }
@@ -409,23 +406,26 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
                     scenario.OriginalData = await _originalScenarioService.GenerateScenarioDataAsync(scenario);
                 }
 
-                // Step 3: Actual Selenium
-                _logger.LogInformation("Step 3/4: Executing Actual Selenium for {ScenarioName}", scenario.DisplayText);
-
-                if (!string.IsNullOrEmpty(connectionId))
+                if (scenario.PredictedSeleniumOutcome.Success)
                 {
-                    await _hubContext.Clients.Group($"scenario-{connectionId}")
-                        .SendAsync("UpdateProgress", new
-                        {
-                            current = currentIndex - 1,
-                            total = totalScenarios,
-                            scenarioName = scenario.DisplayText,
-                            currentStep = "Actual Selenium"
-                        });
-                }
+                    // Step 3: Actual Selenium
+                    _logger.LogInformation("Step 3/4: Executing Actual Selenium for {ScenarioName}", scenario.DisplayText);
 
-                scenario.StopWatch = Stopwatch.StartNew();
-                scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+                    if (!string.IsNullOrEmpty(connectionId))
+                    {
+                        await _hubContext.Clients.Group($"scenario-{connectionId}")
+                            .SendAsync("UpdateProgress", new
+                            {
+                                current = currentIndex - 1,
+                                total = totalScenarios,
+                                scenarioName = scenario.DisplayText,
+                                currentStep = "Actual Selenium"
+                            });
+                    }
+
+                    scenario.StopWatch = Stopwatch.StartNew();
+                    scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
+                }
 
                 // Step 4: Actual Data
                 if (scenario.PredictedSeleniumOutcome.Success)
@@ -490,63 +490,15 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             return scenario;
         }
 
-        //public async Task<IActionResult> RunSelected()
-        //{
-
-        //    var modelJson = TempData["ScenarioModel"] as string;
-        //    var model = JsonConvert.DeserializeObject<ScenarioFormViewModel>(modelJson);
-
-        //    // Check if model.ScenarioDetails has data
-        //    if (model.ScenarioDetails == null || !model.ScenarioDetails.Any())
-        //    {
-        //        // Log or debug here
-        //        Debug.WriteLine("ScenarioDetails is empty");
-        //    }
-
-        //    var selectedScenarios = model.ScenarioDetails
-        //    .Where(s => model.SelectedScenarioIds.Contains(s.ScenarioId))
-        //    .ToList();
-
-        //    var scenarioDetails = new List<ScenarioDetailsViewModel>();
-        //    var scenarioDetail = new ScenarioDetailsViewModel();
-        //    // Now you have full access to each selected scenario's form data
-        //    foreach (var scenario in selectedScenarios)
-        //    {
-
-        //        var detail = await ProcessScenario(scenario);
-
-        //        if (detail.PredictiveSeleniumFailed)
-        //        {
-        //            if (detail.CommitStepReached)
-        //            {
-        //                TempData["ScenarioDetail"] = JsonConvert.SerializeObject(detail);
-
-        //                return RedirectToAction("Preview", "Rollback");
-
-        //            }
-
-        //            return RedirectToAction("ViewComparison");
-
-        //        }
-
-        //        scenarioDetails.Add(detail);
-
-        //        // etc.
-        //    }
-
-        //    // Store them in TempData or session (TempData uses serialization)
-        //    foreach (var detail in scenarioDetails)
-        //    {
-        //        TempData["Scenario"] = JsonConvert.SerializeObject(detail);
-
-        //    }
-
-        //    return RedirectToAction("ViewComparison");
-        //}
-
         public IActionResult ViewComparison()
         {
             var scenariosJson = TempData["Scenarios"] as string;
+
+
+            if (scenariosJson == null)
+            {
+                return RedirectToAction("Index");
+            }
             var scenarios = JsonConvert.DeserializeObject<List<ScenarioDetailsViewModel>>(scenariosJson);
 
             if (scenarios == null || !scenarios.Any())
@@ -579,54 +531,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             return View("ViewMultipleComparisons", comparisonResults);
         }
 
-        //private async Task<ScenarioDetailsViewModel> ProcessScenario(ScenarioDetailsViewModel scenario)
-        //{
-
-        //    var scenarioJson = JsonConvert.SerializeObject(scenario, Formatting.Indented,
-        //    new JsonSerializerSettings
-        //    {
-        //        ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        //    });
-        //    Debug.WriteLine($"Scenario Contents:\n{scenarioJson}");
-
-        //    // Step 1: Predictive Selenium
-        //    var scenarioId = scenario.ScenarioId;
-        //    using (ScopeContext.PushProperty("ScenarioId", scenarioId))
-        //    {
-        //        _logger.LogInformation("Process started for scenario {ScenarioId}", scenarioId);
-        //    }
-
-        //    scenario.PredictedSeleniumOutcome = await _predictiveSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
-
-        //    var completionStep = scenario.PredictiveCompletionStep;
-
-        //    var stopwatch = Stopwatch.StartNew();
-
-        //    // Step 2: Predictive Data (only if prediction succeeded)
-        //    if (scenario.PredictedSeleniumOutcome.Success)
-        //    {
-        //        scenario.PredictiveData = await _predictiveScenarioService.GenerateScenarioDataAsync(scenario);
-        //        scenario.OriginalData = await _originalScenarioService.GenerateScenarioDataAsync(scenario);
-        //    }
-
-        //    // Step 3: Actual Selenium — even if prediction failed (limited by completion step count)
-        //    scenario.StopWatch = Stopwatch.StartNew();
-        //    scenario.ActualSeleniumOutcome = await _actualSeleniumService.GenerateSeleniumOutcomeAsync(scenario);
-
-        //    //Step 4: Actual Data(only if prediction succeeded)
-        //    if (scenario.PredictedSeleniumOutcome.Success)
-        //    {
-        //        scenario.ActualData = await _actualScenarioService.GenerateScenarioDataAsync(scenario);
-        //        stopwatch.Stop();
-
-        //        scenario.ActualData.ActualExecutionDuration = stopwatch.Elapsed;
-        //        scenario.ActualData.ActualExecutionDurationMinutes = (int)Math.Ceiling(stopwatch.Elapsed.TotalMinutes);
-
-        //    }
-
-        //    return scenario;
-        //}
-
         [HttpGet]
         public async Task<IActionResult> LoadScenarioPartial(string scenarioId, int requestId)
         {
@@ -648,19 +552,19 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         }
 
 
-        [HttpGet]
-        public async Task<JsonResult> Scenarios()
-        {
-            var scenarios = new List<object>
-            {
-                new { id = "SCN001", name = "Request More Information" },
-                new { id = "SCN002", name = "Reply to Request" },
-                new { id = "SCN004", name = "Verify" },
-                new { id = "SCN004", name = "Approve WBS" }
-            };
+        //[HttpGet]
+        //public async Task<JsonResult> Scenarios()
+        //{
+        //    var scenarios = new List<object>
+        //    {
+        //        new { id = "SCN001", name = "Request More Information" },
+        //        new { id = "SCN002", name = "Reply to Request" },
+        //        new { id = "SCN004", name = "Verify" },
+        //        new { id = "SCN004", name = "Approve WBS" }
+        //    };
 
-            return Json(scenarios);
-        }
+        //    return Json(scenarios);
+        //}
 
 
         [HttpGet]
@@ -668,31 +572,7 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
         {
             var result = await _scenarioControllerService.GetTargetGroupsAndReviewersAsync(proposalId, groupId, groupType);
             return Json(result);
-            //var targetGroups = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
-            //var reviewers = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
 
-
-            //if (groupType == "verifying")
-            //{
-            //    reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
-            //}
-
-            //if (groupType == "requesting")
-            //{
-            //    targetGroups = await _scenarioControllerService.GetTargetGroupsByRequestIdAsync(proposalId, groupId);
-            //    reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
-            //}
-            //else if (groupType == "replying")
-            //{
-            //    targetGroups = await _scenarioControllerService.GetRequestingGroupsByReplyingIdAsync(proposalId, groupId);
-            //    reviewers = await _scenarioControllerService.GetReviewersBySelectedGroupAsync(proposalId, groupId);
-            //}
-
-            //return Json(new
-            //{
-            //    targetGroups,
-            //    reviewers
-            //});
         }
 
         public async Task<IActionResult> PrintScenarioPdf(int id)
@@ -700,7 +580,6 @@ namespace CapitalRequestAutomatedTesting.UI.Controllers
             try
             {
                 var model = _scenarioMemoryCache.Get(id);
-                //var scenario = await _scenarioControllerService.GetScenarioByIdAsync(scenarioId);
 
                 var htmlContent = await _viewRenderService.RenderToStringAsync("Scenario/ViewComparison", model);
 

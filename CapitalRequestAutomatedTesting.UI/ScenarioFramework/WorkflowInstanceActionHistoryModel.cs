@@ -4,13 +4,12 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
 {
     public class WorkflowInstanceActionHistoryModel
     {
-
+        [RowKey]
         public Guid WorkflowInstanceID { get; set; }
 
         public Guid WorkflowStepID { get; set; }
 
-        public Guid? OptionID { get; set; }
-
+        [RowKey]
         public string Action { get; set; }
 
         public DateTime Completed { get; set; }

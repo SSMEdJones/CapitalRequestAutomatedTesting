@@ -43,8 +43,13 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         public async Task<List<vm.Wbs>> GenerateWBSNumbersAsync(vm.Proposal proposal)
         {
             var proposalId = proposal.Id;
-            var allWBS = await _capitalRequestServices.GetAllWbss(new WbsSearchFilter());
             var proposals = await _capitalRequestServices.GetAllProposals(new ProposalSearchFilter { CapitalFundingYear = proposal.CapitalFundingYear });
+            var proposalIds = proposals.Select(p => p.Id).ToList();
+            var allWBS = (await _capitalRequestServices.GetAllWbss(new WbsSearchFilter()))
+                .Where(x => proposalIds.Contains(x.ProposalId))
+                .ToList();
+
+
             var projectTypes = await _capitalRequestServices.GetAllProjectTypes();
             var capitalPoolIdentifiers = await _capitalRequestServices.GetAllCapitalPoolIdentifiers();
             var capitalPools = await _capitalRequestServices.GetAllCapitalPools();
@@ -61,7 +66,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     where x.ProposalId == proposalId && x.TypeOfProject == w.TypeOfProject
                     orderby x.Id
                     select x).ToList().IndexOf(w) + 1 // ROW_NUMBER equivalent
-                let uniqueId = GetWBSUniqueId(p.CapitalFundingYear, proposalId, proposal.WBSList, proposals)
+                let uniqueId = GetWBSUniqueId(p.CapitalFundingYear, proposalId, allWBS, proposals)
                 select new
                 {
                     w.Id,
@@ -75,12 +80,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                         p.CompanyCode,
                         cpi.ShortName,
                         cp.ShortName,
-                        p.CapitalFundingYear.ToString().Substring(2, 2), // last 2 digits
-                        uniqueId,
+                        p.CapitalFundingYear.ToString().Substring(2, 2) + uniqueId,
                         componentCount.ToString().PadLeft(2, '0'))
                 };
 
+            var newWBSList = query.ToList();
+
             var wbsList = new List<vm.Wbs>();
+
             foreach (var wbs in proposal.WBSList)
             {
                 if (!string.IsNullOrEmpty(wbs.Wbsnumber))
@@ -89,14 +96,16 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     wbsList.Add(wbs);
                     continue;
                 }
-                var uniqueId = GetWBSUniqueId(
-                    proposal.CapitalFundingYear,
-                    proposal.Id,
-                    allWBS,
-                    proposals);
-                wbs.Wbsnumber = $"{proposal.CapitalFundingYear}-CR-{proposal.Id.ToString().PadLeft(6, '0')}-{uniqueId}";
+                var newWbsEntry = newWBSList.FirstOrDefault(x => x.Id == wbs.Id);
+
+                if (newWbsEntry != null)
+                {
+                    wbs.Wbsnumber = newWbsEntry.WBSNumber;
+                }
+
                 wbsList.Add(wbs);
             }
+
             return wbsList;
         }
 
@@ -106,6 +115,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             IEnumerable<vm.Wbs> wbsList,
             IEnumerable<vm.Proposal> proposals)
         {
+
             // Find max UniqueID from existing WBSNumbers for same funding year, excluding current proposal
             var maxUniqueId = (from w in wbsList
                                join p in proposals on w.ProposalId equals p.Id

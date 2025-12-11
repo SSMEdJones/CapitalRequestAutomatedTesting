@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using CapitalRequest.API.DataAccess.ConfigurationSettings;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequest.API.Models;
@@ -60,6 +60,7 @@ namespace CapitalRequest.API.DataAccess.Services.Api
                     .AppendPathSegment("Reviewer")
                     .SetQueryParams(new
                     {
+                        filter.UserId,
                         filter.Email,
                         filter.RegionId,
                         filter.SegmentId,

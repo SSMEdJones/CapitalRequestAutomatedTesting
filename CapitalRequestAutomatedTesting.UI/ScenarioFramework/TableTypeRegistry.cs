@@ -13,10 +13,9 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
             { "Workflow", typeof(WorkflowModel) },
             { "WorkflowStep", typeof(WorkflowStepModel) },
             { "WorkflowInstance", typeof(WorkflowInstanceModel) },
-            { "WorkflowInstanceActionHistory", typeof(WorkflowInstanceActionHistoryModel) },
+            { "WorkflowInstanceActionHistory", typeof(List<WorkflowInstanceActionHistoryModel>) }, // ✅ FIXED
             { "WorkflowStakeHolder", typeof(List<WorkflowStakeholderModel?>) },
-            { "Wbs", typeof(WbsModel) },
-        // Add more table-to-type mappings here
+            { "Wbs", typeof(List<WbsModel>) },
         };
     }
 }

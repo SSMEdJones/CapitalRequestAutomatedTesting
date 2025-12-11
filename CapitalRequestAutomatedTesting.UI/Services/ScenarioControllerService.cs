@@ -822,7 +822,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         public SeleniumStepResult ValidateVerifyButtonAsync(vm.Proposal proposal)
         {
             return ExecuteValidationWithCondition(
-                () => proposal.IsVpOfOps && proposal.VerifyAndSendToVPFinance,
+                () => proposal.WorkflowId != Guid.Empty && proposal.IsMovingForward,
                 "Verify Project button validation passed.",
                 "Verify Project button not found for this Request."
             );

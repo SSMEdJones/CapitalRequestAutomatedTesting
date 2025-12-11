@@ -142,6 +142,9 @@ namespace CapitalRequestAutomatedTesting.UI.ScenarioFramework
         public bool VerifyAndSendToVPFinance { get; set; }
 
         public bool IsVpOfOps { get; set; }
+        [IgnoreForLogging]
+
+        public bool IsTestMode { get; set; }
 
     }
 }
