@@ -35,10 +35,6 @@ namespace CapitalRequest.API.DataAccess.Services.Api
             try
             {
                 var applicationUser = new ApplicationUser();
-                var debug =  _capitalRequestSettings.BaseApiUrl
-                    .AppendPathSegment("ApplicationUser")
-                    .AppendPathSegment($"{userId}");
-
                 var response = await _capitalRequestSettings.BaseApiUrl
                     .AppendPathSegment("ApplicationUser")
                     .AppendPathSegment($"{userId}")

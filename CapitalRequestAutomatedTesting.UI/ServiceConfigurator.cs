@@ -115,7 +115,11 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<IPredictiveWorkflowInstanceService, PredictiveWorkflowInstanceService>();
             services.AddScoped<IPredictiveWorkflowInstanceHistoryService, PredictiveWorkflowInstanceHistoryService>();
             services.AddScoped<IPredictiveWorkflowStakeHolderService, PredictiveWorkflowStakeHolderService>();
+            services.AddScoped<IPredictiveSeleniumService, PredictiveSeleniumService>();
+            services.AddScoped<IPredictiveDashboardService, PredictiveDashboardService>();
             services.AddScoped<IPredictiveWbsService, PredictiveWbsService>();
+            services.AddScoped<IPredictiveProposalService, PredictiveProposalService>();
+            services.AddScoped<IPredictiveWBSDashboardService, PredictiveWBSDashboardService>();
 
             #endregion
 
@@ -157,10 +161,6 @@ namespace CapitalRequestAutomatedTesting.UI
             services.AddScoped<ITestActionService, WorkflowTestActionService>();
             services.AddScoped<IScenarioControllerService, ScenarioControllerService>();
             services.AddScoped<IScenarioComparer, ScenarioComparer>();
-            #endregion
-            #region Selenium Services
-            services.AddScoped<IPredictiveSeleniumService, PredictiveSeleniumService>();
-            services.AddScoped<IPredictiveDashboardService, PredictiveDashboardService>();
             #endregion
 
             #region pdf/save services

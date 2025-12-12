@@ -30,6 +30,7 @@ namespace CapitalRequestAutomatedTesting.UI.Models
 
         public const string BUTTON_CAPTION_VERIFY = "Verify";
         public const string BUTTON_CAPTION_REPLY = "Reply";
+        public const string BUTTON_CAPTION_APPROVE_WBS = "Approve WBS";
 
         //Response Types
         public const string RESPONSE_VERIFIED = "Verified";
@@ -47,6 +48,8 @@ namespace CapitalRequestAutomatedTesting.UI.Models
 
         //New Step 
         public const string STEP_ACTION_ADDED = "Added step";
+
+        public const string STEP_NAME_WBS_VERIFICATION = "Corporate WBS Verification";
 
         //Response Messages
         public const string RESPONSE_ACTION_VERIFIED = "Thank you for verifying this project!";
@@ -126,6 +129,9 @@ namespace CapitalRequestAutomatedTesting.UI.Models
         public const string ADDITIONAL_TASK_CREATE_WBS_NUMBERS = "CreateWBSNumbers";
 
         public const string WORKFLOW_ACTION_GROUP_VPOPS = "3 -VP Ops";
+
+        //Proposal
+        public const string PROJECT_NUMBER_PREFIX = "CE";
 
 
     }

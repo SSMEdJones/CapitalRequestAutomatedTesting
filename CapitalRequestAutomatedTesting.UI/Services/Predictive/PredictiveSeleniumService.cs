@@ -23,7 +23,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         private readonly IFormDataContext _formDataContext;
         private readonly IMapper _mapper;
 
-        public PredictiveSeleniumService(ICapitalRequestServices capitalRequestServices,
+        public PredictiveSeleniumService(
+            ICapitalRequestServices capitalRequestServices,
             ISSMWorkflowServices ssmWorkflowServices,
             IServiceScopeFactory scopeFactory,
             IFormDataContext formDataContext,
@@ -47,7 +48,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             scenarioDetail.SelectedProperties["Scenario Name"] = scenarioDetail.DisplayText;
             scenarioDetail.SelectedProperties["Req Id"] = scenarioDetail.ProposalId.ToString();
 
-            if (scenarioId != "SCN003" && scenarioId != "SCN004")
+            if (scenarioId == "SCN001" || scenarioId == "SCN002")
             {
                 proposal.ReviewerGroupId = detail.RequestingGroupId;
                 proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
@@ -74,8 +75,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 scenarioDetail.SelectedProperties["Target Group"] = targetGroup.Name;
 
-                //var methods = await GetSeleniumMethodsAsync(scenarioDetail);
-                //seleniumScenarioOutcome = await ExecuteSeleniumMethodsAsync(methods, scenarioDetail);
             }
 
             if (scenarioId == "SCN002")
@@ -96,6 +95,12 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 // stubbed for future scenario
 
             }
+            if (scenarioId == "SCN005")
+            {
+                // stubbed for future scenario
+
+            }
+
 
             var methods = await GetSeleniumMethodsAsync(scenarioDetail);
             seleniumScenarioOutcome = await ExecuteSeleniumMethodsAsync(methods, scenarioDetail);
@@ -186,6 +191,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 serviceType = typeof(IPredictiveDashboardService);
             else if (serviceName == $"{nameSpace}IPredictiveWorkflowStepOptionService")
                 serviceType = typeof(IPredictiveWorkflowStepOptionService);
+            else if (serviceName == $"{nameSpace}IPredictiveDashboardService")
+                serviceType = typeof(IPredictiveDashboardService);
+            else if (serviceName == $"{nameSpace}IPredictiveWBSDashboardService")
+                serviceType = typeof(IPredictiveWBSDashboardService);
 
 
             // Get service instance
@@ -273,7 +282,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             var requestingGroupName = string.Empty;
             var submitUserId = string.Empty;
 
-            if (scenarioId != "SCN003" && scenarioId != "SCN004")
+            if (scenarioId == "SCN001" || scenarioId == "SCN002")
             {
 
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
@@ -718,6 +727,50 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 );
 
             }
+            else if (scenarioId == "SCN005")
+            {
+                proposal.ButtonCaption = Constants.BUTTON_CAPTION_APPROVE_WBS;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.VerifyingGroupId = detail.VerifyingGroupId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+                proposal.ActionType = Constants.ACTION_TYPE_APPROVE_WBS;
+
+                var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+                var verifyingGroupName = verifyingGroup.Name;
+                var user = await _capitalRequestServices.GetApplicationUser(proposal.Reviewer.UserId);
+                proposal.IsAdmin = user.ApplicationRoleId == Constants.APPLICATION_ROLE_ID_ADMIN;
+
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       StepNumber = ++stepNumber,
+                       ServiceName = "IPredictiveWorkflowActionService",
+                       MethodName = "ValidateWorkflowButtonAsync",
+                       Parameters = new List<object> { proposal }
+                   }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        ServiceName = "IScenarioControllerService",
+                        MethodName = "ValidateApproveWBSButton",
+                        Parameters = new List<object> { proposal }
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        StepNumber = ++stepNumber,
+                        ServiceName = "IPredictiveWBSDashboardService",
+                        MethodName = "ValidateDashboardStatusAsync",
+                        Parameters = new List<object> { proposal }
+                    }
+                );
+            }
+
 
             return predictiveMethods;
         }

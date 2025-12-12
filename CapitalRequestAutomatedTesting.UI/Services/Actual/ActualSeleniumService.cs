@@ -52,7 +52,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var detail = _mapper.Map<ScenarioDetails>(scenarioDetail);
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
 
-            if (detail.ScenarioId != "SCN003" && detail.ScenarioId != "SCN004")
+            if (detail.ScenarioId == "SCN001" || detail.ScenarioId == "SCN002")
             {
 
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
@@ -97,6 +97,11 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             {
                 //stubbed for future scenario
             }
+            else if (scenarioId == "SCN005")
+            {
+                //stubbed for future scenario
+            }
+
 
             var steps = await GenerateSeleniumSteps(scenarioDetail);
 
@@ -149,7 +154,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             proposal.SubmitUserId = detail.SubmitUserId;
             var userId = string.Empty;
 
-            if (detail.ScenarioId != "SCN003" && detail.ScenarioId != "SCN004")
+            if (detail.ScenarioId == "SCN001" || detail.ScenarioId == "SCN002")
             {
                 proposal.ReviewerGroupId = detail.RequestingGroupId;
                 proposal.RequestedInfo.RequestingReviewerGroupId = detail.RequestingGroupId;
@@ -188,7 +193,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
             var baseUrl = _workflowControllerService.GetAppKeyValueByKey("CapitalRequest", "CapitalRequestURL").LookupValue;
             var filter = new DashboardSearchFilter { CapitalFundingYear = DateTime.Now.Year };
 
-            scenarioDetail.RequestCount = (await _actualDashboardService.GetDashboardDataByUserId(filter, userId)).Count();
+            if (detail.ScenarioId != "SCN005")
+            {
+                scenarioDetail.RequestCount = (await _actualDashboardService.GetDashboardDataByUserId(filter, userId)).Count();
+            }
 
             Debug.WriteLine($"ReviewerUserId: {reviewer.UserId ?? "null"}");
 
@@ -828,6 +836,179 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     Retryable = true
                 });
             }
+            else if (scenarioId == "SCN004")
+            {
+                var editButtonId = "btnEditAttachments";
+                var editButtonText = "Edit ";
+                var submitButtonId = "btnSubmitWorkflow";
+                var submitButtonText = "Submit ";
+
+                // Step 1: Navigate to page and click Attachments tab
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = "Navigate to Attachments tab",
+                    Action = new SeleniumDsl()
+                        .BeginWith(Execute.NavigateTo(viewProposalUrl))
+                        .Then(Execute.ClickButtonById("nav-attachments-tab", "Attachments tab"))
+                        .Build("Navigated to Attachments tab")
+                });
+
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = "Validate Edit button and click",
+                    Action = new SeleniumDsl()
+                        .BeginWith(Validate.ElementById(editButtonId, $"{editButtonText} button"))
+                        .Then(Execute.RobustClickById(editButtonId, editButtonText, maxRetries))
+                        .Build("Clicked edit button")
+
+                });
+
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = "Validate Submit button ",
+                    Action = new SeleniumDsl()
+                        .BeginWith(Validate.ElementById(submitButtonId, $"{submitButtonText} button"))
+                        .Build("Reached submit page")
+
+                });
+
+                if (scenarioDetail.PauseBeforeSubmit)
+                {
+                    actualSteps.Add(new SeleniumScenarioStep
+                    {
+                        StepNumber = ++stepNumber,
+                        Description = "Pause for user to manually submit and auto-detect email notification",
+                        Action = async driver =>
+                        {
+                            Console.WriteLine("🔄 Paused: Please manually submit the form in the browser.");
+                            Console.WriteLine("🤖 Automation will automatically continue when an email notification is created...");
+                            Debug.WriteLine($"🔄 {scenarioId}: Starting automated email notification detection");
+
+                            var urlBefore = driver.Url;
+                            Debug.WriteLine($"🔄 {scenarioId}: Current URL before submission: {urlBefore}");
+
+                            // 🔥 Wait for email notification to be created (instead of response message)
+                            var emailResult = await WaitForEmailNotification(scenarioId, proposalId, maxWaitSeconds: 60);
+
+                            if (emailResult.Found)
+                            {
+                                Console.WriteLine($"✅ Email notification detected: ID {emailResult.NotificationId}");
+                                Console.WriteLine($"🚀 Continuing test execution automatically after {emailResult.ElapsedSeconds:F1}s");
+
+                                Debug.WriteLine($"✅ {scenarioId}: Auto-detected email notification after {emailResult.ElapsedSeconds:F1}s");
+                                return SeleniumStepResult.Pass($"Form submitted successfully. Auto-detected email notification: ID {emailResult.NotificationId}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"⏰ Timeout: No email notification created within 60 seconds");
+                                Debug.WriteLine($"⏰ {scenarioId}: Timeout waiting for email notification");
+
+                                // Fallback: Check for redirect or other indicators
+                                try
+                                {
+                                    await Task.Delay(2000);
+                                    var currentUrl = driver.Url;
+
+                                    if (currentUrl.Contains("/Home") || !currentUrl.Contains("WorkflowActions"))
+                                    {
+                                        Debug.WriteLine($"⚠️ {scenarioId}: Detected redirect as fallback indicator");
+                                        return SeleniumStepResult.Pass($"Form likely submitted (detected redirect to: {currentUrl})");
+                                    }
+                                    else
+                                    {
+                                        return SeleniumStepResult.Fail("Timeout waiting for email notification and no redirect detected");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    return SeleniumStepResult.Fail($"Timeout and error checking fallback indicators: {ex.Message}");
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Continue with dashboard validation step as before
+                var conditionalDashboardSteps = new SeleniumDsl()
+                    .BeginWith(Execute.WaitForDashboardSearchBox()) // Wait for search box instead of navigate
+                    .Then(Conditional.If(
+                        userHasNoRequests,
+                        Validate.NoRequestsMessage(),
+                        new SeleniumDsl()
+                            .BeginWith(Execute.DashboardSearch(proposalId.ToString()))
+                            .Then(Validate.DashboardStatus(dashboardOrder, proposal.SubmitUserId, DateTime.Now, Constants.CHECK_ICON_CLASS))
+                            .Build("Dashboard Search + Status Validation")
+                    ))
+                    .Build("Wait for Dashboard Search Box and validate group status");
+
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    StepName = "Validate group status",
+                    Description = $"Navigate to Home Dashboard enter Request Id and verify group status",
+                    Action = conditionalDashboardSteps,
+                    Retryable = true
+                });
+            }
+            else if (scenarioId == "SCN005")
+            {
+                var approveWbsButtonId = "btnAction";
+                var approveWbsButtonText = Constants.BUTTON_CAPTION_APPROVE_WBS;
+
+                proposal.ButtonCaption = Constants.BUTTON_CAPTION_APPROVE_WBS;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.VerifyingGroupId = detail.VerifyingGroupId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+                proposal.ActionType = Constants.ACTION_TYPE_APPROVE_WBS;
+                var verifyingGroup = await _capitalRequestServices.GetReviewerGroup(proposal.VerifyingGroupId);
+                var verifyingGroupName = verifyingGroup.Name;
+
+                var btnApproveId = "btnApproveWBS";
+                var btnApproveText = "Approve";
+
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = "Validate Workflow DashBoard button click and validate Verifying Reviewer Group Verify button",
+                    Action = new SeleniumDsl()
+                        .BeginWith(Validate.ElementById(approveWbsButtonId, $"{approveWbsButtonText} button"))
+                        .Then(Execute.RobustClickById(approveWbsButtonId, approveWbsButtonText, maxRetries))
+                        .Then(Validate.Text(workflowPortion))
+                        .Then(Validate.ButtonInRowWithText(workflowPortion, verifyButtonText))
+                        .Build("Reached Workflow DashBoard page")
+
+                });
+
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = "Validate Wbs Approval button ",
+                    Action = new SeleniumDsl()
+                        .BeginWith(Execute.NavigateTo(viewProposalUrl))
+                        .Then(Validate.ElementById(approveWbsButtonId, $"{workflowButtonText} button"))
+                        .Then(Execute.RobustClickById(workflowButtonId, workflowButtonText, maxRetries))
+                        .Then(Validate.Text(workflowPortion))
+                        .Then(Validate.ButtonInRowWithText(workflowPortion, verifyButtonText))
+                        .Build("Reached Workflow DashBoard page")
+
+                });
+
+                actualSteps.Add(new SeleniumScenarioStep
+                {
+                    StepNumber = ++stepNumber,
+                    Description = $"Click '{approveWbsButtonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
+                    Action = new SeleniumDsl()
+                    .BeginWith(Execute.ClickButtonInRow(workflowPortion, verifyButtonText))
+                    .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
+                    .Then(Validate.ButtonById(verifyButtonId, verifyProjectButton))
+                    .Build("Clicked Verify and confirmed page transition")
+                });
+
+            }
+
 
             return actualSteps;
         }

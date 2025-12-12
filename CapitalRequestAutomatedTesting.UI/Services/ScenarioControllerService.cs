@@ -1,4 +1,5 @@
 using CapitalRequest.API.DataAccess.Models;
+using CapitalRequest.API.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
 using CapitalRequestAutomatedTesting.UI.Models;
 using CapitalRequestAutomatedTesting.UI.ScenarioFramework;
@@ -66,6 +67,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services
         {
             var submitted = false;
             var proposalId = 0;
+            List<vm.WorkflowAction> verifyWBS = null;
+            var scenarioDetails = new List<ScenarioDetailsViewModel>();
+
             if (requestId != null)
             {
                 proposalId = requestId.Value;
@@ -74,11 +78,27 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                 {
                     // 🔥 Fixed syntax error
                     submitted = proposal.WorkflowId != null && proposal.WorkflowId != Guid.Empty;
+                    verifyWBS = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(requestId.Value, Constants.ACTION_TYPE_VERIFY_WBS))
+                        .Distinct()
+                        .ToList();
+
                 }
+
             }
 
-            var scenarioDetails = new List<ScenarioDetailsViewModel>();
-            if (!submitted && requestId != null)
+            if (verifyWBS != null )
+            {
+                scenarioDetails.Add(new ScenarioDetailsViewModel
+                {
+                    ScenarioId = "SCN005",
+                    PartialViewName = "_ApproveWBS",
+                    DisplayText = "Approve WBS",
+                    SequenceNumber = 1,
+                    VerifyingGroups = requestId.HasValue ? await GetReviewerGroupsAsync(requestId.Value, Constants.ACTION_TYPE_VERIFY_WBS) : new List<SelectListItem>(),
+                });
+
+            }
+            else if (!submitted && requestId != null)
             {
                 // 🔥 If NOT submitted, only show SCN003 for testing submission
                 scenarioDetails.Add(new ScenarioDetailsViewModel
@@ -90,23 +110,20 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                     SubmitUsers = await GetSubmitUsersAsync(proposalId)
                 });
             }
-            else
+            else if (requestId.HasValue)
             {
-                var isVpOps = false;
 
-                if (requestId.HasValue)
-                {
-                    var workflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(requestId.Value, Constants.ACTION_TYPE_VERIFY))
-                        .Distinct()
-                        .ToList();
+                var workflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(requestId.Value, Constants.ACTION_TYPE_VERIFY))
+                    .Distinct()
+                    .ToList();
 
-                    isVpOps = workflowPortions.Any(x => x.WorkflowPortion == Constants.WORKFLOW_ACTION_GROUP_VPOPS) ? true : false;
-                }
+                var isVpOps = workflowPortions.Any(x => x.WorkflowPortion == Constants.WORKFLOW_ACTION_GROUP_VPOPS) ? true : false;
 
 
                 // 🔥 If submitted, show SCN001 and SCN002 for request/reply workflow
                 scenarioDetails.AddRange(new[]
                 {
+
                     new ScenarioDetailsViewModel
                     {
                         ScenarioId = "SCN001",
@@ -129,7 +146,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services
                         PartialViewName = "_VerifyRequest",
                         DisplayText = "Verify a Request",
                         SequenceNumber = 3,
-                        VerifyingGroups = requestId.HasValue ? await GetReviewerGroupsAsync(requestId.Value) : new List<SelectListItem>(),
+                        VerifyingGroups = requestId.HasValue ? await GetReviewerGroupsAsync(requestId.Value, Constants.ACTION_TYPE_VERIFY) : new List<SelectListItem>(),
                         IsVpOfOps = isVpOps
                     }
                 });
@@ -208,10 +225,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services
 
         }
 
-        public async Task<List<SelectListItem>> GetReviewerGroupsAsync(int proposalId)
+        public async Task<List<SelectListItem>> GetReviewerGroupsAsync(int proposalId, string actionType)
         {
 
-            var workflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId, Constants.ACTION_TYPE_VERIFY))
+            var workflowPortions = (await _workflowControllerService.GetWorkflowActionsFromApiAsync(proposalId, actionType))
                 .Select(x => x.WorkflowPortion)
                 .Distinct()
                 .ToList();
@@ -855,6 +872,25 @@ namespace CapitalRequestAutomatedTesting.UI.Services
             );
         }
 
+        public SeleniumStepResult ValidateApproveWBSButtonAsync(vm.Proposal proposal)
+        {
+            return ExecuteValidationWithCondition(
+                () => proposal.WorkflowStep.StepName == Constants.STEP_NAME_WBS_VERIFICATION && proposal.IsMovingForward,
+                "Approve WBS button validation passed.",
+                "Approve WBS button not found for this Request."
+            );
+        }
+
+        public SeleniumStepResult ValidateApproveWBSButton(vm.Proposal proposal)
+        {
+            return ExecuteValidationWithCondition(
+                () => proposal.IsAdmin && proposal.IsMovingForward,
+                "Approve WBS button validation passed.",
+                "Approve WBS button not found for this Request."
+            );
+        }
+
+        
     }
 }
 

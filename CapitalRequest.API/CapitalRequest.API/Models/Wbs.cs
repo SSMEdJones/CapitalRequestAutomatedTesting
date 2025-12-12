@@ -8,9 +8,9 @@ public class Wbs
 
     public int ProposalId { get; set; }
 
-    public int? TypeOfProject { get; set; }
+    public int TypeOfProject { get; set; }
 
-    public string Wbsnumber { get; set; }
+    public string WbsNumber { get; set; }
 
     public DateTime Created { get; set; }
 

@@ -43,6 +43,9 @@ namespace CapitalRequest.API.DataAccess.AutoMapper.MappingProfile
             CreateMap<vm.ProvidedInfo, dto.ProvidedInfo>();
             CreateMap<dto.ReviewerGroup, vm.ReviewerGroup>();
             CreateMap<dto.Reviewer, vm.Reviewer>();
+
+            CreateMap<vm.Wbs, WbsNumber>().ConvertUsing<WBS_TO_WBSNUMBER>();
+
             CreateMap<dto.Wbs, vm.Wbs>();
             CreateMap<dto.Attachment, vm.Attachment>();
             CreateMap<vm.Attachment, dto.Attachment>();

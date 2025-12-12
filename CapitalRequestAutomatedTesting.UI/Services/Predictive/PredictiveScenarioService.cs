@@ -12,6 +12,7 @@ using SSMWorkflow.API.Models;
 using System.Diagnostics;
 using System.Reflection;
 using Constants = CapitalRequestAutomatedTesting.UI.Models.Constants;
+using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 {
@@ -60,7 +61,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             var proposal = await _capitalRequestServices.GetProposal(detail.ProposalId);
 
-            if (detail.ScenarioId != "SCN003" && detail.ScenarioId != "SCN004")
+            if (detail.ScenarioId == "SCN001" || detail.ScenarioId == "SCN002")
             {
                 var requestingGroup = await _capitalRequestServices.GetReviewerGroup(detail.RequestingGroupId);
                 var reviewer = await _capitalRequestServices.GetReviewer(detail.ReviewerId);
@@ -127,6 +128,15 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 }
             }
+            else if (scenarioId == "SCN005")
+            {
+                var verifiedGroup = await _capitalRequestServices.GetReviewerGroup(detail.VerifyingGroupId);
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+
+                scenarioDetail.SelectedProperties["Group"] = verifiedGroup.Name;
+                scenarioDetail.SelectedProperties["Approved By"] = proposal.Reviewer.FullName;
+            }
 
 
             var methods = await GetScenarioMethodsAsync(scenarioDetail);
@@ -192,6 +202,8 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 serviceType = typeof(IPredictiveWorkflowStakeHolderService);
             else if (serviceName == $"{nameSpace}IPredictiveWorkflowInstanceHistoryService")
                 serviceType = typeof(IPredictiveWorkflowInstanceHistoryService);
+            else if (serviceName == $"{nameSpace}IPredictiveWbsService")
+                serviceType = typeof(IPredictiveWbsService);
             else if (serviceName == $"{nameSpace}IPredictiveWbsService")
                 serviceType = typeof(IPredictiveWbsService);
 
@@ -266,6 +278,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 "IPredictiveWorkflowInstanceHistoryService" => "WorkflowInstanceActionHistory",
                 "IPredictiveWorkflowStakeHolderService" => "WorkflowStakeHolder",
                 "IPredictiveWbsService" => "Wbs",
+                "IPredictiveProposalService" => "Proposal",
                 _ => "UnknownService"
             };
         }
@@ -318,7 +331,6 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                     .Where(x => !x.IsComplete)
                     .FirstOrDefault();
 
-
                 var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
                    .Where(x => !x.IsComplete && !x.IsTerminate)
                    .ToList();
@@ -339,7 +351,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 proposal.VerifyingGroupId = detail.VerifyingGroupId;
 
-                if (detail.ScenarioId != "SCN003")
+                if (detail.ScenarioId != "SCN003"  && detail.ScenarioId != "SCN005")
                 {
 
                     var requestingGroupId = detail.RequestingGroupId;
@@ -839,6 +851,183 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                 );
 
             }
+            else if (scenarioId == "SCN005")
+            {
+                proposal.ReviewerGroupId = proposal.VerifyingGroupId;
+                proposal.ReviewerId = detail.ReviewerId;
+                proposal.Reviewer = await _capitalRequestServices.GetReviewer(proposal.ReviewerId.HasValue ? proposal.ReviewerId.Value : 0);
+                var workflowStep = proposal.WorkflowStep;
+                var workflowTemplates = await _capitalRequestServices.GetAllWorkflowTemplates(new WorkflowTemplateSearchFilter());
+                var currentStepNumber = workflowTemplates
+                .Where(x => x.StepName == workflowStep.StepName)
+                .First()
+                .StepNumber;
+
+                proposal.WorkflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                    .Where(x => !x.IsTerminate && x.OptionType == Constants.OPTION_TYPE_VERIFY)
+                   .ToList();
+
+                if (scenarioDetail.IsTestMode)
+                {
+
+                    workflowStep = (await _ssmWorkflowServices.GetAllWorkFlowSteps(proposal.WorkflowId))
+                        .Where(x => x.IsComplete)
+                        .LastOrDefault();
+
+                    var workflowStepOptions = (await _ssmWorkflowServices.GetAllWorkFlowStepOptions(workflowStep.WorkflowStepID))
+                       .ToList();
+
+                    currentStepNumber = workflowTemplates
+                        .Where(x => x.StepName == workflowStep.StepName)
+                        .First()
+                        .StepNumber;
+
+                    // simulate AddWorkflowStepOption
+                    if (!workflowStepOptions.Any(x => x.OptionName.ToLower() == proposal.Reviewer.Email.ToLower()))
+                    {
+                        var newWorkflowStepOption = _mapper.Map<WorkflowStepOption>(proposal.Reviewer);
+                        newWorkflowStepOption.OptionType = workflowStepOptions.FirstOrDefault().OptionType;
+
+                        workflowStepOptions.Add(_mapper.Map<WorkFlowStepOptionViewModel>(newWorkflowStepOption));
+                    }
+
+                    proposal.WorkflowStepOptions = workflowStepOptions;
+                    proposal.WorkflowStepId = workflowStep.WorkflowStepID;
+                    proposal.WorkflowStep = await _ssmWorkflowServices.GetWorkflowStep(workflowStep.WorkflowStepID);
+
+                }
+
+                var nextStepNumber = currentStepNumber + 1;
+
+
+                predictiveMethods.Add(
+                   new PredictiveMethod
+                   {
+                       ServiceName = "IPredictiveWorkflowStepResponderService",
+                       MethodName = "CreateWorkflowStepResponderAsync",
+                       Parameters = new List<object> { proposal, Constants.RESPONDER_VERIFY },
+                       Operation = CrudOperationType.Insert
+                   }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowInstanceHistoryService",
+                        MethodName = "CreateWorkflowInstanceHistoryAsync",
+                        Parameters = new List<object> { proposal, Constants.RESPONSE_VERIFIED },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStepService",
+                        MethodName = "MarkStepCompleteAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Update
+                    }
+                );
+
+
+                var reviewerGroups = await _actualReviewerGroupService.GetFilteredReviewerGroupsAsync(nextStepNumber);
+                var filteredReviewerGroups = _actualReviewerGroupService.FilterReviewerGroups(reviewerGroups, proposal, nextStepNumber);
+
+                proposal.ReviewerGroups = filteredReviewerGroups;
+
+                var workflowTemplate = workflowTemplates
+                    .Where(x => x.StepNumber == nextStepNumber)
+                    .FirstOrDefault();
+
+
+                CreateUpdateWorkFlowStep createWorkflowStep;
+
+                proposal.WorkflowInstanceId = Guid.NewGuid();
+                proposal.NextWorkflowStepId = Guid.NewGuid();
+                proposal.NextStepName = workflowTemplates.FirstOrDefault(x => x.StepNumber == nextStepNumber).StepName;
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStepService",
+                        MethodName = "CreateNextStepAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowInstanceService",
+                        MethodName = "CreateNextStepWorkflowInstanceAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStakeHolderService",
+                        MethodName = "CreateNextStepWorkflowStakeholdersAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStepOptionService",
+                        MethodName = "CreateVerifyWorkflowStepOptionsAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowInstanceHistoryService",
+                        MethodName = "CreateNextStepWorkflowInstanceHistoryAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveProposalService",
+                        MethodName = "UpdateProposalAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Update
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveEmailNotificationService",
+                        MethodName = "CreateNextStepEmailNotificationsAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Insert
+                    }
+                );
+
+                predictiveMethods.Add(
+                    new PredictiveMethod
+                    {
+                        ServiceName = "IPredictiveWorkflowStepService",
+                        MethodName = "MarkStepCompleteAsync",
+                        Parameters = new List<object> { proposal },
+                        Operation = CrudOperationType.Update
+                    }
+                );
+            }
+
 
             var scenarioData = ModelConverter.ToDictionaryExcluding(scenarioDetail);
             var proposalData = ModelConverter.ToDictionaryExcluding(proposal);

@@ -16,6 +16,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
         Task<bool> AllGroupsVerifiedAsync(vm.Proposal proposal);
         Task<bool> AllStepsCompleteAsync(vm.Proposal proposal);
         Task<WorkflowStep> CreateNextStepAsync(vm.Proposal proposal);
+        Task<WorkflowStep> MarkStepCompleteAsync(vm.Proposal proposal);
     }
         
     public class PredictiveWorkflowStepService : IPredictiveWorkflowStepService
@@ -147,6 +148,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             return _mapper.Map<WorkflowStep>(workflowStep);
         }
+       
     }
 
 }

@@ -1,8 +1,5 @@
-using AutoMapper;
 using CapitalRequest.API.DataAccess.Models;
 using CapitalRequestAutomatedTesting.Data.Services;
-using Microsoft.Extensions.Options;
-using SSMWorkflow.API.DataAccess.ConfigurationSettings;
 using vm = CapitalRequest.API.Models;
 
 namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
@@ -10,7 +7,10 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
     public interface IPredictiveWbsService
     {
         Task<List<vm.Wbs>> CreateWBSNumbersAsync(vm.Proposal proposal);
+        Task<List<vm.Wbs>> UpdateWBSNumbersAsync(vm.Proposal proposal);
+
     }
+
     public class PredictiveWbsService : IPredictiveWbsService
     {
         private readonly ICapitalRequestServices _capitalRequestServices;
@@ -38,6 +38,23 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
             });
 
             return wbsWithNumbers;
+
+        }
+        public async Task<List<vm.Wbs>> UpdateWBSNumbersAsync(vm.Proposal proposal)
+        {
+            proposal.WBSList = await _capitalRequestServices.GetAllWbss(
+            new WbsSearchFilter
+            {
+                ProposalId = proposal.Id
+            });
+
+            proposal.WBSList.ForEach(x =>
+            {
+                x.Updated = DateTime.Now;
+                x.UpdatedBy = proposal.Reviewer.UserId;
+            });
+
+            return proposal.WBSList;
 
         }
         public async Task<List<vm.Wbs>> GenerateWBSNumbersAsync(vm.Proposal proposal)
@@ -90,7 +107,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
             foreach (var wbs in proposal.WBSList)
             {
-                if (!string.IsNullOrEmpty(wbs.Wbsnumber))
+                if (!string.IsNullOrEmpty(wbs.WbsNumber))
                 {
                     // Existing WBSNumber, skip
                     wbsList.Add(wbs);
@@ -100,7 +117,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
                 if (newWbsEntry != null)
                 {
-                    wbs.Wbsnumber = newWbsEntry.WBSNumber;
+                    wbs.WbsNumber = newWbsEntry.WBSNumber;
                 }
 
                 wbsList.Add(wbs);
@@ -121,9 +138,9 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
                                join p in proposals on w.ProposalId equals p.Id
                                where p.CapitalFundingYear == capitalFundingYear
                                      && p.Id != proposalId
-                                     && !string.IsNullOrEmpty(w.Wbsnumber)
+                                     && !string.IsNullOrEmpty(w.WbsNumber)
                                let uniqueId = int.TryParse(
-                                   w.Wbsnumber?.Substring(14, 4), out var val) ? val : 0
+                                   w.WbsNumber?.Substring(14, 4), out var val) ? val : 0
                                select uniqueId).DefaultIfEmpty(0).Max();
 
             int nextId = maxUniqueId + 1;

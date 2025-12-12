@@ -302,7 +302,7 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Predictive
 
 
                 }
-                else if (optionType == Constants.OPTION_TYPE_VERIFY)
+                else if (optionType == Constants.OPTION_TYPE_VERIFY  || optionType == Constants.OPTION_TYPE_VERIFY_WBS)
                 {
                     var activeOption = proposal.WorkflowStepOptions
                             .Where(w => w.ReviewerGroupId == proposal.ReviewerGroupId
