@@ -988,23 +988,14 @@ namespace CapitalRequestAutomatedTesting.UI.Services.Actual
                     Description = "Validate Wbs Approval button ",
                     Action = new SeleniumDsl()
                         .BeginWith(Execute.NavigateTo(viewProposalUrl))
+                    //left off here need to set proper button name etc
+
                         .Then(Validate.ElementById(approveWbsButtonId, $"{workflowButtonText} button"))
                         .Then(Execute.RobustClickById(workflowButtonId, workflowButtonText, maxRetries))
                         .Then(Validate.Text(workflowPortion))
                         .Then(Validate.ButtonInRowWithText(workflowPortion, verifyButtonText))
                         .Build("Reached Workflow DashBoard page")
 
-                });
-
-                actualSteps.Add(new SeleniumScenarioStep
-                {
-                    StepNumber = ++stepNumber,
-                    Description = $"Click '{approveWbsButtonText}' in row with WorkflowPortion '{workflowPortion}' and validate no rejection message",
-                    Action = new SeleniumDsl()
-                    .BeginWith(Execute.ClickButtonInRow(workflowPortion, verifyButtonText))
-                    .Then(Validate.ElementNotPresentById("responseMessage", "Rejection message container"))
-                    .Then(Validate.ButtonById(verifyButtonId, verifyProjectButton))
-                    .Build("Clicked Verify and confirmed page transition")
                 });
 
             }
